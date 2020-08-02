@@ -2,6 +2,8 @@
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
+![logo](matrix-commander-logo.svg)
+
 # matrix-commander
 
 Simple but convenient CLI-based Matrix client app for sending and receiving.
