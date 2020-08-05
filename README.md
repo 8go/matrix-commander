@@ -207,17 +207,23 @@ $ # listen to tail, get the last N messages and quit
 $ matrix-commander.py --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
 $ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ # listen to (get) all messages, old and new, and process them in another app
+$ matrix-commander.py --listen all | process-in-other-app
+$ # listen to (get) all messages, including own
+$ matrix-commander.py --listen all --listen-self
+$ # rename device-name, sometimes also called display-name
+$ matrix-commander.py --rename-device "my new name"
 
 ```
 
 # Usage
 ```
-usage: matrix-nio-send.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
-                          [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
-                          [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                          [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                          [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
-                          [-v VERIFY]
+usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+                           [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
+                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
+                           [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
 
 On first run this program will configure itself. On further runs this program
 implements a simple Matrix CLI client that can send messages, listen to
@@ -319,9 +325,9 @@ optional arguments:
                         store for the same device. The store directory can be
                         shared between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
-                        The --listen option takes one argument. Currently,
-                        there are four choices: "never", "once", "forever",
-                        and "tail". By default, --listen is set to "never".
+                        The --listen option takes one argument. There are
+                        several choices: "never", "once", "forever", "tail",
+                        and "all". By default, --listen is set to "never".
                         So, by default no listening will be done. Set it to
                         "forever" to listen for and print incoming messages
                         to stdout. "--listen forever" will listen to all
@@ -329,7 +335,7 @@ optional arguments:
                         "forever", use Control-C on the keyboard or send a
                         signal to the process or service. The PID for
                         signaling can be found in "/home/user/.run/matrix-
-                        nio-send.pid". "--listen once" will get all the
+                        commander.pid". "--listen once" will get all the
                         messages from all rooms that are currently queued up.
                         So, with "once" the program will start, print waiting
                         messages (if any) and then stop. The timeout for
@@ -340,12 +346,13 @@ optional arguments:
                         option. With "tail" some messages read might be old,
                         i.e. already read before, some might be new, i.e.
                         never read before. It prints the messages and then
-                        the program stops. Unlike "once" and "forever" that
-                        listen in ALL rooms, "tail"listens only to the room
-                        specified in the credentials file or the --room
-                        options. Messages are sorted, last-first. Look at
-                        --tail as that option is related to --listen
-                        tail.Furthermore, when listening to messages, no
+                        the program stops. Messages are sorted, last-first.
+                        Look at --tail as that option is related to --listen
+                        tail. The option "all" gets all messages available,
+                        old and new. Unlike "once" and "forever" that listen
+                        in ALL rooms, "tail" and "all" listen only to the
+                        room specified in the credentials file or the --room
+                        options. Furthermore, when listening to messages, no
                         messages will be sent. Hence, when listening,
                         --message must not be used and piped input will be
                         ignored.
@@ -367,7 +374,7 @@ optional arguments:
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
                         via OS.
-  -v VERIFY, --verify VERIFY
+  -v [VERIFY], --verify [VERIFY]
                         Perform verification. By default, no verification is
                         performed. Possible values are: "emoji". If
                         verification is desired, run this program in the
@@ -377,4 +384,25 @@ optional arguments:
                         reject verification. Once verification is complete,
                         stop the program and run it as a service again. Don't
                         send messages or files when you verify.
+  -x RENAME_DEVICE, --rename-device RENAME_DEVICE
+                        Rename the current device to the new device name
+                        provided. No other operations like sending,
+                        listening, or verifying are allowed when renaming the
+                        device.
+
 ```
+
+# For Developers
+
+- Don't change tabbing, spacing, or formating as file is automatically
+  linted with `autopep8 --aggressive`
+- `pylama:format=pep8:linters=pep8`
+
+# Things to do, Things missing
+
+- help me add config file handling
+
+# Final Remarks
+
+- Enjoy!
+- Pull requests are welcome
