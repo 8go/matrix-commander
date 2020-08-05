@@ -212,6 +212,10 @@ $ # listen to tail, get the last N messages and quit
 $ matrix-commander.py --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
 $ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ # listen to (get) all messages, old and new, and process them in another app
+$ matrix-commander.py --listen all | process-in-other-app
+$ # rename device-name, sometimes also called display-name
+$ matrix-commander.py --rename-device "my new name"
 
 ```
 
@@ -406,6 +410,7 @@ optional arguments:
 import magic
 import aiofiles.os
 import aiofiles
+from aiohttp import ClientConnectorError
 import asyncio
 import json
 import re  # regular expression
@@ -430,6 +435,7 @@ from nio import (
     UploadResponse,
     SyncResponse,
     ProfileGetAvatarResponse,
+    UnknownEvent,
     RoomMessage,
     RoomMessageAudio,
     RoomMessageEmote,
@@ -446,6 +452,10 @@ from nio import (
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomMemberEvent,
+    RoomAliasEvent,
+    RoomNameEvent,
     KeyVerificationEvent,
     KeyVerificationStart,
     KeyVerificationCancel,
@@ -454,8 +464,9 @@ from nio import (
     ToDeviceError,
     LocalProtocolError,
     RoomMessagesError,
+    UpdateDeviceError,
     SyncError,
-    UnknownEvent,
+    MessageDirection,
 )
 
 # matrix-commander
@@ -489,10 +500,14 @@ EMOJI = "emoji"  # verification type
 ONCE = "once"  # listening type
 NEVER = "never"  # listening type
 FOREVER = "forever"  # listening type
+ALL = "all"  # listening type
 TAIL = "tail"  # listening type
 LISTEN_DEFAULT = NEVER
 TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
+VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
+VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
+RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -m is not specified
 
 
 class Callbacks(object):
@@ -512,8 +527,12 @@ class Callbacks(object):
                          f"event: {event}")
             if not pargs.listen_self:
                 if event.sender == self.client.user:
-                    logger.debug(f"Skipping message sent by myself: "
-                                 f"{event.body}")
+                    try:
+                        logger.debug("Skipping message sent by myself: "
+                                     f"{event.body}")
+                    except AttributeError:  # does not have .body
+                        logger.debug("Skipping message sent by myself: "
+                                     f"{event}")
                     return
 
             if isinstance(event, RoomMessageMedia):  # for all media events
@@ -566,6 +585,18 @@ class Callbacks(object):
                 # it should be a audio, image, video, etc.
                 # Put here at the end as defensive programming
                 msg = "Received encrypted media: " + event.body + msg_url
+            elif isinstance(event, RoomMemberEvent):
+                msg = ("Received room-member event: sender: "
+                       f"{event.sender}, operation: {event.membership}")
+            elif isinstance(event, RoomEncryptionEvent):
+                msg = ("Received room-encryption event: sender: "
+                       f"{event.sender}")
+            elif isinstance(event, RoomAliasEvent):
+                msg = ("Received room-alias event: sender: "
+                       f"{event.sender}, alias: {event.canonical_alias}")
+            elif isinstance(event, RoomNameEvent):
+                msg = ("Received room-name event: sender: "
+                       f"{event.sender}, room name: {event.name}")
             elif isinstance(event, UnknownEvent):
                 if event.type == "m.reaction":
                     msg = ("Received a reaction, an emoji: "
@@ -1851,7 +1882,18 @@ async def listen_tail(client: AsyncClient, credentials: dict) -> None:
     """
     # we call sync() to get the next_batch marker
     # we set full_state=True to get all room_ids
-    resp_s = await client.sync(timeout=10000, full_state=True)
+    try:
+        resp_s = await client.sync(timeout=10000, full_state=True)
+    except ClientConnectorError:
+        logger.info("sync() failed. Do you have connectivity to internet?")
+        logger.debug(traceback.format_exc())
+        await client.close()
+        return
+    except Exception:
+        logger.info("sync() failed.")
+        logger.debug(traceback.format_exc())
+        await client.close()
+        return
     if isinstance(resp_s, SyncError):
         logger.debug(f"sync failed with resp = {resp_s}")
         await client.close()
@@ -1912,6 +1954,139 @@ async def listen_tail(client: AsyncClient, credentials: dict) -> None:
     await client.close()
 
 
+async def read_all_events_in_direction(
+        client: AsyncClient, room_id: str, start_token: str,
+        direction: MessageDirection = MessageDirection.back) -> list:
+    """Read all events from a given room in certain direction.
+
+    Arguments:
+    ---------
+        client: AsyncClient : The created NIO client
+        room_id: str : The room id of the room for which we
+            would like to fetch the messages.
+        start_token: str :  The token to start returning events from.
+            This token can be obtained from a prev_batch token returned for
+            each room by the sync() API, or from a start or end token returned
+            by a previous request to room_messages().
+        direction: MessageDirection (optional): The direction to return
+            events from. Defaults to MessageDirection.back.
+
+    Returns
+    -------
+        list: list of RoomMessage events, could be empty
+
+    Read all messages of a room beginning from the past_token
+    to oldest or newest message (depending on the direction).
+
+    """
+    all_events = []
+    current_start_token = start_token
+    while True:
+        resp = await client.room_messages(
+            room_id, current_start_token, limit=500, direction=direction)
+        if isinstance(resp, RoomMessagesError):
+            logger.debug("room_messages failed with resp = {resp}")
+            break  # skip to end of function
+        logger.debug(f"Received {len(resp.chunk)} events.")
+        logger.debug(f"room_messages response = {type(resp)} :: {resp}.")
+        logger.debug(f"room_messages room_id = {resp.room_id}.")
+        logger.debug(f"room_messages start = (str) {resp.start}.")
+        logger.debug(f"room_messages end = (str) :: {resp.end}.")
+        logger.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
+        # resp.chunk is just a list of RoomMessage events like this example:
+        # chunk=[RoomMessageText(...)]
+        current_start_token = resp.end
+        if len(resp.chunk) == 0:
+            break
+        all_events = all_events + resp.chunk
+    return all_events
+
+
+async def listen_all(client: AsyncClient, credentials: dict) -> None:
+    """Get all messages, then quit.
+
+    Arguments:
+    ---------
+        client: AsyncClient : the created NIO client
+        credentials: dict : credentials dictionary from the credentials file
+
+    Get all messages. Some might be old, i.e. already
+    read before, some might be new, i.e. never read before.
+    Print them. Then leave.
+
+    The function room_messages() is used to get all messages.
+
+    """
+    # we call sync() to get the next_batch marker
+    # we set full_state=True to get all room_ids
+    try:
+        resp_s = await client.sync(timeout=10000, full_state=True)
+    except ClientConnectorError:
+        logger.info("sync() failed. Do you have connectivity to internet?")
+        logger.debug(traceback.format_exc())
+        await client.close()
+        return
+    except Exception:
+        logger.info("sync() failed.")
+        logger.debug(traceback.format_exc())
+        await client.close()
+        return
+    if isinstance(resp_s, SyncError):
+        logger.debug(f"sync failed with resp = {resp_s}")
+        await client.close()
+        return
+    # this prints a summary of all new messages currently waiting in the queue
+    logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
+    logger.debug(f"client.next_batch after = (str) {client.next_batch}")
+    logger.debug(f"sync next_batch = (str) {resp_s.next_batch}")
+    logger.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
+    logger.debug(f"client.rooms = {client.rooms}")
+    if not resp_s.rooms.join:  # no Rooms!
+        logger.debug(f"sync returned no rooms = {resp_s.rooms.join}")
+        await client.close()
+        return
+
+    # Set up event callbacks
+    callbacks = Callbacks(client)
+    # Note: we are NOT registering a callback funtion!
+
+    # room_id = list(resp_s.rooms.join.keys())[0]  # first room_id from dict
+    # alternative way of getting room_id, client.rooms is also a dict
+    # room_id = list(client.rooms.keys())[0]  # first room_id from dict
+
+    # get rooms as specified by the user thru args or credential file
+    rooms = determine_rooms(credentials['room_id'])
+    logger.debug(f"Rooms are: {rooms}")
+
+    # To loop over all rooms, one can loop through the join dictionary. i.e.
+    # for room_id, room_info in resp_s.rooms.join.items():  # loop all rooms
+    for room_id in rooms:  # loop only over user specified rooms
+        prev_batch = resp_s.rooms.join[room_id].timeline.prev_batch
+        back_events = await read_all_events_in_direction(
+            client, room_id, prev_batch, MessageDirection.back)
+        front_events = await read_all_events_in_direction(
+            client, room_id, prev_batch, MessageDirection.front)
+
+        # We have to reverse the first list since we are going backwards (but
+        # we want to have a chronological order)
+        all_events = back_events[::-1] + front_events
+
+        for event in all_events:
+            logger.debug(f"sending event to callback = {event}.")
+            if client.rooms and client.rooms[room_id]:
+                room = client.rooms[room_id]
+            else:
+                room = MatrixRoom(room_id, None, True)  # dummy_room
+            await callbacks.message_callback(room, event)
+            resp = await client.room_read_markers(
+                room_id=room_id,
+                fully_read_event=event.event_id,
+                read_event=event.event_id)
+            logger.debug(
+                f"room_read_markers response = {type(resp)} :: {resp}.")
+    await client.close()
+
+
 async def main_listen() -> None:
     """Use credentials to log in and listen."""
     credentials_file = determine_credentials_file()
@@ -1936,10 +2111,33 @@ async def main_listen() -> None:
         # await listen_once_alternative(client) # an alternative implementation
     elif pargs.listen == TAIL:
         await listen_tail(client, credentials)
+    elif pargs.listen == ALL:
+        await listen_all(client, credentials)
     else:
         logger.debug(f"Unrecognized listening type \"{pargs.listen}\". "
                      "Closing client.")
         await client.close()
+
+
+async def main_rename_device() -> None:
+    """Use credentials to log in and rename the device name of itself."""
+    credentials_file = determine_credentials_file()
+    store_dir = determine_store_dir()
+    if not os.path.isfile(credentials_file):
+        logger.debug("Credentials file must be created first before one "
+                     "can verify.")
+        cleanup()
+        sys.exit(1)
+    logger.debug("Credentials file does exist.")
+    client, credentials = login_using_credentials_file(credentials_file,
+                                                       store_dir)
+    content = {"display_name": pargs.rename_device}
+    resp = await client.update_device(credentials["device_id"], content)
+    if isinstance(resp, UpdateDeviceError):
+        logger.debug(f"update_device failed with {resp}")
+    else:
+        logger.debug(f"update_device successful with {resp}")
+    await client.close()
 
 
 async def main_verify() -> None:
@@ -1999,75 +2197,75 @@ async def main_send() -> None:
 
 def initial_check_of_args() -> None:
     """Check arguments."""
+    # First, the adjustments
     if not pargs.encrypted:
         pargs.encrypted = True  # force it on
         logger.debug("Encryption is always enabled. It cannot be turned off.")
-
-    if pargs.config:
-        logger.info("This feature is not implemented yet. "
-                    "Please help me implement it. If you feel motivated "
-                    "please write code and submit a Pull Request. "
-                    "Your contribution is appreciated. Thnx!")
-        sys.exit(1)
-
-    if pargs.listen:
-        pargs.listen = pargs.listen.lower()
-    if (pargs.listen == FOREVER or pargs.listen == ONCE) and pargs.tail != 0:
-        logger.error("Don't use --listen forever or --listen once together "
-                     "with --tail. It's one or the other.")
-        sys.exit(1)
-
-    if pargs.tail != 0:
-        pargs.listen = TAIL  # --tail turns on --listen TAIL
-
-    # this is set by default anyway, just defensive programming
-    if pargs.encrypted and ((not pargs.store) or (pargs.store == "")):
-        logger.error("If --encrypt is used --store must be set too. "
-                     "Specify --store and run program again.")
-        sys.exit(1)
-
     if not pargs.encrypted:  # just in case we ever go back disabling e2e
         pargs.store = None
-
-    if pargs.verify and (pargs.verify.lower() != EMOJI):
-        logger.error(f"For --verify currently only \"{EMOJI}\" is allowed "
-                     "as keyword.")
-        sys.exit(1)
-
-    if (pargs.verify and
+    if pargs.listen:
+        pargs.listen = pargs.listen.lower()
+    if pargs.listen == NEVER and pargs.tail != 0:
+        pargs.listen = TAIL  # --tail turns on --listen TAIL
+        logger.debug("--listen set to \"tail\" because \"--tail\" is used.")
+    # Secondly, the checks
+    if pargs.config:
+        t = ("This feature is not implemented yet. "
+             "Please help me implement it. If you feel motivated "
+             "please write code and submit a Pull Request. "
+             "Your contribution is appreciated. Thnx!")
+    elif (pargs.listen == FOREVER or pargs.listen == ONCE
+            or pargs.listen == ALL) and pargs.tail != 0:
+        t = ("Don't use --listen forever, --listen once or --listen all "
+             "together with --tail. It's one or the other.")
+    # this is set by default anyway, just defensive programming
+    elif pargs.encrypted and ((not pargs.store) or (pargs.store == "")):
+        t = ("If --encrypt is used --store must be set too. "
+             "Specify --store and run program again.")
+    elif pargs.verify and (pargs.verify.lower() != EMOJI):
+        t = (f"For --verify currently only \"{EMOJI}\" is allowed "
+             "as keyword.")
+    elif (pargs.verify and
             (pargs.message or pargs.image or pargs.audio or
-             pargs.file or pargs.room or pargs.listen != NEVER)):
-        logger.error("If --verify is specified, only verify can be done. "
-                     "No messages, images, or files can be sent."
-                     "No listening or tailing allowed.")
-        sys.exit(1)
-
-    if (pargs.listen != NEVER and
+             pargs.file or pargs.room or pargs.listen != NEVER or
+             pargs.rename_device)):
+        t = ("If --verify is specified, only verify can be done. "
+             "No messages, images, or files can be sent."
+             "No listening or tailing allowed. No renaming.")
+    elif pargs.rename_device and (pargs.rename_device == ""):
+        t = ("Don't use an empty name for --rename_device.")
+    elif (pargs.rename_device and
             (pargs.message or pargs.image or pargs.audio or
-             pargs.file)):
-        logger.error("If --listen is specified, only listening can be done. "
-                     "No messages, images, or files can be sent.")
-        sys.exit(1)
-
-    if (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
-        logger.error("If --listen once or --listen forever are specified, "
-                     "--room must not be specified because "
-                     "these options listen in ALL rooms.")
-        sys.exit(1)
-
-    if (pargs.listen != NEVER and pargs.listen != FOREVER and
-            pargs.listen != ONCE and pargs.listen != TAIL):
-        logger.error("If --listen is specified, only four choices are "
-                     f"possible: {ONCE}, {NEVER}, {FOREVER} or {TAIL}. "
-                     f"Found {pargs.listen}.")
-        sys.exit(1)
-
-    if pargs.listen == NEVER and pargs.listen_self:
-        logger.error("If --listen or --tail are not used, "
-                     "--listen-self must not be used "
-                     "either. Specify --listen or --tail "
-                     "and run program again.")
-        sys.exit(1)
+             pargs.file or pargs.room or pargs.listen != NEVER or
+             pargs.verify)):
+        t = ("If --rename_device is specified, only rename can be done. "
+             "No messages, images, or files can be sent."
+             "No listening or tailing allowed. No verification.")
+    elif (pargs.listen != NEVER and
+            (pargs.message or pargs.image or
+             pargs.audio or pargs.file)):
+        t = ("If --listen is specified, only listening can be done. "
+             "No messages, images, or files can be sent.")
+    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
+        t = ("If --listen once or --listen forever are specified, "
+             "--room must not be specified because "
+             "these options listen in ALL rooms.")
+    elif (pargs.listen != NEVER and pargs.listen != FOREVER and
+            pargs.listen != ONCE and pargs.listen != TAIL and
+            pargs.listen != ALL):
+        t = ("If --listen is specified, only these choices are "
+             f"possible: {ONCE}, {NEVER}, {FOREVER}, {TAIL} or {ALL}. "
+             f"Found \"{pargs.listen}\".")
+    elif pargs.listen == NEVER and pargs.listen_self:
+        t = ("If neither --listen nor --tail are used, "
+             "then --listen-self must not be used "
+             "either. Specify --listen or --tail "
+             "and run program again.")
+    else:
+        logger.debug("All arguments are valid. All checks passed.")
+        return
+    logger.error(t)
+    sys.exit(1)
 
 
 if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
@@ -2235,9 +2433,9 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
                     default=LISTEN_DEFAULT,  # when -l is not used
                     nargs='?',  # makes the word optional
                     const=FOREVER,  # when -l is used, but FOREVER is not added
-                    help="The --listen option takes one argument. Currently, "
-                    f"there are four choices: \"{NEVER}\", \"{ONCE}\", "
-                    f"\"{FOREVER}\", and \"{TAIL}\". "
+                    help="The --listen option takes one argument. There "
+                    f"are several choices: \"{NEVER}\", \"{ONCE}\", "
+                    f"\"{FOREVER}\", \"{TAIL}\", and \"{ALL}\". "
                     f"By default, --listen is set to \"{NEVER}\".  So, by "
                     "default no listening will be done. Set it to "
                     f"\"{FOREVER}\" to listen for and print incoming messages "
@@ -2260,13 +2458,17 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
                     f"\"{TAIL}\" some messages read might be old, "
                     "i.e. already read before, some might be new, "
                     "i.e. never read before. It prints the messages and then "
-                    f"the program stops. Unlike \"{ONCE}\" and "
-                    f"\"{FOREVER}\" that listen in ALL rooms, \"{TAIL}\""
-                    "listens only to the room specified in the credentials "
-                    "file or the --room options. "
+                    f"the program stops. "
                     "Messages are sorted, last-first. "
                     "Look at --tail as that option is related "
-                    "to --listen tail."
+                    "to --listen tail. "
+                    f"The option \"{ALL}\" gets all messages available, "
+                    "old and new. "
+                    f"Unlike \"{ONCE}\" and "
+                    f"\"{FOREVER}\" that listen in ALL rooms, \"{TAIL}\" "
+                    f"and \"{ALL}\" listen "
+                    "only to the room specified in the credentials "
+                    "file or the --room options. "
                     "Furthermore, when listening to messages, no messages "
                     "will be sent. Hence, when listening, --message must not "
                     "be used and piped input will be ignored. ")
@@ -2298,6 +2500,10 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
                     "arriving messages through the operating system. "
                     "By default there is no notification via OS.")
     ap.add_argument("-v", "--verify", required=False, type=str,
+                    default=VERIFY_UNUSED_DEFAULT,  # when -t is not used
+                    nargs='?',  # makes the word optional
+                    # when -v is used, but text is not added
+                    const=VERIFY_USED_DEFAULT,
                     help="Perform verification. By default, no "
                     "verification is performed. "
                     f"Possible values are: \"{EMOJI}\". "
@@ -2309,6 +2515,12 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
                     "Once verification is complete, stop the program and "
                     "run it as a service again. Don't send messages or "
                     "files when you verify. ")
+    ap.add_argument("-x", "--rename-device", required=False, type=str,
+                    default=RENAME_DEVICE_UNUSED_DEFAULT,  # when -x isn't used
+                    help="Rename the current device to the new "
+                    "device name provided. No other operations like "
+                    "sending, listening, or verifying are allowed when "
+                    "renaming the device. ")
 
     pargs = ap.parse_args()
     if pargs.debug:
@@ -2323,8 +2535,10 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
     try:
         if pargs.verify:
             asyncio.get_event_loop().run_until_complete(main_verify())
+        elif pargs.rename_device:
+            asyncio.get_event_loop().run_until_complete(main_rename_device())
         elif (pargs.listen == FOREVER or pargs.listen == ONCE
-                or pargs.listen == TAIL):
+                or pargs.listen == TAIL or pargs.listen == ALL):
             asyncio.get_event_loop().run_until_complete(main_listen())
         else:
             asyncio.get_event_loop().run_until_complete(main_send())
