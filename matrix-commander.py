@@ -9,6 +9,8 @@ r"""matrix-commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
+![logo](matrix-commander-logo.svg)
+
 # matrix-commander
 
 Simple but convenient CLI-based Matrix client app for sending and receiving.
@@ -46,7 +48,7 @@ Use cases for this program could be
   sending messages to her/his own room
 - as educational material that showcases the use of the `matrix-nio` SDK
 
-## First Run, Set Up, Credentials File, End-to-end Encryption
+# First Run, Set Up, Credentials File, End-to-end Encryption
 
 This program on the first run creates a credentials.json file.
 The credentials.json file stores: homeserver, user id,
@@ -88,7 +90,7 @@ into the Matrix account. Now this program can be used
 to easily send simple text messages, images, and so forth
 to the preconfigured room.
 
-## Sending
+# Sending
 
 Messages to send can be provided
 1) in the command line (-m or --message)
@@ -110,7 +112,7 @@ Photos and images that can be sent. That includes files like
 Arbirtary files like .txt, .pdf, .doc, audio files like .mp3
 or video files like .mp4 can also be sent.
 
-## Listening, Receiving
+# Listening, Receiving
 
 One can listen to one or multiple rooms. Received messages will be displayed
 on the screen. If desired, optionally, you can be notified of incoming
@@ -126,13 +128,13 @@ Messages can be received or listened to various ways:
 3) Tail: prints the last N read or unread messages of one or multiple
    specified rooms and after printing them the program terminates.
 
-## Verification
+# Verification
 
 The program can accept verification request and verify other devices
 via emojis. Do do so use the --verify option and the program will
 await incoming verification request and act accordingly.
 
-## Summary, TLDR
+# Summary, TLDR
 
 This simple Matrix client written in Python allows you to send and
 receive messages and verify other devices. End-to-end encryption is enabled
@@ -212,8 +214,12 @@ $ # listen to tail, get the last N messages and quit
 $ matrix-commander.py --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
 $ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ # get the very last message
+$ matrix-commander.py --tail 1 --listen-self
 $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander.py --listen all | process-in-other-app
+$ # listen to (get) all messages, including own
+$ matrix-commander.py --listen all --listen-self
 $ # rename device-name, sometimes also called display-name
 $ matrix-commander.py --rename-device "my new name"
 
@@ -221,12 +227,12 @@ $ matrix-commander.py --rename-device "my new name"
 
 # Usage
 ```
-usage: matrix-nio-send.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
-                          [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
-                          [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                          [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                          [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
-                          [-v VERIFY]
+usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+                           [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
+                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
+                           [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
 
 On first run this program will configure itself. On further runs this program
 implements a simple Matrix CLI client that can send messages, listen to
@@ -328,9 +334,9 @@ optional arguments:
                         store for the same device. The store directory can be
                         shared between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
-                        The --listen option takes one argument. Currently,
-                        there are four choices: "never", "once", "forever",
-                        and "tail". By default, --listen is set to "never".
+                        The --listen option takes one argument. There are
+                        several choices: "never", "once", "forever", "tail",
+                        and "all". By default, --listen is set to "never".
                         So, by default no listening will be done. Set it to
                         "forever" to listen for and print incoming messages
                         to stdout. "--listen forever" will listen to all
@@ -338,7 +344,7 @@ optional arguments:
                         "forever", use Control-C on the keyboard or send a
                         signal to the process or service. The PID for
                         signaling can be found in "/home/user/.run/matrix-
-                        nio-send.pid". "--listen once" will get all the
+                        commander.*.pid". "--listen once" will get all the
                         messages from all rooms that are currently queued up.
                         So, with "once" the program will start, print waiting
                         messages (if any) and then stop. The timeout for
@@ -349,12 +355,13 @@ optional arguments:
                         option. With "tail" some messages read might be old,
                         i.e. already read before, some might be new, i.e.
                         never read before. It prints the messages and then
-                        the program stops. Unlike "once" and "forever" that
-                        listen in ALL rooms, "tail"listens only to the room
-                        specified in the credentials file or the --room
-                        options. Messages are sorted, last-first. Look at
-                        --tail as that option is related to --listen
-                        tail.Furthermore, when listening to messages, no
+                        the program stops. Messages are sorted, last-first.
+                        Look at --tail as that option is related to --listen
+                        tail. The option "all" gets all messages available,
+                        old and new. Unlike "once" and "forever" that listen
+                        in ALL rooms, "tail" and "all" listen only to the
+                        room specified in the credentials file or the --room
+                        options. Furthermore, when listening to messages, no
                         messages will be sent. Hence, when listening,
                         --message must not be used and piped input will be
                         ignored.
@@ -376,7 +383,7 @@ optional arguments:
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
                         via OS.
-  -v VERIFY, --verify VERIFY
+  -v [VERIFY], --verify [VERIFY]
                         Perform verification. By default, no verification is
                         performed. Possible values are: "emoji". If
                         verification is desired, run this program in the
@@ -386,14 +393,23 @@ optional arguments:
                         reject verification. Once verification is complete,
                         stop the program and run it as a service again. Don't
                         send messages or files when you verify.
+  -x RENAME_DEVICE, --rename-device RENAME_DEVICE
+                        Rename the current device to the new device name
+                        provided. No other operations like sending,
+                        listening, or verifying are allowed when renaming the
+                        device.
 
 ```
 
 # For Developers
 
 - Don't change tabbing, spacing, or formating as file is automatically
-  linted with `autopep8 --aggressive`
+  sorted, linted and formated.
 - `pylama:format=pep8:linters=pep8`
+- first `isort` import sorter
+- then `flake` linter/formater
+- then `black` linter/formater
+- linelength: 79
 
 # Things to do, Things missing
 
@@ -407,35 +423,49 @@ optional arguments:
 """
 
 
-import magic
-import aiofiles.os
-import aiofiles
-from aiohttp import ClientConnectorError
-import asyncio
-import json
-import re  # regular expression
-import os
-import sys
-import select
-import getpass
 import argparse
+import asyncio
+import datetime
+import getpass
+import json
 import logging
-import traceback
-import textwrap
-import notify2
-import urllib.request
+import os
+import re  # regular expression
+import select
+import sys
 import tempfile
-from PIL import Image
+import textwrap
+import traceback
+import urllib.request
+import uuid
+
+import aiofiles
+import aiofiles.os
+import magic
+import notify2
+from aiohttp import ClientConnectorError
 from markdown import markdown
 from nio import (
     AsyncClient,
     AsyncClientConfig,
-    MatrixRoom,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
     LoginResponse,
-    UploadResponse,
-    SyncResponse,
+    MatrixRoom,
+    MessageDirection,
     ProfileGetAvatarResponse,
-    UnknownEvent,
+    RoomAliasEvent,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
     RoomMessageEmote,
@@ -444,30 +474,20 @@ from nio import (
     RoomMessageImage,
     RoomMessageMedia,
     RoomMessageNotice,
+    RoomMessagesError,
     RoomMessageText,
     RoomMessageUnknown,
     RoomMessageVideo,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomMemberEvent,
-    RoomAliasEvent,
     RoomNameEvent,
-    KeyVerificationEvent,
-    KeyVerificationStart,
-    KeyVerificationCancel,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    ToDeviceError,
-    LocalProtocolError,
-    RoomMessagesError,
-    UpdateDeviceError,
+    RoomReadMarkersError,
     SyncError,
-    MessageDirection,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadResponse,
 )
+from PIL import Image
 
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
@@ -476,8 +496,10 @@ PROG_WITH_EXT = os.path.basename(__file__)
 # file to store credentials in case you want to run program multiple times
 CREDENTIALS_FILE_DEFAULT = "credentials.json"  # login credentials JSON file
 # e.g. ~/.config/matrix-commander/
-CREDENTIALS_DIR_LASTRESORT = (os.path.expanduser("~/.config/") +
-                              os.path.splitext(os.path.basename(__file__))[0])
+CREDENTIALS_DIR_LASTRESORT = (
+    os.path.expanduser("~/.config/")
+    + os.path.splitext(os.path.basename(__file__))[0]
+)
 # directory to be used by end-to-end encrypted protocol for persistent storage
 STORE_DIR_DEFAULT = "./store/"
 # e.g. ~/.local/share/matrix-commander/
@@ -485,17 +507,24 @@ STORE_DIR_DEFAULT = "./store/"
 # like store to result in a final path of
 # e.g. ~/.local/share/matrix-commander/store/ as actual persistent store dir
 STORE_PATH_LASTRESORT = os.path.normpath(
-    (os.path.expanduser("~/.local/share/") +
-     os.path.splitext(os.path.basename(__file__))[0]))
+    (
+        os.path.expanduser("~/.local/share/")
+        + os.path.splitext(os.path.basename(__file__))[0]
+    )
+)
 # e.g. ~/.local/share/matrix-commander/store/
 STORE_DIR_LASTRESORT = os.path.normpath(
-    (os.path.expanduser(STORE_PATH_LASTRESORT + "/" + STORE_DIR_DEFAULT)))
+    (os.path.expanduser(STORE_PATH_LASTRESORT + "/" + STORE_DIR_DEFAULT))
+)
 # usually there are no permissions for using: /run/matrix-commander.pid
-# so instead the local ~/.run/matrix-commander.pid will be used for storing
-# the PID for sending signals
+# so instead local files like ~/.run/matrix-commander.some-uuid-here.pid will
+# be used for storing the PID(s) for sending signals.
+# There might be more than 1 process running in parallel, so there might be
+# more than 1 PID at a given point in time.
 PID_DIR_DEFAULT = os.path.normpath(os.path.expanduser("~/.run/"))
 PID_FILE_DEFAULT = os.path.normpath(
-    PID_DIR_DEFAULT + "/" + PROG_WITHOUT_EXT + ".pid")
+    PID_DIR_DEFAULT + "/" + PROG_WITHOUT_EXT + "." + str(uuid.uuid4()) + ".pid"
+)
 EMOJI = "emoji"  # verification type
 ONCE = "once"  # listening type
 NEVER = "never"  # listening type
@@ -517,23 +546,37 @@ class Callbacks(object):
         """Store AsyncClient."""
         self.client = client
 
-    async def message_callback(self, room: MatrixRoom, event):
+    # according to pylama: function too complex: C901 # noqa: C901
+    async def message_callback(self, room: MatrixRoom, event):  # noqa: C901
         """Handle all events of type RoomMessage.
 
         Includes events like RoomMessageText, RoomMessageImage, etc.
         """
         try:
-            logger.debug(f"message_callback(): for room {room} received this "
-                         f"event: {event}")
+            logger.debug(
+                f"message_callback(): for room {room} received this "
+                f"event: {type(event)} {event}"
+            )
             if not pargs.listen_self:
                 if event.sender == self.client.user:
                     try:
-                        logger.debug("Skipping message sent by myself: "
-                                     f"{event.body}")
+                        logger.debug(
+                            f"Skipping message sent by myself: {event.body}"
+                        )
                     except AttributeError:  # does not have .body
-                        logger.debug("Skipping message sent by myself: "
-                                     f"{event}")
+                        logger.debug(
+                            f"Skipping message sent by myself: {event}"
+                        )
                     return
+
+            # millisec since 1970
+            logger.debug(f"event.server_timestamp = {event.server_timestamp}")
+            timestamp = datetime.datetime.fromtimestamp(
+                int(event.server_timestamp / 1000)
+            )  # sec since 1970
+            event_datetime = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            # e.g. 2020-08-06 17:30:18
+            logger.debug(f"event_datetime = {event_datetime}")
 
             if isinstance(event, RoomMessageMedia):  # for all media events
                 media_mxc = event.url
@@ -586,21 +629,31 @@ class Callbacks(object):
                 # Put here at the end as defensive programming
                 msg = "Received encrypted media: " + event.body + msg_url
             elif isinstance(event, RoomMemberEvent):
-                msg = ("Received room-member event: sender: "
-                       f"{event.sender}, operation: {event.membership}")
+                msg = (
+                    "Received room-member event: sender: "
+                    f"{event.sender}, operation: {event.membership}"
+                )
             elif isinstance(event, RoomEncryptionEvent):
-                msg = ("Received room-encryption event: sender: "
-                       f"{event.sender}")
+                msg = (
+                    "Received room-encryption event: sender: "
+                    f"{event.sender}"
+                )
             elif isinstance(event, RoomAliasEvent):
-                msg = ("Received room-alias event: sender: "
-                       f"{event.sender}, alias: {event.canonical_alias}")
+                msg = (
+                    "Received room-alias event: sender: "
+                    f"{event.sender}, alias: {event.canonical_alias}"
+                )
             elif isinstance(event, RoomNameEvent):
-                msg = ("Received room-name event: sender: "
-                       f"{event.sender}, room name: {event.name}")
+                msg = (
+                    "Received room-name event: sender: "
+                    f"{event.sender}, room name: {event.name}"
+                )
             elif isinstance(event, UnknownEvent):
                 if event.type == "m.reaction":
-                    msg = ("Received a reaction, an emoji: "
-                           f"{event.source['content']['m.relates_to']['key']}")
+                    msg = (
+                        "Received a reaction, an emoji: "
+                        f"{event.source['content']['m.relates_to']['key']}"
+                    )
                 else:
                     msg = f"Received unknown event: {event}"
             else:
@@ -618,27 +671,31 @@ class Callbacks(object):
             logger.debug(f"type(msg) = {type(msg)}. msg is a string")
             sender_nick = room.user_name(event.sender)
             if not sender_nick:  # convert @foo:mat.io into foo
-                sender_nick = event.sender.split(':')[0][1:]
+                sender_nick = event.sender.split(":")[0][1:]
             room_nick = room.display_name
             if not room_nick or room_nick == "Empty Room" or room_nick == "":
                 room_nick = "Undetermined"
-            logger.debug("Message received for room "
-                         f"{room_nick} [{room.room_id}] | "
-                         f"sender {sender_nick} "
-                         f"[{event.sender}] : {msg}")
-            print("Message received for room "
-                  f"{room_nick} [{room.room_id}] | "
-                  f"sender {sender_nick} "
-                  f"[{event.sender}] : {msg}", flush=True)
+            complete_msg = (
+                "Message received for room "
+                f"{room_nick} [{room.room_id}] | "
+                f"sender {sender_nick} "
+                f"[{event.sender}] | {event_datetime} | {msg}"
+            )
+            logger.debug(complete_msg)
+            print(complete_msg, flush=True)
             if pargs.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
-                notify(f"From {room.user_name(event.sender)}",
-                       msg[:160], avatar_url)
+                notify(
+                    f"From {room.user_name(event.sender)}",
+                    msg[:160],
+                    avatar_url,
+                )
 
         except BaseException:
             logger.debug(traceback.format_exc())
 
-    async def to_device_callback(self, event):  # noqa
+    # according to linter: function is too complex, C901
+    async def to_device_callback(self, event):  # noqa: C901
         """Handle events sent to device."""
         try:
             client = self.client
@@ -674,11 +731,14 @@ class Callbacks(object):
                 """
 
                 if "emoji" not in event.short_authentication_string:
-                    print("Other device does not support emoji verification "
-                          f"{event.short_authentication_string}.")
+                    print(
+                        "Other device does not support emoji verification "
+                        f"{event.short_authentication_string}."
+                    )
                     return
                 resp = await client.accept_key_verification(
-                    event.transaction_id)
+                    event.transaction_id
+                )
                 if isinstance(resp, ToDeviceError):
                     print(f"accept_key_verification failed with {resp}")
 
@@ -707,8 +767,10 @@ class Callbacks(object):
                 # client.cancel_key_verification(tx_id, reject=False)
                 # here. The SAS flow is already cancelled.
                 # We only need to inform the user.
-                print(f"Verification has been cancelled by {event.sender} "
-                      f"for reason \"{event.reason}\".")
+                print(
+                    f"Verification has been cancelled by {event.sender} "
+                    f'for reason "{event.reason}".'
+                )
 
             elif isinstance(event, KeyVerificationKey):  # second step
                 """ Second step is to receive KeyVerificationKey
@@ -729,24 +791,30 @@ class Callbacks(object):
 
                 yn = input("Do the emojis match? (Y/N) (C for Cancel) ")
                 if yn.lower() == "y":
-                    print("Match! The verification for this "
-                          "device will be accepted.")
+                    print(
+                        "Match! The verification for this "
+                        "device will be accepted."
+                    )
                     resp = await client.confirm_short_auth_string(
-                        event.transaction_id)
+                        event.transaction_id
+                    )
                     if isinstance(resp, ToDeviceError):
                         print(f"confirm_short_auth_string failed with {resp}")
                 elif yn.lower() == "n":  # no, don't match, reject
-                    print("No match! Device will NOT be verified "
-                          "by rejecting verification.")
+                    print(
+                        "No match! Device will NOT be verified "
+                        "by rejecting verification."
+                    )
                     resp = await client.cancel_key_verification(
-                        event.transaction_id, reject=True)
+                        event.transaction_id, reject=True
+                    )
                     if isinstance(resp, ToDeviceError):
                         print(f"cancel_key_verification failed with {resp}")
                 else:  # C or anything for cancel
-                    print("Cancelled by user! Verification will be "
-                          "cancelled.")
+                    print("Cancelled by user! Verification will be cancelled.")
                     resp = await client.cancel_key_verification(
-                        event.transaction_id, reject=False)
+                        event.transaction_id, reject=False
+                    )
                     if isinstance(resp, ToDeviceError):
                         print(f"cancel_key_verification failed with {resp}")
 
@@ -771,26 +839,34 @@ class Callbacks(object):
                     todevice_msg = sas.get_mac()
                 except LocalProtocolError as e:
                     # e.g. it might have been cancelled by ourselves
-                    print(f"Cancelled or protocol error: Reason: {e}.\n"
-                          f"Verification with {event.sender} not concluded. "
-                          "Try again?")
+                    print(
+                        f"Cancelled or protocol error: Reason: {e}.\n"
+                        f"Verification with {event.sender} not concluded. "
+                        "Try again?"
+                    )
                 else:
                     resp = await client.to_device(todevice_msg)
                     if isinstance(resp, ToDeviceError):
                         print(f"to_device failed with {resp}")
-                    print(f"sas.we_started_it = {sas.we_started_it}\n"
-                          f"sas.sas_accepted = {sas.sas_accepted}\n"
-                          f"sas.canceled = {sas.canceled}\n"
-                          f"sas.timed_out = {sas.timed_out}\n"
-                          f"sas.verified = {sas.verified}\n"
-                          f"sas.verified_devices = {sas.verified_devices}\n")
-                    print("Emoji verification was successful!\n"
-                          "Hit Control-C to stop the program or "
-                          "initiate another Emoji verification from "
-                          "another device or room.")
+                    print(
+                        f"sas.we_started_it = {sas.we_started_it}\n"
+                        f"sas.sas_accepted = {sas.sas_accepted}\n"
+                        f"sas.canceled = {sas.canceled}\n"
+                        f"sas.timed_out = {sas.timed_out}\n"
+                        f"sas.verified = {sas.verified}\n"
+                        f"sas.verified_devices = {sas.verified_devices}\n"
+                    )
+                    print(
+                        "Emoji verification was successful!\n"
+                        "Hit Control-C to stop the program or "
+                        "initiate another Emoji verification from "
+                        "another device or room."
+                    )
             else:
-                print(f"Received unexpected event type {type(event)}. "
-                      f"Event is {event}. Event will be ignored.")
+                print(
+                    f"Received unexpected event type {type(event)}. "
+                    f"Event is {event}. Event will be ignored."
+                )
         except BaseException:
             print(traceback.format_exc())
 
@@ -826,9 +902,8 @@ async def get_avatar_url(client: AsyncClient, user_id: str) -> str:
     """
     avatar_url = None  # default
     resp = await client.get_avatar(user_id)
-    if (isinstance(resp, ProfileGetAvatarResponse)):
-        logger.debug("ProfileGetAvatarResponse. "
-                     f"Response is: {resp}")
+    if isinstance(resp, ProfileGetAvatarResponse):
+        logger.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
         avatar_mxc = resp.avatar_url
         logger.debug(f"avatar_mxc is {avatar_mxc}")
         if avatar_mxc:  # could be None if no avatar
@@ -846,6 +921,10 @@ def create_pid_file() -> None:
     So, if it fails there is no problem. The PID file can
     be helpful to send a kill signal or similar to the process.
     E.g. to stop listening.
+    Because the user can start several processes at the same time,
+    just having one PID file is not acceptable because a newly started
+    process would overwrite the previous PID file. We use UUIDs to make
+    each PID file unique.
     """
     try:
         if not os.path.exists(PID_DIR_DEFAULT):
@@ -856,11 +935,15 @@ def create_pid_file() -> None:
         with open(PID_FILE_DEFAULT, "w") as f:  # overwrite
             f.write(str(pid))
             f.close()
-        logger.debug(f"Successfully created PID file \"{PID_FILE_DEFAULT}\" "
-                     f"to store process id {pid}.")
+        logger.debug(
+            f'Successfully created PID file "{PID_FILE_DEFAULT}" '
+            f"to store process id {pid}."
+        )
     except Exception:
-        logger.debug(f"Failed to create PID file \"{PID_FILE_DEFAULT}\" "
-                     f"to store process id {pid}.")
+        logger.debug(
+            f'Failed to create PID file "{PID_FILE_DEFAULT}" '
+            f"to store process id {pid}."
+        )
 
 
 def delete_pid_file() -> None:
@@ -872,7 +955,7 @@ def delete_pid_file() -> None:
     try:
         os.remove(PID_FILE_DEFAULT)
     except Exception:
-        logger.debug(f"Failed to remove PID file \"{PID_FILE_DEFAULT}\".")
+        logger.debug(f'Failed to remove PID file "{PID_FILE_DEFAULT}".')
 
 
 def cleanup() -> None:
@@ -881,8 +964,9 @@ def cleanup() -> None:
     delete_pid_file()
 
 
-def write_credentials_to_disk(homeserver, user_id, device_id, access_token,
-                              room_id, credentials_file) -> None:
+def write_credentials_to_disk(
+    homeserver, user_id, device_id, access_token, room_id, credentials_file
+) -> None:
     """Write the required login details to disk.
 
     This file can later be used for logging in
@@ -921,9 +1005,9 @@ def write_credentials_to_disk(homeserver, user_id, device_id, access_token,
                 # e.g. "!SomeRoomIdString:example.org"
                 "room_id": room_id,
                 # long cryptographic access token
-                "access_token": access_token
+                "access_token": access_token,
             },
-            f
+            f,
         )
 
 
@@ -940,7 +1024,7 @@ def read_credentials_from_disk(credentials_file) -> dict:
     """
     # open the file in read-only mode
     with open(credentials_file, "r") as f:
-        return(json.load(f))
+        return json.load(f)
 
 
 def determine_credentials_file() -> str:
@@ -974,31 +1058,44 @@ def determine_credentials_file() -> str:
     """
     credentials_file = pargs.credentials  # default location
     if (not os.path.isfile(pargs.credentials)) and (
-            pargs.credentials == os.path.basename(pargs.credentials)):
-        logger.debug("Credentials file does not exist locally. "
-                     "File name has no path.")
+        pargs.credentials == os.path.basename(pargs.credentials)
+    ):
+        logger.debug(
+            "Credentials file does not exist locally. "
+            "File name has no path."
+        )
         credentials_file = CREDENTIALS_DIR_LASTRESORT + "/" + pargs.credentials
-        logger.debug(f"Trying path \"{credentials_file}\" as last resort. "
-                     "Suggesting to look for it there.")
+        logger.debug(
+            f'Trying path "{credentials_file}" as last resort. '
+            "Suggesting to look for it there."
+        )
         if os.path.isfile(credentials_file):
-            logger.debug("We found the file. It exists in the last resort "
-                         f"directory {credentials_file} "
-                         "Suggesting to use this one.")
+            logger.debug(
+                "We found the file. It exists in the last resort "
+                f'directory "{credentials_file}". '
+                "Suggesting to use this one."
+            )
         else:
-            logger.debug("File does not exists either in the last resort "
-                         "directory or the local directory. "
-                         "File not found anywhere. One will have to be "
-                         "created. So we suggest the local directory.")
+            logger.debug(
+                "File does not exists either in the last resort "
+                "directory or the local directory. "
+                "File not found anywhere. One will have to be "
+                "created. So we suggest the local directory."
+            )
             credentials_file = pargs.credentials
     else:
         if os.path.isfile(pargs.credentials):
-            logger.debug("Credentials file existed. "
-                         "So this is the one we suggest to use. "
-                         f"file: {credentials_file}")
+            logger.debug(
+                "Credentials file existed. "
+                "So this is the one we suggest to use. "
+                f"file: {credentials_file}"
+            )
         else:
-            logger.debug("Credentials file was specified with full path. "
-                         "So we suggest that one. "
-                         f"file: {credentials_file}")
+            logger.debug(
+                "Credentials file was specified with full path. "
+                "So we suggest that one. "
+                f"file: {credentials_file}"
+            )
     # The returned file (with or without path)  might or might not exist.
     # But if it does not exist, it is either a full path, or local.
     # We do not want to return the last resort path if it does not exist,
@@ -1037,45 +1134,63 @@ def determine_store_dir() -> str:
     if not pargs.encrypted:
         return None
     pargs_store_norm = os.path.normpath(pargs.store)  # normailzed for humans
-    text2 = ("It will need to be verified.\n"
-             "The store directory will be created in the "
-             f"directory \"{pargs_store_norm}\". Optionally, consider moving "
-             "the persistent storage directory files inside "
-             f"\"{pargs_store_norm}\" into "
-             f"the directory \"{STORE_DIR_LASTRESORT}\" "
-             "for a more consistent experience.")
+    text2 = (
+        "It will need to be verified.\n"
+        "The store directory will be created in the "
+        f'directory "{pargs_store_norm}". Optionally, consider moving '
+        "the persistent storage directory files inside "
+        f'"{pargs_store_norm}" into '
+        f'the directory "{STORE_DIR_LASTRESORT}" '
+        "for a more consistent experience."
+    )
     if os.path.isdir(pargs.store):
-        logger.debug("Found an existing store in directory "
-                     f"\"{pargs_store_norm}\". It will be used.")
+        logger.debug(
+            "Found an existing store in directory "
+            f'"{pargs_store_norm}" (local or arguments). '
+            "It will be used."
+        )
         return pargs_store_norm
-    if (pargs.store != STORE_DIR_DEFAULT and
-            pargs.store != os.path.basename(pargs.store)):
-        text1 = (f"Store directory \"{pargs_store_norm}\" was specified by "
-                 "user, it is a directory with path, but it "
-                 "does not exist. Hence it will be created there. ")
+    if pargs.store != STORE_DIR_DEFAULT and pargs.store != os.path.basename(
+        pargs.store
+    ):
+        text1 = (
+            f'Store directory "{pargs_store_norm}" was specified by '
+            "user, it is a directory with path, but it "
+            "does not exist. Hence it will be created there. "
+        )
         logger.info(text1 + text2)
         print(text1 + text2)
         return pargs_store_norm  # create in the specified, directory with path
-    if (pargs.store == STORE_DIR_DEFAULT and
-            os.path.isdir(STORE_DIR_LASTRESORT)):
-        logger.debug("Store was not found in default local directory. "
-                     "But found an existing store directory in "
-                     f"\"{STORE_DIR_LASTRESORT}\" directory. "
-                     "It will be used.")
+    if pargs.store == STORE_DIR_DEFAULT and os.path.isdir(
+        STORE_DIR_LASTRESORT
+    ):
+        logger.debug(
+            "Store was not found in default local directory. "
+            "But found an existing store directory in "
+            f'"{STORE_DIR_LASTRESORT}" directory. '
+            "It will be used."
+        )
         return STORE_DIR_LASTRESORT
 
     if pargs.store == os.path.basename(pargs.store):
-        logger.debug(f"Store directory \"{pargs_store_norm}\" is just a name "
-                     "without a path. Already looked locally, but not found "
-                     "locally. So now looking for it in last-resort path.")
+        logger.debug(
+            f'Store directory "{pargs_store_norm}" is just a name '
+            "without a path. Already looked locally, but not found "
+            "locally. So now looking for it in last-resort path."
+        )
         last_resort = os.path.normpath(
-            STORE_PATH_LASTRESORT + "/" + pargs.store)
+            STORE_PATH_LASTRESORT + "/" + pargs.store
+        )
         if os.path.isdir(last_resort):
-            logger.debug("Found an existing store directory in "
-                         f"\"{last_resort}\" directory. It will be used.")
+            logger.debug(
+                "Found an existing store directory in "
+                f'"{last_resort}" directory. It will be used.'
+            )
             return last_resort
-    text1 = ("Could not find existing store directory anywhere. "
-             "A new one will be created. ")
+    text1 = (
+        "Could not find existing store directory anywhere. "
+        "A new one will be created. "
+    )
     logger.info(text1 + text2)
     print(text1 + text2)
     return pargs_store_norm  # create in the specified, local dir without path
@@ -1095,19 +1210,23 @@ def determine_rooms(room_id) -> list:
 
     """
     if not pargs.room:
-        logger.debug("Room id was provided via credentials file. "
-                     "No rooms given in commans line.  "
-                     f"Setting rooms to \"{room_id}\".")
+        logger.debug(
+            "Room id was provided via credentials file. "
+            "No rooms given in commans line.  "
+            f'Setting rooms to "{room_id}".'
+        )
         return [room_id]  # list of 1
     else:
         rooms = []
         for room in pargs.room:
-            room_id = room.replace(r'\!', '!')  # remove possible escape
+            room_id = room.replace(r"\!", "!")  # remove possible escape
             rooms.append(room_id)
-        logger.debug("Room(s) were provided via command line. "
-                     "Overwriting room id from credentials file "
-                     f"with rooms \"{rooms}\" "
-                     "from command line.")
+        logger.debug(
+            "Room(s) were provided via command line. "
+            "Overwriting room id from credentials file "
+            f'with rooms "{rooms}" '
+            "from command line."
+        )
         return rooms
 
 
@@ -1135,7 +1254,7 @@ async def send_file(client, rooms, file):
     This is a working example for a PDF file.
     It can be viewed or downloaded from:
     https://matrix.example.com/_matrix/media/r0/download/
-        example.com/SomeStrangeUriKey # noqa
+        example.com/SomeStrangeUriKey
     {
         "type": "m.room.message",
         "sender": "@someuser:example.com",
@@ -1159,13 +1278,17 @@ async def send_file(client, rooms, file):
 
     """
     if not rooms:
-        logger.info("No rooms are given. This should not happen. "
-                    "This file is being droppend and NOT sent.")
+        logger.info(
+            "No rooms are given. This should not happen. "
+            "This file is being droppend and NOT sent."
+        )
         return
     if not os.path.isfile(file):
-        logger.debug(f"File {file} is not a file. Doesn't exist or "
-                     "is a directory."
-                     "This file is being droppend and NOT sent.")
+        logger.debug(
+            f"File {file} is not a file. Doesn't exist or "
+            "is a directory."
+            "This file is being droppend and NOT sent."
+        )
         return
 
     # # restrict to "txt", "pdf", "mp3", "ogg", "wav", ...
@@ -1188,8 +1311,8 @@ async def send_file(client, rooms, file):
     #                 "This file is being droppend and NOT sent.")
     #    return
 
-    # first do an upload of file
-    # see https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload # noqa
+    # first do an upload of file, see upload() documentation
+    # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
     # then send URI of upload to room
 
     file_stat = await aiofiles.os.stat(file)
@@ -1198,18 +1321,24 @@ async def send_file(client, rooms, file):
             f,
             content_type=mime_type,  # application/pdf
             filename=os.path.basename(file),
-            filesize=file_stat.st_size)
-    if (isinstance(resp, UploadResponse)):
-        logger.debug("File was uploaded successfully to server. "
-                     f"Response is: {resp}")
+            filesize=file_stat.st_size,
+        )
+    if isinstance(resp, UploadResponse):
+        logger.debug(
+            f"File was uploaded successfully to server. Response is: {resp}"
+        )
     else:
-        logger.info(f"The program {PROG_WITH_EXT} failed to upload. "
-                    "Please retry. This could be temporary issue on "
-                    "your server. "
-                    "Sorry.")
-        logger.info(f"file=\"{file}\"; mime_type=\"{mime_type}\"; "
-                    f"filessize=\"{file_stat.st_size}\""
-                    f"Failed to upload: {resp}")
+        logger.info(
+            f"The program {PROG_WITH_EXT} failed to upload. "
+            "Please retry. This could be temporary issue on "
+            "your server. "
+            "Sorry."
+        )
+        logger.info(
+            f'file="{file}"; mime_type="{mime_type}"; '
+            f'filessize="{file_stat.st_size}"'
+            f"Failed to upload: {resp}"
+        )
 
     # determine msg_type:
     if mime_type.startswith("audio/"):
@@ -1221,10 +1350,7 @@ async def send_file(client, rooms, file):
 
     content = {
         "body": os.path.basename(file),  # descriptive title
-        "info": {
-            "size": file_stat.st_size,
-            "mimetype": mime_type,
-        },
+        "info": {"size": file_stat.st_size, "mimetype": mime_type},
         "msgtype": msg_type,
         "url": resp.content_uri,
     }
@@ -1232,15 +1358,16 @@ async def send_file(client, rooms, file):
     try:
         for room_id in rooms:
             await client.room_send(
-                room_id,
-                message_type="m.room.message",
-                content=content
+                room_id, message_type="m.room.message", content=content
             )
-            logger.debug(f"This file was sent: \"{file}\" "
-                         f"to room \"{room_id}\".")
+            logger.debug(
+                f'This file was sent: "{file}" ' f'to room "{room_id}".'
+            )
     except Exception:
-        logger.debug(f"File send of file {file} failed. "
-                     "Sorry. Here is the traceback.")
+        logger.debug(
+            f"File send of file {file} failed. "
+            "Sorry. Here is the traceback."
+        )
         logger.debug(traceback.format_exc())
 
 
@@ -1258,7 +1385,7 @@ async def send_image(client, rooms, image):
     This is a working example for a JPG image.
     It can be viewed or downloaded from:
     https://matrix.example.com/_matrix/media/r0/download/
-        example.com/SomeStrangeUriKey # noqa
+        example.com/SomeStrangeUriKey
     {
         "type": "m.room.message",
         "sender": "@someuser:example.com",
@@ -1290,40 +1417,50 @@ async def send_image(client, rooms, image):
 
     """
     if not rooms:
-        logger.info("No rooms are given. This should not happen. "
-                    "This image is being droppend and NOT sent.")
+        logger.info(
+            "No rooms are given. This should not happen. "
+            "This image is being droppend and NOT sent."
+        )
         return
     if not os.path.isfile(image):
-        logger.debug(f"Image file {image} is not a file. Doesn't exist or "
-                     "is a directory."
-                     "This image is being droppend and NOT sent.")
+        logger.debug(
+            f"Image file {image} is not a file. Doesn't exist or "
+            "is a directory."
+            "This image is being droppend and NOT sent."
+        )
         return
 
     # "bmp", "gif", "jpg", "jpeg", "png", "pbm", "pgm", "ppm", "xbm", "xpm",
     # "tiff", "webp", "svg",
 
-    if not re.match("^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
-                    os.path.splitext(image)[1].lower()):
-        logger.debug(f"Image file {image} is not an image file. Should be "
-                     ".jpg, .jpeg, .gif, or .png. "
-                     f"[{os.path.splitext(image)[1].lower()}]"
-                     "This image is being droppend and NOT sent.")
+    if not re.match(
+        "^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
+        os.path.splitext(image)[1].lower(),
+    ):
+        logger.debug(
+            f"Image file {image} is not an image file. Should be "
+            ".jpg, .jpeg, .gif, or .png. "
+            f"[{os.path.splitext(image)[1].lower()}]"
+            "This image is being droppend and NOT sent."
+        )
         return
 
     # 'application/pdf' "image/jpeg"
     mime_type = magic.from_file(image, mime=True)
     if not mime_type.startswith("image/"):
-        logger.debug(f"Image file {image} does not have an image mime type. "
-                     "Should be something like image/jpeg. "
-                     f"Found mime type {mime_type}. "
-                     "This image is being droppend and NOT sent.")
+        logger.debug(
+            f"Image file {image} does not have an image mime type. "
+            "Should be something like image/jpeg. "
+            f"Found mime type {mime_type}. "
+            "This image is being droppend and NOT sent."
+        )
         return
 
     im = Image.open(image)
     (width, height) = im.size  # im.size returns (width,height) tuple
 
-    # first do an upload of image
-    # see https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload # noqa
+    # first do an upload of image, see upload() documentation
+    # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
     # then send URI of upload to room
 
     file_stat = await aiofiles.os.stat(image)
@@ -1332,18 +1469,25 @@ async def send_image(client, rooms, image):
             f,
             content_type=mime_type,  # image/jpeg
             filename=os.path.basename(image),
-            filesize=file_stat.st_size)
-    if (isinstance(resp, UploadResponse)):
-        logger.debug("Image was uploaded successfully to server. "
-                     f"Response is: {resp}")
+            filesize=file_stat.st_size,
+        )
+    if isinstance(resp, UploadResponse):
+        logger.debug(
+            "Image was uploaded successfully to server. "
+            f"Response is: {resp}"
+        )
     else:
-        logger.info(f"The program {PROG_WITH_EXT} failed to upload. "
-                    "Please retry. This could be temporary issue on "
-                    "your server. "
-                    "Sorry.")
-        logger.info(f"file=\"{image}\"; mime_type=\"{mime_type}\"; "
-                    f"filessize=\"{file_stat.st_size}\""
-                    f"Failed to upload: {resp}")
+        logger.info(
+            f"The program {PROG_WITH_EXT} failed to upload. "
+            "Please retry. This could be temporary issue on "
+            "your server. "
+            "Sorry."
+        )
+        logger.info(
+            f'file="{image}"; mime_type="{mime_type}"; '
+            f'filessize="{file_stat.st_size}"'
+            f"Failed to upload: {resp}"
+        )
 
     # TODO compute thumbnail, upload thumbnail to Server
     # TODO add thumbnail info to `content`
@@ -1372,15 +1516,16 @@ async def send_image(client, rooms, image):
     try:
         for room_id in rooms:
             await client.room_send(
-                room_id,
-                message_type="m.room.message",
-                content=content
+                room_id, message_type="m.room.message", content=content
             )
-            logger.debug(f"This image file was sent: \"{image}\" "
-                         f"to room \"{room_id}\".")
+            logger.debug(
+                f'This image file was sent: "{image}" ' f'to room "{room_id}".'
+            )
     except Exception:
-        logger.debug(f"Image send of file {image} failed. "
-                     "Sorry. Here is the traceback.")
+        logger.debug(
+            f"Image send of file {image} failed. "
+            "Sorry. Here is the traceback."
+        )
         logger.debug(traceback.format_exc())
 
 
@@ -1401,8 +1546,10 @@ async def send_message(client, rooms, message):
 
     """
     if not rooms:
-        logger.info("No rooms are given. This should not happen. "
-                    "This text message is being droppend and NOT sent.")
+        logger.info(
+            "No rooms are given. This should not happen. "
+            "This text message is being droppend and NOT sent."
+        )
         return
     # remove leading AND trailing newlines to beautify
     message = message.strip("\n")
@@ -1410,7 +1557,8 @@ async def send_message(client, rooms, message):
     if message == "" or message.strip() == "":
         logger.debug(
             "The message is empty. "
-            "This message is being droppend and NOT sent.")
+            "This message is being droppend and NOT sent."
+        )
         return
 
     if pargs.notice:
@@ -1419,24 +1567,26 @@ async def send_message(client, rooms, message):
         content = {"msgtype": "m.text"}
 
     if pargs.code:
-        logger.debug("Sending message in format \"code\".")
+        logger.debug('Sending message in format "code".')
         formatted_message = "<pre><code>" + message + "</code></pre>"
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     elif pargs.markdown:
-        logger.debug("Converting message from MarkDown into HTML. "
-                     "Sending message in format \"markdown\".")
+        logger.debug(
+            "Converting message from MarkDown into HTML. "
+            'Sending message in format "markdown".'
+        )
         # e.g. converts from "-abc" to "<ul><li>abc</li></ul>"
         formatted_message = markdown(message)
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     elif pargs.html:
-        logger.debug("Sending message in format \"html\".")
+        logger.debug('Sending message in format "html".')
         formatted_message = message  # the same for the time being
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     else:
-        logger.debug("Sending message in format \"text\".")
+        logger.debug('Sending message in format "text".')
     content["body"] = message
 
     try:
@@ -1447,8 +1597,9 @@ async def send_message(client, rooms, message):
                 content=content,
                 ignore_unverified_devices=True,
             )
-            logger.debug(f"This message was sent: \"{message}\" "
-                         f"to room \"{room_id}\".")
+            logger.debug(
+                f'This message was sent: "{message}" ' f'to room "{room_id}".'
+            )
     except Exception:
         logger.debug("Image send failed. Sorry. Here is the traceback.")
         logger.debug(traceback.format_exc())
@@ -1463,19 +1614,25 @@ def get_messages_from_pipe() -> list:
     Currently there is at most 1 msg in the returned list.
     """
     messages = []
-    stdin_ready = select.select([sys.stdin, ], [], [], 0.0)[0]
+    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[0]  # noqa
     if not stdin_ready:
-        logger.debug("stdin is not ready. "
-                     "A pipe could be used, but pipe could be empty, "
-                     "stdin could also be a keyboard.")
+        logger.debug(
+            "stdin is not ready. "
+            "A pipe could be used, but pipe could be empty, "
+            "stdin could also be a keyboard."
+        )
     else:
-        logger.debug("stdin is ready. Something "
-                     "is definitely piped into program from stdin."
-                     "Reading message from stdin pipe.")
+        logger.debug(
+            "stdin is ready. Something "
+            "is definitely piped into program from stdin."
+            "Reading message from stdin pipe."
+        )
     if ((not stdin_ready) and (not sys.stdin.isatty())) or stdin_ready:
         if not sys.stdin.isatty():
-            logger.debug("Pipe was definitely used, but pipe might be empty. "
-                         "Trying to read from pipe in any case.")
+            logger.debug(
+                "Pipe was definitely used, but pipe might be empty. "
+                "Trying to read from pipe in any case."
+            )
         message = ""
         try:
             for line in sys.stdin:
@@ -1483,9 +1640,11 @@ def get_messages_from_pipe() -> list:
             logger.debug("Using data from stdin pipe as message.")
             messages.append(message)
         except EOFError:  # EOF when reading a line
-            logger.debug("Reading from stdin resulted in EOF. This can happen "
-                         "when a pipe was used, but the pipe is empty. "
-                         "No message will be generated.")
+            logger.debug(
+                "Reading from stdin resulted in EOF. This can happen "
+                "when a pipe was used, but the pipe is empty. "
+                "No message will be generated."
+            )
     return messages
 
 
@@ -1506,30 +1665,40 @@ def get_messages_from_keyboard() -> list:
     """
     messages = []
     if pargs.message:
-        logger.debug("Don't read from keyboard because there are "
-                     "messages provided in arguments with -m.")
+        logger.debug(
+            "Don't read from keyboard because there are "
+            "messages provided in arguments with -m."
+        )
         return messages  # return empty list because mesgs in -m
-    stdin_ready = select.select([sys.stdin, ], [], [], 0.0)[0]
+    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[0]  # noqa
     if not stdin_ready:
-        logger.debug("stdin is not ready. "
-                     "A pipe could be used, but pipe could be empty, "
-                     "stdin could also be a keyboard.")
+        logger.debug(
+            "stdin is not ready. "
+            "A pipe could be used, but pipe could be empty, "
+            "stdin could also be a keyboard."
+        )
     else:
-        logger.debug("stdin is ready. Something "
-                     "is definitely piped into program from stdin."
-                     "Reading message from stdin pipe.")
-    if ((not stdin_ready) and (sys.stdin.isatty())):
+        logger.debug(
+            "stdin is ready. Something "
+            "is definitely piped into program from stdin."
+            "Reading message from stdin pipe."
+        )
+    if (not stdin_ready) and (sys.stdin.isatty()):
         # because sys.stdin.isatty() is true
-        logger.debug("No pipe was used, so read input from keyboard. "
-                     "Reading message from keyboard")
+        logger.debug(
+            "No pipe was used, so read input from keyboard. "
+            "Reading message from keyboard"
+        )
         try:
             message = input("Enter message to send: ")
             logger.debug("Using data from stdin keyboard as message.")
             messages.append(message)
         except EOFError:  # EOF when reading a line
-            logger.debug("Reading from stdin resulted in EOF. "
-                         "Reading from keyboard failed. "
-                         "No message will be generated.")
+            logger.debug(
+                "Reading from stdin resulted in EOF. "
+                "Reading from keyboard failed. "
+                "No message will be generated."
+            )
     return messages
 
 
@@ -1585,14 +1754,15 @@ async def process_arguments_and_input(client, rooms):
     logger.debug(f"Messages from keyboard:     {messages_from_keyboard}")
     logger.debug(f"Messages from command-line: {messages_from_commandline}")
 
-    messages_all = messages_from_commandline + \
-        messages_from_pipe + messages_from_keyboard  # keyboard at end
+    messages_all = (
+        messages_from_commandline + messages_from_pipe + messages_from_keyboard
+    )  # keyboard at end
 
     # loop thru all msgs and split them
     if pargs.split:
         # pargs.split can have escape characters, it has to be de-escaped
         decoded_string = bytes(pargs.split, "utf-8").decode("unicode_escape")
-        logger.debug(f"String used for splitting is: \"{decoded_string}\"")
+        logger.debug(f'String used for splitting is: "{decoded_string}"')
         messages_all_split = []
         for m in messages_all:
             messages_all_split += m.split(decoded_string)
@@ -1602,8 +1772,9 @@ async def process_arguments_and_input(client, rooms):
     await send_messages_and_files(client, rooms, messages_all_split)
 
 
-async def create_credentials_file(credentials_file: str,
-                                  store_dir: str) -> None:
+async def create_credentials_file(
+    credentials_file: str, store_dir: str
+) -> None:
     """Log in, create credentials file, log out and exit.
 
     Arguments:
@@ -1612,16 +1783,17 @@ async def create_credentials_file(credentials_file: str,
         store_dir: str : location of persistent storage store directory
 
     """
-    text = f'''
+    text = f"""
             Credentials file \"{pargs.credentials}\" was not found.
             First time use? Setting up new credentials?
             Asking for homeserver, user, password and
-            room id to create a credentials file.'''
+            room id to create a credentials file."""
     print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
     homeserver = "https://matrix.example.org"
     homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
-    if not (homeserver.startswith("https://")
-            or homeserver.startswith("http://")):
+    if not (
+        homeserver.startswith("https://") or homeserver.startswith("http://")
+    ):
         homeserver = "https://" + homeserver
     user_id = "@user:example.org"
     user_id = input(f"Enter your full user ID: [{user_id}] ")
@@ -1637,51 +1809,61 @@ async def create_credentials_file(credentials_file: str,
         max_limit_exceeded=0,
         max_timeouts=0,
         store_sync_tokens=True,
-        encryption_enabled=True,)
+        encryption_enabled=True,
+    )
 
     if not os.path.exists(store_dir):
         os.makedirs(store_dir)
-        logger.info(f"The persistent storage directory {store_dir} "
-                    "was created for you.")
+        logger.info(
+            f"The persistent storage directory {store_dir} "
+            "was created for you."
+        )
 
     # Initialize the matrix client
     client = AsyncClient(
-        homeserver,
-        user_id,
-        store_path=store_dir,
-        config=client_config,)
+        homeserver, user_id, store_path=store_dir, config=client_config,
+    )
 
     pw = getpass.getpass()
     resp = await client.login(pw, device_name=device_name)
     # check that we logged in succesfully
-    if (isinstance(resp, LoginResponse)):
+    if isinstance(resp, LoginResponse):
         # when writing, always write to primary location (e.g. .)
-        write_credentials_to_disk(homeserver, resp.user_id, resp.device_id,
-                                  resp.access_token, room_id,
-                                  pargs.credentials)
-        text = f'''
+        write_credentials_to_disk(
+            homeserver,
+            resp.user_id,
+            resp.device_id,
+            resp.access_token,
+            room_id,
+            pargs.credentials,
+        )
+        text = f"""
                 Log in using a password was successful.
                 Credentials were stored in file \"{pargs.credentials}\".
                 Run program \"{PROG_WITH_EXT}\" again to
                 login with credentials and to send a message.
                 If you plan on having many credential files, consider
-                moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\".'''
+                moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
         print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
     else:
-        logger.info(f"The program {PROG_WITH_EXT} failed. "
-                    "Most likely wrong credentials were entered."
-                    "Sorry.")
-        logger.info(f"homeserver=\"{homeserver}\"; user=\"{user_id}\"; "
-                    f"room_id=\"{room_id}\""
-                    f"Failed to log in: {resp}")
+        logger.info(
+            f"The program {PROG_WITH_EXT} failed. "
+            "Most likely wrong credentials were entered."
+            "Sorry."
+        )
+        logger.info(
+            f'homeserver="{homeserver}"; user="{user_id}"; '
+            f'room_id="{room_id}"'
+            f"Failed to log in: {resp}"
+        )
     await client.close()
     cleanup()
     sys.exit(1)
 
 
 def login_using_credentials_file(
-        credentials_file: str,
-        store_dir: str) -> (AsyncClient, dict):
+    credentials_file: str, store_dir: str
+) -> (AsyncClient, dict):
     """Log in by using available credentials file.
 
     Arguments:
@@ -1706,20 +1888,22 @@ def login_using_credentials_file(
     )
     # Initialize the matrix client based on credentials from file
     client = AsyncClient(
-        credentials['homeserver'],
-        credentials['user_id'],
-        device_id=credentials['device_id'],
+        credentials["homeserver"],
+        credentials["user_id"],
+        device_id=credentials["device_id"],
         store_path=store_dir,
         config=client_config,
     )
     client.restore_login(
-        user_id=credentials['user_id'],
-        device_id=credentials['device_id'],
-        access_token=credentials['access_token']
+        user_id=credentials["user_id"],
+        device_id=credentials["device_id"],
+        access_token=credentials["access_token"],
     )
     # room_id = credentials['room_id']
-    logger.debug("Logged in using stored credentials from "
-                 f"credentials file \"{credentials_file}\".")
+    logger.debug(
+        "Logged in using stored credentials from "
+        f'credentials file "{credentials_file}".'
+    )
     logger.debug(f"Logged_in() = {client.logged_in}")
     return (client, credentials)
 
@@ -1729,10 +1913,13 @@ async def listen_forever(client: AsyncClient) -> None:
     # Set up event callbacks
     callbacks = Callbacks(client)
     client.add_event_callback(callbacks.message_callback, (RoomMessage,))
-    print("This program is ready and for its Matrix messages. To stop "
-          "program type Control-C on keyboard or send signal to "
-          f"process {os.getpid()}. PID can also be found in "
-          f"file \"{PID_FILE_DEFAULT}\".", flush=True)
+    print(
+        "This program is ready and for its Matrix messages. To stop "
+        "program type Control-C on keyboard or send signal to "
+        f"process {os.getpid()}. PID can also be found in "
+        f'file "{PID_FILE_DEFAULT}".',
+        flush=True,
+    )
     # the sync_loop will be terminated by user hitting Control-C to stop
     await client.sync_forever(timeout=30000, full_state=True)
 
@@ -1750,7 +1937,7 @@ async def listen_once(client: AsyncClient) -> None:
     # We want to get messages and quit, so we call sync() instead of
     # sync_forever().
     resp = await client.sync(timeout=10000, full_state=False)
-    if (isinstance(resp, SyncResponse)):
+    if isinstance(resp, SyncResponse):
         logger.debug(f"Sync successful. Response is: {resp}")
     else:
         logger.info(f"Sync failed. Error is: {resp}")
@@ -1851,18 +2038,30 @@ async def listen_once_alternative(client: AsyncClient) -> None:
     for room_id, room_info in resp_s.rooms.join.items():
         event_list = room_info.timeline.events
         for event in event_list:
+            logger.debug(f"sending event to callback = {event}.")
+            # because of full_state=False in sync() the
+            # rooms object is not fully populated and missing the
+            # room names.
             room = client.rooms[room_id]
             await callbacks.message_callback(room, event)
+        if event_list:  # list not empty
+            last_event = event_list[-1]
             resp = await client.room_read_markers(
                 room_id=room_id,
-                fully_read_event=event.event_id,
-                read_event=event.event_id)
-            logger.debug("room_read_markers response = "
-                         f"{type(resp)} :: {resp}.")
+                fully_read_event=last_event.event_id,
+                read_event=last_event.event_id,
+            )
+            if isinstance(resp, RoomReadMarkersError):
+                logger.debug(
+                    f"room_read_markers failed with response = {resp}."
+                )
     await client.close()
 
 
-async def listen_tail(client: AsyncClient, credentials: dict) -> None:
+# according to pylama: function too complex: C901 # noqa: C901
+async def listen_tail(  # noqa: C901
+    client: AsyncClient, credentials: dict
+) -> None:
     """Get the last N messages, then quit.
 
     Arguments:
@@ -1918,15 +2117,16 @@ async def listen_tail(client: AsyncClient, credentials: dict) -> None:
     # room_id = list(client.rooms.keys())[0]  # first room_id from dict
 
     # get rooms as specified by the user thru args or credential file
-    rooms = determine_rooms(credentials['room_id'])
+    rooms = determine_rooms(credentials["room_id"])
     logger.debug(f"Rooms are: {rooms}")
 
     limit = pargs.tail
     # To loop over all rooms, one can loop through the join dictionary. i.e.
     # for room_id, room_info in resp_s.rooms.join.items():  # loop all rooms
     for room_id in rooms:  # loop only over user specified rooms
-        resp = await client.room_messages(room_id,
-                                          start=resp_s.next_batch, limit=limit)
+        resp = await client.room_messages(
+            room_id, start=resp_s.next_batch, limit=limit
+        )
         if isinstance(resp, RoomMessagesError):
             logger.debug("room_messages failed with resp = {resp}")
             continue  # skip this room
@@ -1945,18 +2145,27 @@ async def listen_tail(client: AsyncClient, credentials: dict) -> None:
             else:
                 room = MatrixRoom(room_id, None, True)  # dummy_room
             await callbacks.message_callback(room, event)
+        if resp.chunk:  # list not empty
+            # order is reversed, first element is timewise the newest
+            first_event = resp.chunk[1]
             resp = await client.room_read_markers(
                 room_id=room_id,
-                fully_read_event=event.event_id,
-                read_event=event.event_id)
-            logger.debug(
-                f"room_read_markers response = {type(resp)} :: {resp}.")
+                fully_read_event=first_event.event_id,
+                read_event=first_event.event_id,
+            )
+            if isinstance(resp, RoomReadMarkersError):
+                logger.debug(
+                    f"room_read_markers failed with response = {resp}."
+                )
     await client.close()
 
 
 async def read_all_events_in_direction(
-        client: AsyncClient, room_id: str, start_token: str,
-        direction: MessageDirection = MessageDirection.back) -> list:
+    client: AsyncClient,
+    room_id: str,
+    start_token: str,
+    direction: MessageDirection = MessageDirection.back,
+) -> list:
     """Read all events from a given room in certain direction.
 
     Arguments:
@@ -1983,7 +2192,8 @@ async def read_all_events_in_direction(
     current_start_token = start_token
     while True:
         resp = await client.room_messages(
-            room_id, current_start_token, limit=500, direction=direction)
+            room_id, current_start_token, limit=500, direction=direction
+        )
         if isinstance(resp, RoomMessagesError):
             logger.debug("room_messages failed with resp = {resp}")
             break  # skip to end of function
@@ -2002,7 +2212,10 @@ async def read_all_events_in_direction(
     return all_events
 
 
-async def listen_all(client: AsyncClient, credentials: dict) -> None:
+# according to pylama: function too complex: C901 # noqa: C901
+async def listen_all(  # noqa: C901
+    client: AsyncClient, credentials: dict
+) -> None:
     """Get all messages, then quit.
 
     Arguments:
@@ -2055,7 +2268,7 @@ async def listen_all(client: AsyncClient, credentials: dict) -> None:
     # room_id = list(client.rooms.keys())[0]  # first room_id from dict
 
     # get rooms as specified by the user thru args or credential file
-    rooms = determine_rooms(credentials['room_id'])
+    rooms = determine_rooms(credentials["room_id"])
     logger.debug(f"Rooms are: {rooms}")
 
     # To loop over all rooms, one can loop through the join dictionary. i.e.
@@ -2063,9 +2276,11 @@ async def listen_all(client: AsyncClient, credentials: dict) -> None:
     for room_id in rooms:  # loop only over user specified rooms
         prev_batch = resp_s.rooms.join[room_id].timeline.prev_batch
         back_events = await read_all_events_in_direction(
-            client, room_id, prev_batch, MessageDirection.back)
+            client, room_id, prev_batch, MessageDirection.back
+        )
         front_events = await read_all_events_in_direction(
-            client, room_id, prev_batch, MessageDirection.front)
+            client, room_id, prev_batch, MessageDirection.front
+        )
 
         # We have to reverse the first list since we are going backwards (but
         # we want to have a chronological order)
@@ -2078,12 +2293,17 @@ async def listen_all(client: AsyncClient, credentials: dict) -> None:
             else:
                 room = MatrixRoom(room_id, None, True)  # dummy_room
             await callbacks.message_callback(room, event)
+        if all_events:  # list not empty
+            last_event = all_events[-1]
             resp = await client.room_read_markers(
                 room_id=room_id,
-                fully_read_event=event.event_id,
-                read_event=event.event_id)
-            logger.debug(
-                f"room_read_markers response = {type(resp)} :: {resp}.")
+                fully_read_event=last_event.event_id,
+                read_event=last_event.event_id,
+            )
+            if isinstance(resp, RoomReadMarkersError):
+                logger.debug(
+                    f"room_read_markers failed with response = {resp}."
+                )
     await client.close()
 
 
@@ -2092,13 +2312,15 @@ async def main_listen() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug("Credentials file must be created first before one "
-                     "can verify.")
+        logger.debug(
+            "Credentials file must be created first before one can verify."
+        )
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(credentials_file,
-                                                       store_dir)
+    client, credentials = login_using_credentials_file(
+        credentials_file, store_dir
+    )
     # Sync encryption keys with the server
     # Required for participating in encrypted rooms
     if client.should_upload_keys:
@@ -2114,8 +2336,9 @@ async def main_listen() -> None:
     elif pargs.listen == ALL:
         await listen_all(client, credentials)
     else:
-        logger.debug(f"Unrecognized listening type \"{pargs.listen}\". "
-                     "Closing client.")
+        logger.debug(
+            f'Unrecognized listening type "{pargs.listen}". ' "Closing client."
+        )
         await client.close()
 
 
@@ -2124,13 +2347,15 @@ async def main_rename_device() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug("Credentials file must be created first before one "
-                     "can verify.")
+        logger.debug(
+            "Credentials file must be created first before one can verify."
+        )
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(credentials_file,
-                                                       store_dir)
+    client, credentials = login_using_credentials_file(
+        credentials_file, store_dir
+    )
     content = {"display_name": pargs.rename_device}
     resp = await client.update_device(credentials["device_id"], content)
     if isinstance(resp, UpdateDeviceError):
@@ -2145,24 +2370,29 @@ async def main_verify() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug("Credentials file must be created first before one "
-                     "can verify.")
+        logger.debug(
+            "Credentials file must be created first before one can verify."
+        )
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(credentials_file,
-                                                       store_dir)
+    client, credentials = login_using_credentials_file(
+        credentials_file, store_dir
+    )
     # Set up event callbacks
     callbacks = Callbacks(client)
     client.add_to_device_callback(
-        callbacks.to_device_callback, (KeyVerificationEvent,))
+        callbacks.to_device_callback, (KeyVerificationEvent,)
+    )
     # Sync encryption keys with the server
     # Required for participating in encrypted rooms
     if client.should_upload_keys:
         await client.keys_upload()
-    print("This program is ready and waiting for the other party to initiate "
-          "an emoji verification with us by selecting \"Verify by Emoji\" "
-          "in their Matrix client.")
+    print(
+        "This program is ready and waiting for the other party to initiate "
+        'an emoji verification with us by selecting "Verify by Emoji" '
+        "in their Matrix client."
+    )
     # the sync_loop will be terminated by user hitting Control-C to stop
     await client.sync_forever(timeout=30000, full_state=True)
 
@@ -2176,10 +2406,11 @@ async def main_send() -> None:
         await create_credentials_file(credentials_file, store_dir)
     else:
         logger.debug("Credentials file does exist.")
-        client, credentials = login_using_credentials_file(credentials_file,
-                                                           store_dir)
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
+        )
         # a few more steps to prepare for sending messages
-        rooms = determine_rooms(credentials['room_id'])
+        rooms = determine_rooms(credentials["room_id"])
         logger.debug(f"Rooms are: {rooms}")
         # Sync encryption keys with the server
         # Required for participating in encrypted rooms
@@ -2195,7 +2426,8 @@ async def main_send() -> None:
         await client.close()
 
 
-def initial_check_of_args() -> None:
+# according to pylama: function too complex: C901 # noqa: C901
+def initial_check_of_args() -> None:  # noqa: C901
     """Check arguments."""
     # First, the adjustments
     if not pargs.encrypted:
@@ -2207,60 +2439,92 @@ def initial_check_of_args() -> None:
         pargs.listen = pargs.listen.lower()
     if pargs.listen == NEVER and pargs.tail != 0:
         pargs.listen = TAIL  # --tail turns on --listen TAIL
-        logger.debug("--listen set to \"tail\" because \"--tail\" is used.")
+        logger.debug('--listen set to "tail" because "--tail" is used.')
     # Secondly, the checks
     if pargs.config:
-        t = ("This feature is not implemented yet. "
-             "Please help me implement it. If you feel motivated "
-             "please write code and submit a Pull Request. "
-             "Your contribution is appreciated. Thnx!")
-    elif (pargs.listen == FOREVER or pargs.listen == ONCE
-            or pargs.listen == ALL) and pargs.tail != 0:
-        t = ("Don't use --listen forever, --listen once or --listen all "
-             "together with --tail. It's one or the other.")
+        t = (
+            "This feature is not implemented yet. "
+            "Please help me implement it. If you feel motivated "
+            "please write code and submit a Pull Request. "
+            "Your contribution is appreciated. Thnx!"
+        )
+    elif (
+        pargs.listen == FOREVER or pargs.listen == ONCE or pargs.listen == ALL
+    ) and pargs.tail != 0:
+        t = (
+            "Don't use --listen forever, --listen once or --listen all "
+            "together with --tail. It's one or the other."
+        )
     # this is set by default anyway, just defensive programming
     elif pargs.encrypted and ((not pargs.store) or (pargs.store == "")):
-        t = ("If --encrypt is used --store must be set too. "
-             "Specify --store and run program again.")
+        t = (
+            "If --encrypt is used --store must be set too. "
+            "Specify --store and run program again."
+        )
     elif pargs.verify and (pargs.verify.lower() != EMOJI):
-        t = (f"For --verify currently only \"{EMOJI}\" is allowed "
-             "as keyword.")
-    elif (pargs.verify and
-            (pargs.message or pargs.image or pargs.audio or
-             pargs.file or pargs.room or pargs.listen != NEVER or
-             pargs.rename_device)):
-        t = ("If --verify is specified, only verify can be done. "
-             "No messages, images, or files can be sent."
-             "No listening or tailing allowed. No renaming.")
+        t = f'For --verify currently only "{EMOJI}" is allowed ' "as keyword."
+    elif pargs.verify and (
+        pargs.message
+        or pargs.image
+        or pargs.audio
+        or pargs.file
+        or pargs.room
+        or pargs.listen != NEVER
+        or pargs.rename_device
+    ):
+        t = (
+            "If --verify is specified, only verify can be done. "
+            "No messages, images, or files can be sent."
+            "No listening or tailing allowed. No renaming."
+        )
     elif pargs.rename_device and (pargs.rename_device == ""):
-        t = ("Don't use an empty name for --rename_device.")
-    elif (pargs.rename_device and
-            (pargs.message or pargs.image or pargs.audio or
-             pargs.file or pargs.room or pargs.listen != NEVER or
-             pargs.verify)):
-        t = ("If --rename_device is specified, only rename can be done. "
-             "No messages, images, or files can be sent."
-             "No listening or tailing allowed. No verification.")
-    elif (pargs.listen != NEVER and
-            (pargs.message or pargs.image or
-             pargs.audio or pargs.file)):
-        t = ("If --listen is specified, only listening can be done. "
-             "No messages, images, or files can be sent.")
+        t = "Don't use an empty name for --rename_device."
+    elif pargs.rename_device and (
+        pargs.message
+        or pargs.image
+        or pargs.audio
+        or pargs.file
+        or pargs.room
+        or pargs.listen != NEVER
+        or pargs.verify
+    ):
+        t = (
+            "If --rename_device is specified, only rename can be done. "
+            "No messages, images, or files can be sent."
+            "No listening or tailing allowed. No verification."
+        )
+    elif pargs.listen != NEVER and (
+        pargs.message or pargs.image or pargs.audio or pargs.file
+    ):
+        t = (
+            "If --listen is specified, only listening can be done. "
+            "No messages, images, or files can be sent."
+        )
     elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
-        t = ("If --listen once or --listen forever are specified, "
-             "--room must not be specified because "
-             "these options listen in ALL rooms.")
-    elif (pargs.listen != NEVER and pargs.listen != FOREVER and
-            pargs.listen != ONCE and pargs.listen != TAIL and
-            pargs.listen != ALL):
-        t = ("If --listen is specified, only these choices are "
-             f"possible: {ONCE}, {NEVER}, {FOREVER}, {TAIL} or {ALL}. "
-             f"Found \"{pargs.listen}\".")
+        t = (
+            "If --listen once or --listen forever are specified, "
+            "--room must not be specified because "
+            "these options listen in ALL rooms."
+        )
+    elif (
+        pargs.listen != NEVER
+        and pargs.listen != FOREVER
+        and pargs.listen != ONCE
+        and pargs.listen != TAIL
+        and pargs.listen != ALL
+    ):
+        t = (
+            "If --listen is specified, only these choices are "
+            f"possible: {ONCE}, {NEVER}, {FOREVER}, {TAIL} or {ALL}. "
+            f'Found "{pargs.listen}".'
+        )
     elif pargs.listen == NEVER and pargs.listen_self:
-        t = ("If neither --listen nor --tail are used, "
-             "then --listen-self must not be used "
-             "either. Specify --listen or --tail "
-             "and run program again.")
+        t = (
+            "If neither --listen nor --tail are used, "
+            "then --listen-self must not be used "
+            "either. Specify --listen or --tail "
+            "and run program again."
+        )
     else:
         logger.debug("All arguments are valid. All checks passed.")
         return
@@ -2268,7 +2532,8 @@ def initial_check_of_args() -> None:
     sys.exit(1)
 
 
-if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
+# according to linter: function is too complex, C901
+if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     logging.basicConfig()  # initialize root logger, a must
     # set log level on root
     if "DEBUG" in os.environ:
@@ -2282,8 +2547,8 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
         "On further runs this program implements a simple Matrix CLI client "
         "that can send messages, listen to messages and verify devices. "
         "It can send one or multiple message to one or multiple Matrix  "
-        "rooms. The text messages can be of various formats such as \"text\", "
-        "\"html\", \"markdown\" or \"code\". Images, audio or arbitrary files "
+        'rooms. The text messages can be of various formats such as "text", '
+        '"html", "markdown" or "code". Images, audio or arbitrary files '
         "can be sent as well. For receiving there are three main options: "
         "listen forever, listen once and quit, and get the last N messages "
         "and quit. Emoji verification is built-in which can be used "
@@ -2293,234 +2558,351 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
         "encryption packages must be installed. "
         "See dependencies in source code (or README.md). For even more "
         "explications run this program with the --help option or read the "
-        "full documentation in the source code.")
+        "full documentation in the source code."
+    )
     # Add the arguments to the parser
-    ap.add_argument("-d", "--debug", required=False,
-                    action="store_true", help="Print debug information")
-    ap.add_argument("-c", "--credentials", required=False, type=str,
-                    default=CREDENTIALS_FILE_DEFAULT,
-                    help="On first run, information about homeserver, "
-                    "user, room id, etc. will be written to a credentials "
-                    "file. By default, this file "
-                    f"is \"{CREDENTIALS_FILE_DEFAULT}\". "
-                    "On further runs the credentials file is read to "
-                    "permit logging into the correct Matrix account "
-                    "and sending messages to the preconfigured room. "
-                    "If this option is provided, the provided file name "
-                    "will be used as credentials file instead of the "
-                    "default one. ")
-    ap.add_argument("-r", "--room", required=False,
-                    action="extend", nargs="+", type=str,
-                    help="Send to this room or these rooms. None, one or "
-                    "multiple rooms can be specified. "
-                    "The default room is provided "
-                    "in credentials file. If a room (or multiple ones) "
-                    "is (or are) provided in the arguments, then it "
-                    "(or they) will be used "
-                    "instead of the one from the credentials file. "
-                    "The user must have access to the specified room "
-                    "in order to send messages there. Messages cannot "
-                    "be sent to arbitrary rooms. When specifying the "
-                    "room id some shells require the exclamation mark "
-                    "to be escaped with a blackslash.")
+    ap.add_argument(
+        "-d",
+        "--debug",
+        required=False,
+        action="store_true",
+        help="Print debug information",
+    )
+    ap.add_argument(
+        "-c",
+        "--credentials",
+        required=False,
+        type=str,
+        default=CREDENTIALS_FILE_DEFAULT,
+        help="On first run, information about homeserver, "
+        "user, room id, etc. will be written to a credentials "
+        "file. By default, this file "
+        f'is "{CREDENTIALS_FILE_DEFAULT}". '
+        "On further runs the credentials file is read to "
+        "permit logging into the correct Matrix account "
+        "and sending messages to the preconfigured room. "
+        "If this option is provided, the provided file name "
+        "will be used as credentials file instead of the "
+        "default one. ",
+    )
+    ap.add_argument(
+        "-r",
+        "--room",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send to this room or these rooms. None, one or "
+        "multiple rooms can be specified. "
+        "The default room is provided "
+        "in credentials file. If a room (or multiple ones) "
+        "is (or are) provided in the arguments, then it "
+        "(or they) will be used "
+        "instead of the one from the credentials file. "
+        "The user must have access to the specified room "
+        "in order to send messages there. Messages cannot "
+        "be sent to arbitrary rooms. When specifying the "
+        "room id some shells require the exclamation mark "
+        "to be escaped with a blackslash.",
+    )
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
     # e.g. message=[ 'm1', 'm2' ]
-    ap.add_argument("-m", "--message", required=False,
-                    action="extend", nargs="+", type=str,
-                    help="Send this message. If not specified, and no "
-                    "input piped in from stdin, then message "
-                    "will be read from stdin, i.e. keyboard. "
-                    "This option can be used multiple time to send "
-                    "multiple messages. If there is data is piped "
-                    "into this program, then first data from the "
-                    "pipe is published, then messages from this "
-                    "option are published.")
+    ap.add_argument(
+        "-m",
+        "--message",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send this message. If not specified, and no "
+        "input piped in from stdin, then message "
+        "will be read from stdin, i.e. keyboard. "
+        "This option can be used multiple time to send "
+        "multiple messages. If there is data is piped "
+        "into this program, then first data from the "
+        "pipe is published, then messages from this "
+        "option are published.",
+    )
     # allow multiple messages , e.g. -i "i1.jpg" "i2.gif"
     # or -m "i1.png" -i "i2.jpeg"
     # image is going to be a list of strings
     # e.g. image=[ 'i1.jpg', 'i2.png' ]
-    ap.add_argument("-i", "--image", required=False,
-                    action="extend", nargs="+", type=str,
-                    help="Send this image. "
-                    "This option can be used multiple time to send "
-                    "multiple images. First images are send, "
-                    "then text messages are send.")
+    ap.add_argument(
+        "-i",
+        "--image",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send this image. "
+        "This option can be used multiple time to send "
+        "multiple images. First images are send, "
+        "then text messages are send.",
+    )
     # allow multiple audio files , e.g. -i "a1.mp3" "a2.wav"
     # or -m "a1.mp3" -i "a2.m4a"
     # audio is going to be a list of strings
     # e.g. audio=[ 'a1.mp3', 'a2.m4a' ]
-    ap.add_argument("-a", "--audio", required=False,
-                    action="extend", nargs="+", type=str,
-                    help="Send this audio file. "
-                    "This option can be used multiple time to send "
-                    "multiple audio files. First audios are send, "
-                    "then text messages are send.")
+    ap.add_argument(
+        "-a",
+        "--audio",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send this audio file. "
+        "This option can be used multiple time to send "
+        "multiple audio files. First audios are send, "
+        "then text messages are send.",
+    )
     # allow multiple files , e.g. -i "a1.pdf" "a2.doc"
     # or -m "a1.pdf" -i "a2.doc"
     # file is going to be a list of strings
     # e.g. file=[ 'a1.pdf', 'a2.doc' ]
-    ap.add_argument("-f", "--file", required=False,
-                    action="extend", nargs="+", type=str,
-                    help="Send this file (e.g. PDF, DOC, MP4). "
-                    "This option can be used multiple time to send "
-                    "multiple files. First files are send, "
-                    "then text messages are send.")
+    ap.add_argument(
+        "-f",
+        "--file",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send this file (e.g. PDF, DOC, MP4). "
+        "This option can be used multiple time to send "
+        "multiple files. First files are send, "
+        "then text messages are send.",
+    )
     # -h already used for --help, -w for "web"
-    ap.add_argument("-w", "--html", required=False,
-                    action="store_true", help="Send message as format "
-                    "\"HTML\". If not specified, message will be sent "
-                    "as format \"TEXT\". E.g. that allows some text "
-                    "to be bold, etc. Only a subset of HTML tags are "
-                    "accepted by Matrix.")
+    ap.add_argument(
+        "-w",
+        "--html",
+        required=False,
+        action="store_true",
+        help="Send message as format "
+        '"HTML". If not specified, message will be sent '
+        'as format "TEXT". E.g. that allows some text '
+        "to be bold, etc. Only a subset of HTML tags are "
+        "accepted by Matrix.",
+    )
     # -m already used for --message, -z because there were no letters left
-    ap.add_argument("-z", "--markdown", required=False,
-                    action="store_true", help="Send message as format "
-                    "\"MARKDOWN\". If not specified, message will be sent "
-                    "as format \"TEXT\". E.g. that allows sending of text "
-                    "formated in MarkDown language.")
+    ap.add_argument(
+        "-z",
+        "--markdown",
+        required=False,
+        action="store_true",
+        help="Send message as format "
+        '"MARKDOWN". If not specified, message will be sent '
+        'as format "TEXT". E.g. that allows sending of text '
+        "formated in MarkDown language.",
+    )
     #  -c is already used for --credentials, -k as it sounds like c
-    ap.add_argument("-k", "--code", required=False,
-                    action="store_true", help="Send message as format "
-                    "\"CODE\". If not specified, message will be sent "
-                    "as format \"TEXT\". If both --html and --code are "
-                    "specified then --code takes priority. This is "
-                    "useful for sending ASCII-art or tabbed output "
-                    "like tables as a fixed-sized font will be used "
-                    "for display.")
+    ap.add_argument(
+        "-k",
+        "--code",
+        required=False,
+        action="store_true",
+        help="Send message as format "
+        '"CODE". If not specified, message will be sent '
+        'as format "TEXT". If both --html and --code are '
+        "specified then --code takes priority. This is "
+        "useful for sending ASCII-art or tabbed output "
+        "like tables as a fixed-sized font will be used "
+        "for display.",
+    )
     # -s is already used for --store, -i for sPlit
-    ap.add_argument("-p", "--split", required=False, type=str,
-                    help="If set, split the message(s) into multiple messages "
-                    "wherever the string specified with --split occurs. "
-                    "E.g. One pipes a stream of RSS articles into the "
-                    "program and the articles are separated by three "
-                    "newlines. "
-                    "Then with --split set to \"\\n\\n\\n\" each article "
-                    "will be printed in a separate message. "
-                    "By default, i.e. if not set, no messages will be split.")
+    ap.add_argument(
+        "-p",
+        "--split",
+        required=False,
+        type=str,
+        help="If set, split the message(s) into multiple messages "
+        "wherever the string specified with --split occurs. "
+        "E.g. One pipes a stream of RSS articles into the "
+        "program and the articles are separated by three "
+        "newlines. "
+        'Then with --split set to "\\n\\n\\n" each article '
+        "will be printed in a separate message. "
+        "By default, i.e. if not set, no messages will be split.",
+    )
     # -c is already used for --credentials
-    ap.add_argument("-j", "--config", required=False, type=str,
-                    help="Location of a config file. By default, no "
-                    "config file is used. "
-                    "If this option is provided, the provided file name "
-                    "will be used to read configuration from. ")
-    ap.add_argument("-n", "--notice", required=False,
-                    action="store_true", help="Send message as notice. "
-                    "If not specified, message will be sent as text.")
-    ap.add_argument("-e", "--encrypted", required=False,
-                    action="store_true", help="Send message end-to-end "
-                    "encrypted. Encryption is always turned on and "
-                    "will always be used where possible. "
-                    "It cannot be turned off. This flag does nothing "
-                    "as encryption is turned on with or without this "
-                    "argument.")
+    ap.add_argument(
+        "-j",
+        "--config",
+        required=False,
+        type=str,
+        help="Location of a config file. By default, no "
+        "config file is used. "
+        "If this option is provided, the provided file name "
+        "will be used to read configuration from. ",
+    )
+    ap.add_argument(
+        "-n",
+        "--notice",
+        required=False,
+        action="store_true",
+        help="Send message as notice. "
+        "If not specified, message will be sent as text.",
+    )
+    ap.add_argument(
+        "-e",
+        "--encrypted",
+        required=False,
+        action="store_true",
+        help="Send message end-to-end "
+        "encrypted. Encryption is always turned on and "
+        "will always be used where possible. "
+        "It cannot be turned off. This flag does nothing "
+        "as encryption is turned on with or without this "
+        "argument.",
+    )
     # -n already used for --markdown, -e for "nOtice"
-    ap.add_argument("-s", "--store", required=False, type=str,
-                    default=STORE_DIR_DEFAULT,
-                    help="Path to directory to be "
-                    "used as \"store\" for encrypted messaging. "
-                    "By default, this directory "
-                    f"is \"{STORE_DIR_DEFAULT}\". "
-                    "Since encryption is always enabled, a store is "
-                    "always needed. "
-                    "If this option is provided, the provided directory name "
-                    "will be used as persistent storage directory instead of "
-                    "the default one. Preferably, for multiple executions "
-                    "of this program use the same store for the same device. "
-                    "The store directory can be shared between multiple "
-                    "different devices and users.")
-    ap.add_argument("-l", "--listen", required=False, type=str,
-                    default=LISTEN_DEFAULT,  # when -l is not used
-                    nargs='?',  # makes the word optional
-                    const=FOREVER,  # when -l is used, but FOREVER is not added
-                    help="The --listen option takes one argument. There "
-                    f"are several choices: \"{NEVER}\", \"{ONCE}\", "
-                    f"\"{FOREVER}\", \"{TAIL}\", and \"{ALL}\". "
-                    f"By default, --listen is set to \"{NEVER}\".  So, by "
-                    "default no listening will be done. Set it to "
-                    f"\"{FOREVER}\" to listen for and print incoming messages "
-                    "to stdout. "
-                    f"\"--listen {FOREVER}\" will listen to all messages on "
-                    "all rooms forever. "
-                    f"To stop listening \"{FOREVER}\", use Control-C on "
-                    "the keyboard or send a signal to the process or service. "
-                    "The PID for signaling can be found in "
-                    f"\"{PID_FILE_DEFAULT}\". "
-                    f"\"--listen {ONCE}\" will get all the messages from "
-                    "all rooms that are currently queued up. So, with "
-                    f"\"{ONCE}\" the program will start, print waiting "
-                    "messages (if any) and then stop. The timeout for "
-                    f"\"{ONCE}\" is set to 10 seconds. So, be patient, it "
-                    "might take up to that amount of time. "
-                    f"\"{TAIL}\" reads and prints the last N "
-                    "messages from the specified rooms, then quits. The "
-                    "number N can be set with the --tail option. With "
-                    f"\"{TAIL}\" some messages read might be old, "
-                    "i.e. already read before, some might be new, "
-                    "i.e. never read before. It prints the messages and then "
-                    f"the program stops. "
-                    "Messages are sorted, last-first. "
-                    "Look at --tail as that option is related "
-                    "to --listen tail. "
-                    f"The option \"{ALL}\" gets all messages available, "
-                    "old and new. "
-                    f"Unlike \"{ONCE}\" and "
-                    f"\"{FOREVER}\" that listen in ALL rooms, \"{TAIL}\" "
-                    f"and \"{ALL}\" listen "
-                    "only to the room specified in the credentials "
-                    "file or the --room options. "
-                    "Furthermore, when listening to messages, no messages "
-                    "will be sent. Hence, when listening, --message must not "
-                    "be used and piped input will be ignored. ")
-    ap.add_argument("-t", "--tail", required=False, type=int,
-                    default=TAIL_UNUSED_DEFAULT,  # when -t is not used
-                    nargs='?',  # makes the word optional
-                    # when -t is used, but number is not added
-                    const=TAIL_USED_DEFAULT,
-                    help="The --tail option reads and prints the last N "
-                    "messages from the specified rooms, then quits. "
-                    "It takes one "
-                    "argument, an integer, "
-                    "which we call N here. If there are fewer than N messages "
-                    "in a room, it reads and prints up to N messages. "
-                    "It gets the last N messages in reverse order. "
-                    "Look at --listen as this option is related to --tail."
-                    "Furthermore, when tailing messages, no messages "
-                    "will be sent. Hence, when tailing or listening, "
-                    "--message  must not be used and piped input will "
-                    "be ignored. ")
-    ap.add_argument("-y", "--listen-self", required=False,
-                    action="store_true", help="If set and listening, "
-                    "then program will listen to and print also "
-                    "the messages sent by its own user. "
-                    "By default messages from oneself are not printed.")
-    ap.add_argument("-o", "--os-notify", required=False,
-                    action="store_true", help="If set and listening, "
-                    "then program will attempt to visually notify of "
-                    "arriving messages through the operating system. "
-                    "By default there is no notification via OS.")
-    ap.add_argument("-v", "--verify", required=False, type=str,
-                    default=VERIFY_UNUSED_DEFAULT,  # when -t is not used
-                    nargs='?',  # makes the word optional
-                    # when -v is used, but text is not added
-                    const=VERIFY_USED_DEFAULT,
-                    help="Perform verification. By default, no "
-                    "verification is performed. "
-                    f"Possible values are: \"{EMOJI}\". "
-                    "If verification is desired, run this program in the "
-                    "foreground (not as a service) and without a pipe. "
-                    "Verification questions "
-                    "will be printed on stdout and the user has to respond "
-                    "via the keyboard to accept or reject verification. "
-                    "Once verification is complete, stop the program and "
-                    "run it as a service again. Don't send messages or "
-                    "files when you verify. ")
-    ap.add_argument("-x", "--rename-device", required=False, type=str,
-                    default=RENAME_DEVICE_UNUSED_DEFAULT,  # when -x isn't used
-                    help="Rename the current device to the new "
-                    "device name provided. No other operations like "
-                    "sending, listening, or verifying are allowed when "
-                    "renaming the device. ")
+    ap.add_argument(
+        "-s",
+        "--store",
+        required=False,
+        type=str,
+        default=STORE_DIR_DEFAULT,
+        help="Path to directory to be "
+        'used as "store" for encrypted messaging. '
+        "By default, this directory "
+        f'is "{STORE_DIR_DEFAULT}". '
+        "Since encryption is always enabled, a store is "
+        "always needed. "
+        "If this option is provided, the provided directory name "
+        "will be used as persistent storage directory instead of "
+        "the default one. Preferably, for multiple executions "
+        "of this program use the same store for the same device. "
+        "The store directory can be shared between multiple "
+        "different devices and users.",
+    )
+    ap.add_argument(
+        "-l",
+        "--listen",
+        required=False,
+        type=str,
+        default=LISTEN_DEFAULT,  # when -l is not used
+        nargs="?",  # makes the word optional
+        const=FOREVER,  # when -l is used, but FOREVER is not added
+        help="The --listen option takes one argument. There "
+        f'are several choices: "{NEVER}", "{ONCE}", '
+        f'"{FOREVER}", "{TAIL}", and "{ALL}". '
+        f'By default, --listen is set to "{NEVER}".  So, by '
+        "default no listening will be done. Set it to "
+        f'"{FOREVER}" to listen for and print incoming messages '
+        "to stdout. "
+        f'"--listen {FOREVER}" will listen to all messages on '
+        "all rooms forever. "
+        f'To stop listening "{FOREVER}", use Control-C on '
+        "the keyboard or send a signal to the process or service. "
+        "The PID for signaling can be found in a PID file in "
+        f'directory "{PID_DIR_DEFAULT}". '
+        f'"--listen {ONCE}" will get all the messages from '
+        "all rooms that are currently queued up. So, with "
+        f'"{ONCE}" the program will start, print waiting '
+        "messages (if any) and then stop. The timeout for "
+        f'"{ONCE}" is set to 10 seconds. So, be patient, it '
+        "might take up to that amount of time. "
+        f'"{TAIL}" reads and prints the last N '
+        "messages from the specified rooms, then quits. The "
+        "number N can be set with the --tail option. With "
+        f'"{TAIL}" some messages read might be old, '
+        "i.e. already read before, some might be new, "
+        "i.e. never read before. It prints the messages and then "
+        f"the program stops. "
+        "Messages are sorted, last-first. "
+        "Look at --tail as that option is related "
+        "to --listen tail. "
+        f'The option "{ALL}" gets all messages available, '
+        "old and new. "
+        f'Unlike "{ONCE}" and '
+        f'"{FOREVER}" that listen in ALL rooms, "{TAIL}" '
+        f'and "{ALL}" listen '
+        "only to the room specified in the credentials "
+        "file or the --room options. "
+        "Furthermore, when listening to messages, no messages "
+        "will be sent. Hence, when listening, --message must not "
+        "be used and piped input will be ignored. ",
+    )
+    ap.add_argument(
+        "-t",
+        "--tail",
+        required=False,
+        type=int,
+        default=TAIL_UNUSED_DEFAULT,  # when -t is not used
+        nargs="?",  # makes the word optional
+        # when -t is used, but number is not added
+        const=TAIL_USED_DEFAULT,
+        help="The --tail option reads and prints up to the last N "
+        "messages from the specified rooms, then quits. "
+        "It takes one "
+        "argument, an integer, "
+        "which we call N here. If there are fewer than N messages "
+        "in a room, it reads and prints up to N messages. "
+        "It gets the last N messages in reverse order. "
+        "It print the newest message first, and the "
+        "oldest message last. "
+        "If --listen-self is not set it will print less than "
+        "N messages in many cases because N messages are "
+        "obtained, but some of them are discarded by default if "
+        "they are from the user itself. "
+        "Look at --listen as this option is related to --tail."
+        "Furthermore, when tailing messages, no messages "
+        "will be sent. Hence, when tailing or listening, "
+        "--message  must not be used and piped input will "
+        "be ignored. ",
+    )
+    ap.add_argument(
+        "-y",
+        "--listen-self",
+        required=False,
+        action="store_true",
+        help="If set and listening, "
+        "then program will listen to and print also "
+        "the messages sent by its own user. "
+        "By default messages from oneself are not printed.",
+    )
+    ap.add_argument(
+        "-o",
+        "--os-notify",
+        required=False,
+        action="store_true",
+        help="If set and listening, "
+        "then program will attempt to visually notify of "
+        "arriving messages through the operating system. "
+        "By default there is no notification via OS.",
+    )
+    ap.add_argument(
+        "-v",
+        "--verify",
+        required=False,
+        type=str,
+        default=VERIFY_UNUSED_DEFAULT,  # when -t is not used
+        nargs="?",  # makes the word optional
+        # when -v is used, but text is not added
+        const=VERIFY_USED_DEFAULT,
+        help="Perform verification. By default, no "
+        "verification is performed. "
+        f'Possible values are: "{EMOJI}". '
+        "If verification is desired, run this program in the "
+        "foreground (not as a service) and without a pipe. "
+        "Verification questions "
+        "will be printed on stdout and the user has to respond "
+        "via the keyboard to accept or reject verification. "
+        "Once verification is complete, stop the program and "
+        "run it as a service again. Don't send messages or "
+        "files when you verify. ",
+    )
+    ap.add_argument(
+        "-x",
+        "--rename-device",
+        required=False,
+        type=str,
+        default=RENAME_DEVICE_UNUSED_DEFAULT,  # when -x isn't used
+        help="Rename the current device to the new "
+        "device name provided. No other operations like "
+        "sending, listening, or verifying are allowed when "
+        "renaming the device. ",
+    )
 
     pargs = ap.parse_args()
     if pargs.debug:
@@ -2537,22 +2919,30 @@ if __name__ == "__main__":  # noqa # ignore mccabe if-too-complex
             asyncio.get_event_loop().run_until_complete(main_verify())
         elif pargs.rename_device:
             asyncio.get_event_loop().run_until_complete(main_rename_device())
-        elif (pargs.listen == FOREVER or pargs.listen == ONCE
-                or pargs.listen == TAIL or pargs.listen == ALL):
+        elif (
+            pargs.listen == FOREVER
+            or pargs.listen == ONCE
+            or pargs.listen == TAIL
+            or pargs.listen == ALL
+        ):
             asyncio.get_event_loop().run_until_complete(main_listen())
         else:
             asyncio.get_event_loop().run_until_complete(main_send())
         logger.debug(f"The program {PROG_WITH_EXT} terminated successfully.")
     except TimeoutError:
-        logger.info(f"The program {PROG_WITH_EXT} ran into a timeout. "
-                    "Most likely connectivity to internet was lost. "
-                    "If this happens frequently consider running this "
-                    "program as a service so it will restart automatically. "
-                    "Sorry. Here is the traceback.")
+        logger.info(
+            f"The program {PROG_WITH_EXT} ran into a timeout. "
+            "Most likely connectivity to internet was lost. "
+            "If this happens frequently consider running this "
+            "program as a service so it will restart automatically. "
+            "Sorry. Here is the traceback."
+        )
         logger.info(traceback.format_exc())
     except Exception:
-        logger.info(f"The program {PROG_WITH_EXT} failed. "
-                    "Sorry. Here is the traceback.")
+        logger.info(
+            f"The program {PROG_WITH_EXT} failed. "
+            "Sorry. Here is the traceback."
+        )
         logger.info(traceback.format_exc())
         # traceback.print_exc(file=sys.stdout)
     except KeyboardInterrupt:
