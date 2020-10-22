@@ -41,7 +41,11 @@ Use cases for this program could be
   sending messages to her/his own room
 - as educational material that showcases the use of the `matrix-nio` SDK
 
-## First Run, Set Up, Credentials File, End-to-end Encryption
+# Give it a Star
+If you like it, use it, fork it, make a Pull Request or contribute.
+Please give it a GitHub Star right now so others find it more easily. <3
+
+# First Run, Set Up, Credentials File, End-to-end Encryption
 
 This program on the first run creates a credentials.json file.
 The credentials.json file stores: homeserver, user id,
@@ -83,7 +87,7 @@ into the Matrix account. Now this program can be used
 to easily send simple text messages, images, and so forth
 to the preconfigured room.
 
-## Sending
+# Sending
 
 Messages to send can be provided
 1) in the command line (-m or --message)
@@ -105,7 +109,7 @@ Photos and images that can be sent. That includes files like
 Arbirtary files like .txt, .pdf, .doc, audio files like .mp3
 or video files like .mp4 can also be sent.
 
-## Listening, Receiving
+# Listening, Receiving
 
 One can listen to one or multiple rooms. Received messages will be displayed
 on the screen. If desired, optionally, you can be notified of incoming
@@ -121,13 +125,17 @@ Messages can be received or listened to various ways:
 3) Tail: prints the last N read or unread messages of one or multiple
    specified rooms and after printing them the program terminates.
 
-## Verification
+When listening to messages you can also choose to download and decrypt
+media. Say, someone is sending a song. The mp3 file can be downloaded
+and automatically decrypted for you.
+
+# Verification
 
 The program can accept verification request and verify other devices
 via emojis. Do do so use the --verify option and the program will
 await incoming verification request and act accordingly.
 
-## Summary, TLDR
+# Summary, TLDR
 
 This simple Matrix client written in Python allows you to send and
 receive messages and verify other devices. End-to-end encryption is enabled
@@ -144,8 +152,12 @@ by default and cannot be turned off.
   - pip3 install --user --upgrade python_magic
 - python3 package notify2 must be installed to support OS notifications
   - pip3 install --user --upgrade notify2
+- python3 package urllib must be installed to support media download
+  - pip3 install --user --upgrade urllib
 - this file must be installed, and should have execution permissions
   - chmod 755 matrix-commander.py
+- for a full list see the import statements at the beginning of the Python
+  source code.
 
 # Examples of calling `matrix-commander`
 
@@ -207,12 +219,17 @@ $ # listen to tail, get the last N messages and quit
 $ matrix-commander.py --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
 $ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ # get the very last message
+$ matrix-commander.py --tail 1 --listen-self
 $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander.py --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
 $ matrix-commander.py --listen all --listen-self
 $ # rename device-name, sometimes also called display-name
 $ matrix-commander.py --rename-device "my new name"
+$ # download and decrypt media files like images, audio, PDF, etc.
+$ # and store downloaded files in directory "mymedia"
+$ matrix-commander.py --listen forever --listen-self --download-media mymedia
 
 ```
 
@@ -222,8 +239,9 @@ usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [-u [DOWNLOAD_MEDIA]] [-o] [-v [VERIFY]]
+                           [-x RENAME_DEVICE]
 
 On first run this program will configure itself. On further runs this program
 implements a simple Matrix CLI client that can send messages, listen to
@@ -231,26 +249,26 @@ messages and verify devices. It can send one or multiple message to one or
 multiple Matrix rooms. The text messages can be of various formats such as
 "text", "html", "markdown" or "code". Images, audio or arbitrary files can be
 sent as well. For receiving there are three main options: listen forever,
-listen once and quit, and get the last N messages and quit. Emoji
-verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. matrix-nio
-(https://github.com/poljar/matrix-nio) and end-to-end encryption packages
-must be installed. See dependencies in source code (or README.md). For even
-more explications run this program with the --help option or read the full
+listen once and quit, and get the last N messages and quit. Emoji verification
+is built-in which can be used to verify devices. End-to-end encryption is
+enabled by default and cannot be turned off. matrix-nio
+(https://github.com/poljar/matrix-nio) and end-to-end encryption packages must
+be installed. See dependencies in source code (or README.md). For even more
+explications run this program with the --help option or read the full
 documentation in the source code.
 
 optional arguments:
   -h, --help            show this help message and exit
   -d, --debug           Print debug information
   -c CREDENTIALS, --credentials CREDENTIALS
-                        On first run, information about homeserver, user,
-                        room id, etc. will be written to a credentials file.
-                        By default, this file is "credentials.json". On
-                        further runs the credentials file is read to permit
-                        logging into the correct Matrix account and sending
-                        messages to the preconfigured room. If this option is
-                        provided, the provided file name will be used as
-                        credentials file instead of the default one.
+                        On first run, information about homeserver, user, room
+                        id, etc. will be written to a credentials file. By
+                        default, this file is "credentials.json". On further
+                        runs the credentials file is read to permit logging
+                        into the correct Matrix account and sending messages
+                        to the preconfigured room. If this option is provided,
+                        the provided file name will be used as credentials
+                        file instead of the default one.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
                         Send to this room or these rooms. None, one or
                         multiple rooms can be specified. The default room is
@@ -265,19 +283,19 @@ optional arguments:
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
-                        stdin, i.e. keyboard. This option can be used
-                        multiple time to send multiple messages. If there is
-                        data is piped into this program, then first data from
-                        the pipe is published, then messages from this option
-                        are published.
+                        stdin, i.e. keyboard. This option can be used multiple
+                        time to send multiple messages. If there is data is
+                        piped into this program, then first data from the pipe
+                        is published, then messages from this option are
+                        published.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
-                        Send this image. This option can be used multiple
-                        time to send multiple images. First images are send,
-                        then text messages are send.
+                        Send this image. This option can be used multiple time
+                        to send multiple images. First images are send, then
+                        text messages are send.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
-                        Send this audio file. This option can be used
-                        multiple time to send multiple audio files. First
-                        audios are send, then text messages are send.
+                        Send this audio file. This option can be used multiple
+                        time to send multiple audio files. First audios are
+                        send, then text messages are send.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
                         be used multiple time to send multiple files. First
@@ -305,10 +323,10 @@ optional arguments:
                         default, i.e. if not set, no messages will be split.
   -j CONFIG, --config CONFIG
                         Location of a config file. By default, no config file
-                        is used. If this option is provided, the provided
-                        file name will be used to read configuration from.
-  -n, --notice          Send message as notice. If not specified, message
-                        will be sent as text.
+                        is used. If this option is provided, the provided file
+                        name will be used to read configuration from.
+  -n, --notice          Send message as notice. If not specified, message will
+                        be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
                         always turned on and will always be used where
                         possible. It cannot be turned off. This flag does
@@ -321,55 +339,68 @@ optional arguments:
                         needed. If this option is provided, the provided
                         directory name will be used as persistent storage
                         directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same
-                        store for the same device. The store directory can be
-                        shared between multiple different devices and users.
+                        multiple executions of this program use the same store
+                        for the same device. The store directory can be shared
+                        between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
-                        and "all". By default, --listen is set to "never".
-                        So, by default no listening will be done. Set it to
-                        "forever" to listen for and print incoming messages
-                        to stdout. "--listen forever" will listen to all
-                        messages on all rooms forever. To stop listening
-                        "forever", use Control-C on the keyboard or send a
-                        signal to the process or service. The PID for
-                        signaling can be found in "/home/user/.run/matrix-
-                        commander.pid". "--listen once" will get all the
-                        messages from all rooms that are currently queued up.
-                        So, with "once" the program will start, print waiting
-                        messages (if any) and then stop. The timeout for
-                        "once" is set to 10 seconds. So, be patient, it might
-                        take up to that amount of time. "tail" reads and
-                        prints the last N messages from the specified rooms,
-                        then quits. The number N can be set with the --tail
-                        option. With "tail" some messages read might be old,
-                        i.e. already read before, some might be new, i.e.
-                        never read before. It prints the messages and then
-                        the program stops. Messages are sorted, last-first.
-                        Look at --tail as that option is related to --listen
-                        tail. The option "all" gets all messages available,
-                        old and new. Unlike "once" and "forever" that listen
-                        in ALL rooms, "tail" and "all" listen only to the
-                        room specified in the credentials file or the --room
-                        options. Furthermore, when listening to messages, no
-                        messages will be sent. Hence, when listening,
-                        --message must not be used and piped input will be
-                        ignored.
+                        and "all". By default, --listen is set to "never". So,
+                        by default no listening will be done. Set it to
+                        "forever" to listen for and print incoming messages to
+                        stdout. "--listen forever" will listen to all messages
+                        on all rooms forever. To stop listening "forever", use
+                        Control-C on the keyboard or send a signal to the
+                        process or service. The PID for signaling can be found
+                        in a PID file in directory "/home/user/.run". "--
+                        listen once" will get all the messages from all rooms
+                        that are currently queued up. So, with "once" the
+                        program will start, print waiting messages (if any)
+                        and then stop. The timeout for "once" is set to 10
+                        seconds. So, be patient, it might take up to that
+                        amount of time. "tail" reads and prints the last N
+                        messages from the specified rooms, then quits. The
+                        number N can be set with the --tail option. With
+                        "tail" some messages read might be old, i.e. already
+                        read before, some might be new, i.e. never read
+                        before. It prints the messages and then the program
+                        stops. Messages are sorted, last-first. Look at --tail
+                        as that option is related to --listen tail. The option
+                        "all" gets all messages available, old and new. Unlike
+                        "once" and "forever" that listen in ALL rooms, "tail"
+                        and "all" listen only to the room specified in the
+                        credentials file or the --room options. Furthermore,
+                        when listening to messages, no messages will be sent.
+                        Hence, when listening, --message must not be used and
+                        piped input will be ignored.
   -t [TAIL], --tail [TAIL]
-                        The --tail option reads and prints the last N
+                        The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
                         takes one argument, an integer, which we call N here.
-                        If there are fewer than N messages in a room, it
-                        reads and prints up to N messages. It gets the last N
-                        messages in reverse order. Look at --listen as this
-                        option is related to --tail.Furthermore, when tailing
-                        messages, no messages will be sent. Hence, when
-                        tailing or listening, --message must not be used and
-                        piped input will be ignored.
+                        If there are fewer than N messages in a room, it reads
+                        and prints up to N messages. It gets the last N
+                        messages in reverse order. It print the newest message
+                        first, and the oldest message last. If --listen-self
+                        is not set it will print less than N messages in many
+                        cases because N messages are obtained, but some of
+                        them are discarded by default if they are from the
+                        user itself. Look at --listen as this option is
+                        related to --tail.Furthermore, when tailing messages,
+                        no messages will be sent. Hence, when tailing or
+                        listening, --message must not be used and piped input
+                        will be ignored.
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
+  -u [DOWNLOAD_MEDIA], --download-media [DOWNLOAD_MEDIA]
+                        If set and listening, then program will download
+                        received media files (e.g. image, audio, video, text,
+                        PDF files). media will be downloaded to local
+                        directory. By default, media will be downloaded to is
+                        "./media/". You can overwrite default with your
+                        preferred directory. If media is encrypted it will be
+                        decrypted and stored decrypted. By default media files
+                        will not be downloaded.
   -o, --os-notify       If set and listening, then program will attempt to
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
@@ -386,17 +417,53 @@ optional arguments:
                         send messages or files when you verify.
   -x RENAME_DEVICE, --rename-device RENAME_DEVICE
                         Rename the current device to the new device name
-                        provided. No other operations like sending,
-                        listening, or verifying are allowed when renaming the
-                        device.
+                        provided. No other operations like sending, listening,
+                        or verifying are allowed when renaming the device.
 
 ```
+
+# Features
+
+- CLI, Command Line Interface
+- Python 3
+- Uses nio-template
+- End-to-end encryption
+- Storage for End-to-end encryption
+- Storage of credentials
+- Supports access token instead of password
+- Sending messages
+- Sending notices
+- Sending formatted messages
+- Sending MarkDown messages
+- Message splitting before sending
+- Sending Code-formatted messages
+- Sending to one room
+- Sending to multiple rooms
+- Sending image files (photos, etc.)
+- Sending of media files (music, videos, etc.)
+- Sending of arbitrary files (PDF, xls, doc, txt, etc.)
+- Receiving messages forever
+- Receiving messages once
+- Receiving last messages
+- Receiving or skipping its own messages
+- Supports renaming of device
+- Supports notification via OS of received messages
+- Supports periodic execution via crontab
+- Supports room aliases
+- Provides PID files
+- Logging
+- In-source documentation
+- Can be run as a service
 
 # For Developers
 
 - Don't change tabbing, spacing, or formating as file is automatically
-  linted with `autopep8 --aggressive`
+  sorted, linted and formated.
 - `pylama:format=pep8:linters=pep8`
+- first `isort` import sorter
+- then `flake` linter/formater
+- then `black` linter/formater
+- linelength: 79
 
 # Things to do, Things missing
 
@@ -406,3 +473,4 @@ optional arguments:
 
 - Enjoy!
 - Pull requests are welcome
+
