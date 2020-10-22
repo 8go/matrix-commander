@@ -48,6 +48,10 @@ Use cases for this program could be
   sending messages to her/his own room
 - as educational material that showcases the use of the `matrix-nio` SDK
 
+# Give it a Star
+If you like it, use it, fork it, make a Pull Request or contribute.
+Please give it a GitHub Star right now so others find it more easily. <3
+
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
 This program on the first run creates a credentials.json file.
@@ -128,6 +132,10 @@ Messages can be received or listened to various ways:
 3) Tail: prints the last N read or unread messages of one or multiple
    specified rooms and after printing them the program terminates.
 
+When listening to messages you can also choose to download and decrypt
+media. Say, someone is sending a song. The mp3 file can be downloaded
+and automatically decrypted for you.
+
 # Verification
 
 The program can accept verification request and verify other devices
@@ -151,8 +159,12 @@ by default and cannot be turned off.
   - pip3 install --user --upgrade python_magic
 - python3 package notify2 must be installed to support OS notifications
   - pip3 install --user --upgrade notify2
+- python3 package urllib must be installed to support media download
+  - pip3 install --user --upgrade urllib
 - this file must be installed, and should have execution permissions
   - chmod 755 matrix-commander.py
+- for a full list see the import statements at the beginning of the Python
+  source code.
 
 # Examples of calling `matrix-commander`
 
@@ -222,6 +234,9 @@ $ # listen to (get) all messages, including own
 $ matrix-commander.py --listen all --listen-self
 $ # rename device-name, sometimes also called display-name
 $ matrix-commander.py --rename-device "my new name"
+$ # download and decrypt media files like images, audio, PDF, etc.
+$ # and store downloaded files in directory "mymedia"
+$ matrix-commander.py --listen forever --listen-self --download-media mymedia
 
 ```
 
@@ -231,8 +246,9 @@ usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [-u [DOWNLOAD_MEDIA]] [-o] [-v [VERIFY]]
+                           [-x RENAME_DEVICE]
 
 On first run this program will configure itself. On further runs this program
 implements a simple Matrix CLI client that can send messages, listen to
@@ -240,26 +256,26 @@ messages and verify devices. It can send one or multiple message to one or
 multiple Matrix rooms. The text messages can be of various formats such as
 "text", "html", "markdown" or "code". Images, audio or arbitrary files can be
 sent as well. For receiving there are three main options: listen forever,
-listen once and quit, and get the last N messages and quit. Emoji
-verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. matrix-nio
-(https://github.com/poljar/matrix-nio) and end-to-end encryption packages
-must be installed. See dependencies in source code (or README.md). For even
-more explications run this program with the --help option or read the full
+listen once and quit, and get the last N messages and quit. Emoji verification
+is built-in which can be used to verify devices. End-to-end encryption is
+enabled by default and cannot be turned off. matrix-nio
+(https://github.com/poljar/matrix-nio) and end-to-end encryption packages must
+be installed. See dependencies in source code (or README.md). For even more
+explications run this program with the --help option or read the full
 documentation in the source code.
 
 optional arguments:
   -h, --help            show this help message and exit
   -d, --debug           Print debug information
   -c CREDENTIALS, --credentials CREDENTIALS
-                        On first run, information about homeserver, user,
-                        room id, etc. will be written to a credentials file.
-                        By default, this file is "credentials.json". On
-                        further runs the credentials file is read to permit
-                        logging into the correct Matrix account and sending
-                        messages to the preconfigured room. If this option is
-                        provided, the provided file name will be used as
-                        credentials file instead of the default one.
+                        On first run, information about homeserver, user, room
+                        id, etc. will be written to a credentials file. By
+                        default, this file is "credentials.json". On further
+                        runs the credentials file is read to permit logging
+                        into the correct Matrix account and sending messages
+                        to the preconfigured room. If this option is provided,
+                        the provided file name will be used as credentials
+                        file instead of the default one.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
                         Send to this room or these rooms. None, one or
                         multiple rooms can be specified. The default room is
@@ -274,19 +290,19 @@ optional arguments:
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
-                        stdin, i.e. keyboard. This option can be used
-                        multiple time to send multiple messages. If there is
-                        data is piped into this program, then first data from
-                        the pipe is published, then messages from this option
-                        are published.
+                        stdin, i.e. keyboard. This option can be used multiple
+                        time to send multiple messages. If there is data is
+                        piped into this program, then first data from the pipe
+                        is published, then messages from this option are
+                        published.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
-                        Send this image. This option can be used multiple
-                        time to send multiple images. First images are send,
-                        then text messages are send.
+                        Send this image. This option can be used multiple time
+                        to send multiple images. First images are send, then
+                        text messages are send.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
-                        Send this audio file. This option can be used
-                        multiple time to send multiple audio files. First
-                        audios are send, then text messages are send.
+                        Send this audio file. This option can be used multiple
+                        time to send multiple audio files. First audios are
+                        send, then text messages are send.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
                         be used multiple time to send multiple files. First
@@ -314,10 +330,10 @@ optional arguments:
                         default, i.e. if not set, no messages will be split.
   -j CONFIG, --config CONFIG
                         Location of a config file. By default, no config file
-                        is used. If this option is provided, the provided
-                        file name will be used to read configuration from.
-  -n, --notice          Send message as notice. If not specified, message
-                        will be sent as text.
+                        is used. If this option is provided, the provided file
+                        name will be used to read configuration from.
+  -n, --notice          Send message as notice. If not specified, message will
+                        be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
                         always turned on and will always be used where
                         possible. It cannot be turned off. This flag does
@@ -330,55 +346,68 @@ optional arguments:
                         needed. If this option is provided, the provided
                         directory name will be used as persistent storage
                         directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same
-                        store for the same device. The store directory can be
-                        shared between multiple different devices and users.
+                        multiple executions of this program use the same store
+                        for the same device. The store directory can be shared
+                        between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
-                        and "all". By default, --listen is set to "never".
-                        So, by default no listening will be done. Set it to
-                        "forever" to listen for and print incoming messages
-                        to stdout. "--listen forever" will listen to all
-                        messages on all rooms forever. To stop listening
-                        "forever", use Control-C on the keyboard or send a
-                        signal to the process or service. The PID for
-                        signaling can be found in "/home/user/.run/matrix-
-                        commander.*.pid". "--listen once" will get all the
-                        messages from all rooms that are currently queued up.
-                        So, with "once" the program will start, print waiting
-                        messages (if any) and then stop. The timeout for
-                        "once" is set to 10 seconds. So, be patient, it might
-                        take up to that amount of time. "tail" reads and
-                        prints the last N messages from the specified rooms,
-                        then quits. The number N can be set with the --tail
-                        option. With "tail" some messages read might be old,
-                        i.e. already read before, some might be new, i.e.
-                        never read before. It prints the messages and then
-                        the program stops. Messages are sorted, last-first.
-                        Look at --tail as that option is related to --listen
-                        tail. The option "all" gets all messages available,
-                        old and new. Unlike "once" and "forever" that listen
-                        in ALL rooms, "tail" and "all" listen only to the
-                        room specified in the credentials file or the --room
-                        options. Furthermore, when listening to messages, no
-                        messages will be sent. Hence, when listening,
-                        --message must not be used and piped input will be
-                        ignored.
+                        and "all". By default, --listen is set to "never". So,
+                        by default no listening will be done. Set it to
+                        "forever" to listen for and print incoming messages to
+                        stdout. "--listen forever" will listen to all messages
+                        on all rooms forever. To stop listening "forever", use
+                        Control-C on the keyboard or send a signal to the
+                        process or service. The PID for signaling can be found
+                        in a PID file in directory "/home/user/.run". "--
+                        listen once" will get all the messages from all rooms
+                        that are currently queued up. So, with "once" the
+                        program will start, print waiting messages (if any)
+                        and then stop. The timeout for "once" is set to 10
+                        seconds. So, be patient, it might take up to that
+                        amount of time. "tail" reads and prints the last N
+                        messages from the specified rooms, then quits. The
+                        number N can be set with the --tail option. With
+                        "tail" some messages read might be old, i.e. already
+                        read before, some might be new, i.e. never read
+                        before. It prints the messages and then the program
+                        stops. Messages are sorted, last-first. Look at --tail
+                        as that option is related to --listen tail. The option
+                        "all" gets all messages available, old and new. Unlike
+                        "once" and "forever" that listen in ALL rooms, "tail"
+                        and "all" listen only to the room specified in the
+                        credentials file or the --room options. Furthermore,
+                        when listening to messages, no messages will be sent.
+                        Hence, when listening, --message must not be used and
+                        piped input will be ignored.
   -t [TAIL], --tail [TAIL]
-                        The --tail option reads and prints the last N
+                        The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
                         takes one argument, an integer, which we call N here.
-                        If there are fewer than N messages in a room, it
-                        reads and prints up to N messages. It gets the last N
-                        messages in reverse order. Look at --listen as this
-                        option is related to --tail.Furthermore, when tailing
-                        messages, no messages will be sent. Hence, when
-                        tailing or listening, --message must not be used and
-                        piped input will be ignored.
+                        If there are fewer than N messages in a room, it reads
+                        and prints up to N messages. It gets the last N
+                        messages in reverse order. It print the newest message
+                        first, and the oldest message last. If --listen-self
+                        is not set it will print less than N messages in many
+                        cases because N messages are obtained, but some of
+                        them are discarded by default if they are from the
+                        user itself. Look at --listen as this option is
+                        related to --tail.Furthermore, when tailing messages,
+                        no messages will be sent. Hence, when tailing or
+                        listening, --message must not be used and piped input
+                        will be ignored.
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
+  -u [DOWNLOAD_MEDIA], --download-media [DOWNLOAD_MEDIA]
+                        If set and listening, then program will download
+                        received media files (e.g. image, audio, video, text,
+                        PDF files). media will be downloaded to local
+                        directory. By default, media will be downloaded to is
+                        "./media/". You can overwrite default with your
+                        preferred directory. If media is encrypted it will be
+                        decrypted and stored decrypted. By default media files
+                        will not be downloaded.
   -o, --os-notify       If set and listening, then program will attempt to
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
@@ -395,11 +424,45 @@ optional arguments:
                         send messages or files when you verify.
   -x RENAME_DEVICE, --rename-device RENAME_DEVICE
                         Rename the current device to the new device name
-                        provided. No other operations like sending,
-                        listening, or verifying are allowed when renaming the
-                        device.
+                        provided. No other operations like sending, listening,
+                        or verifying are allowed when renaming the device.
 
 ```
+
+# Features
+
+- CLI, Command Line Interface
+- Python 3
+- Uses nio-template
+- End-to-end encryption
+- Storage for End-to-end encryption
+- Storage of credentials
+- Supports access token instead of password
+- Sending messages
+- Sending notices
+- Sending formatted messages
+- Sending MarkDown messages
+- Message splitting before sending
+- Sending Code-formatted messages
+- Sending to one room
+- Sending to multiple rooms
+- Sending image files (photos, etc.)
+- Sending of media files (music, videos, etc.)
+- Sending of arbitrary files (PDF, xls, doc, txt, etc.)
+- Receiving messages forever
+- Receiving messages once
+- Receiving last messages
+- Receiving or skipping its own messages
+- Receiving and downloading media files
+  - including automatic decryption
+- Supports renaming of device
+- Supports notification via OS of received messages
+- Supports periodic execution via crontab
+- Supports room aliases
+- Provides PID files
+- Logging
+- In-source documentation
+- Can be run as a service
 
 # For Developers
 
@@ -422,7 +485,7 @@ optional arguments:
 
 """
 
-
+# automatically sorted by isort, then formatted by black
 import argparse
 import asyncio
 import datetime
@@ -446,6 +509,7 @@ import notify2
 from aiohttp import ClientConnectorError
 from markdown import markdown
 from nio import (
+    crypto,
     AsyncClient,
     AsyncClientConfig,
     KeyVerificationCancel,
@@ -458,13 +522,15 @@ from nio import (
     MatrixRoom,
     MessageDirection,
     ProfileGetAvatarResponse,
+    RedactedEvent,
+    RedactionEvent,
     RoomAliasEvent,
     RoomEncryptedAudio,
+    RoomEncryptionEvent,
     RoomEncryptedFile,
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
-    RoomEncryptionEvent,
     RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
@@ -480,6 +546,7 @@ from nio import (
     RoomMessageVideo,
     RoomNameEvent,
     RoomReadMarkersError,
+    RoomResolveAliasError,
     SyncError,
     SyncResponse,
     ToDeviceError,
@@ -487,6 +554,7 @@ from nio import (
     UpdateDeviceError,
     UploadResponse,
 )
+from urllib.parse import urlparse
 from PIL import Image
 
 # matrix-commander
@@ -516,6 +584,8 @@ STORE_PATH_LASTRESORT = os.path.normpath(
 STORE_DIR_LASTRESORT = os.path.normpath(
     (os.path.expanduser(STORE_PATH_LASTRESORT + "/" + STORE_DIR_DEFAULT))
 )
+# directory to be used for downloading media files
+MEDIA_DIR_DEFAULT = "./media/"
 # usually there are no permissions for using: /run/matrix-commander.pid
 # so instead local files like ~/.run/matrix-commander.some-uuid-here.pid will
 # be used for storing the PID(s) for sending signals.
@@ -537,6 +607,37 @@ TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
 VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
 RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -m is not specified
+
+
+def choose_available_filename(filename):
+    """Return next available filename.
+
+    If filename (includes path) does not exist,
+    then it returns filename. If file already
+    exists it adds a counter at end, before
+    extension, and increases counter until it
+    finds a filename that does not yet exist.
+    This avoids overwritting files when sources
+    have same name.
+    """
+    if os.path.exists(filename):
+        try:
+            start, ext = filename.rsplit(".", 1)
+        except ValueError:
+            start, ext = (filename, "")
+        i = 0
+        while os.path.exists(f"{start}_{i}.{ext}"):
+            i += 1
+        return f"{start}_{i}.{ext}"
+    else:
+        return filename
+
+
+async def download_mxc(client: AsyncClient, url: str):
+    """Download MXC resource."""
+    mxc = urlparse(url)
+    response = await client.download(mxc.netloc, mxc.path.strip("/"))
+    return response.body
 
 
 class Callbacks(object):
@@ -583,12 +684,51 @@ class Callbacks(object):
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
+                if pargs.download_media:
+                    # download unencrypted media file
+                    media_data = await download_mxc(self.client, media_mxc)
+                    filename = choose_available_filename(
+                        os.path.join(pargs.download_media, event.body)
+                    )
+                    async with aiofiles.open(filename, "wb") as f:
+                        await f.write(media_data)
+                        # Set atime and mtime of file to event timestamp
+                        os.utime(
+                            filename,
+                            ns=((event.server_timestamp * 1000000,) * 2),
+                        )
+                    msg_url += f" [Downloaded media file to {filename}]"
 
             if isinstance(event, RoomEncryptedMedia):  # for all e2e media
                 media_mxc = event.url
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
+                if pargs.download_media:
+                    # download encrypted media file
+                    media_data = await download_mxc(self.client, media_mxc)
+                    filename = choose_available_filename(
+                        os.path.join(pargs.download_media, event.body)
+                    )
+                    async with aiofiles.open(filename, "wb") as f:
+                        await f.write(
+                            crypto.attachments.decrypt_attachment(
+                                media_data,
+                                event.source["content"]["file"]["key"]["k"],
+                                event.source["content"]["file"]["hashes"][
+                                    "sha256"
+                                ],
+                                event.source["content"]["file"]["iv"],
+                            )
+                        )
+                        # Set atime and mtime of file to event timestamp
+                        os.utime(
+                            filename,
+                            ns=((event.server_timestamp * 1000000,) * 2),
+                        )
+                    msg_url += (
+                        f" [Downloaded and decrypted media file to {filename}]"
+                    )
 
             if isinstance(event, RoomMessageAudio):
                 msg = "Received audio: " + event.body + msg_url
@@ -630,13 +770,13 @@ class Callbacks(object):
                 msg = "Received encrypted media: " + event.body + msg_url
             elif isinstance(event, RoomMemberEvent):
                 msg = (
-                    "Received room-member event: sender: "
-                    f"{event.sender}, operation: {event.membership}"
+                    "Received room-member event: "
+                    f"sender: {event.sender}, operation: {event.membership}"
                 )
             elif isinstance(event, RoomEncryptionEvent):
                 msg = (
-                    "Received room-encryption event: sender: "
-                    f"{event.sender}"
+                    "Received room-encryption event: "
+                    f"sender: {event.sender}"
                 )
             elif isinstance(event, RoomAliasEvent):
                 msg = (
@@ -647,6 +787,18 @@ class Callbacks(object):
                 msg = (
                     "Received room-name event: sender: "
                     f"{event.sender}, room name: {event.name}"
+                )
+            elif isinstance(event, RedactedEvent):
+                msg = (
+                    "Received redacted event: "
+                    f"sender: {event.sender}, "
+                    f"type: {event.type}, redacter: {event.redacter}"
+                )
+            elif isinstance(event, RedactionEvent):
+                msg = (
+                    "Received redaction event: "
+                    f"sender: {event.sender}, "
+                    f"redacts: {event.redacts}"
                 )
             elif isinstance(event, UnknownEvent):
                 if event.type == "m.reaction":
@@ -893,6 +1045,18 @@ def notify(title: str, content: str, image_url: str):
         logger.debug(f"Showing notification for {title} failed.")
         print(traceback.format_exc())
         pass
+
+
+def is_room_alias(room_id: str) -> bool:
+    """Determine if room identifier is a room alias.
+
+    Alias are of syntax: #somealias:someserver
+
+    """
+    if room_id and len(room_id) > 3 and room_id[0] == "#":
+        return True
+    else:
+        return False
 
 
 async def get_avatar_url(client: AsyncClient, user_id: str) -> str:
@@ -1360,9 +1524,7 @@ async def send_file(client, rooms, file):
             await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            logger.debug(
-                f'This file was sent: "{file}" ' f'to room "{room_id}".'
-            )
+            logger.debug(f'This file was sent: "{file}" to room "{room_id}".')
     except Exception:
         logger.debug(
             f"File send of file {file} failed. "
@@ -1519,7 +1681,7 @@ async def send_image(client, rooms, image):
                 room_id, message_type="m.room.message", content=content
             )
             logger.debug(
-                f'This image file was sent: "{image}" ' f'to room "{room_id}".'
+                f'This image file was sent: "{image}" to room "{room_id}".'
             )
     except Exception:
         logger.debug(
@@ -1529,7 +1691,8 @@ async def send_image(client, rooms, image):
         logger.debug(traceback.format_exc())
 
 
-async def send_message(client, rooms, message):
+# according to linter: function is too complex, C901
+async def send_message(client, rooms, message):  # noqa: C901
     """Process message.
 
     Format messages according to instructions from command line arguments.
@@ -1591,6 +1754,15 @@ async def send_message(client, rooms, message):
 
     try:
         for room_id in rooms:
+            if is_room_alias(room_id):
+                resp = await client.room_resolve_alias(room_id)
+                if isinstance(resp, RoomResolveAliasError):
+                    print(f"room_resolve_alias failed with {resp}")
+                room_id = resp.room_id
+                logger.debug(
+                    f'Mapping room alias "{resp.room_alias}" to '
+                    f'room id "{resp.room_id}".'
+                )
             await client.room_send(
                 room_id,
                 message_type="m.room.message",
@@ -1598,7 +1770,7 @@ async def send_message(client, rooms, message):
                 ignore_unverified_devices=True,
             )
             logger.debug(
-                f'This message was sent: "{message}" ' f'to room "{room_id}".'
+                f'This message was sent: "{message}" to room "{room_id}".'
             )
     except Exception:
         logger.debug("Image send failed. Sorry. Here is the traceback.")
@@ -1912,7 +2084,10 @@ async def listen_forever(client: AsyncClient) -> None:
     """Listen forever or until Control-C."""
     # Set up event callbacks
     callbacks = Callbacks(client)
-    client.add_event_callback(callbacks.message_callback, (RoomMessage,))
+    client.add_event_callback(
+        callbacks.message_callback,
+        (RoomMessage, RedactedEvent, RedactionEvent,),
+    )
     print(
         "This program is ready and for its Matrix messages. To stop "
         "program type Control-C on keyboard or send signal to "
@@ -2426,6 +2601,45 @@ async def main_send() -> None:
         await client.close()
 
 
+def is_download_media_dir_valid() -> bool:
+    """Check if media download directory is correct."""
+    if not pargs.download_media:
+        return True  # "": that means no download of media, valid value
+    # normailzed for humans
+    dl = os.path.normpath(pargs.download_media)
+    pargs.download_media = dl
+    if os.path.isfile(dl):
+        logger.error(
+            f'"{dl}" cannot be used as media directory, because '
+            f'"{dl}" is a file. Specify a different directory for downloading '
+            "media."
+        )
+        return False
+    if os.path.isdir(dl):
+        if os.access(dl, os.W_OK):  # Check for write access
+            return True
+        else:
+            logger.error(
+                "Found an existing media download directory "
+                f'"{dl}". But this directory is lacking write '
+                "permissions. Add write permissions to it."
+            )
+            return False
+    else:
+        # not a file, not a directory, create directory
+        mode = 0o777
+        try:
+            os.mkdir(dl, mode)
+        except OSError as exc:
+            logger.error(
+                "Could not create media download directory "
+                f"{dl} for you. ({exc})"
+            )
+            return False
+        logger.debug("Created media download directory " f'"{dl}" for you.')
+        return True
+
+
 # according to pylama: function too complex: C901 # noqa: C901
 def initial_check_of_args() -> None:  # noqa: C901
     """Check arguments."""
@@ -2522,6 +2736,13 @@ def initial_check_of_args() -> None:  # noqa: C901
         t = (
             "If neither --listen nor --tail are used, "
             "then --listen-self must not be used "
+            "either. Specify --listen or --tail "
+            "and run program again."
+        )
+    elif pargs.listen == NEVER and not pargs.download_media:
+        t = (
+            "If neither --listen nor --tail are used, "
+            "then --download-media must not be used "
             "either. Specify --listen or --tail "
             "and run program again."
         )
@@ -2862,6 +3083,24 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "By default messages from oneself are not printed.",
     )
     ap.add_argument(
+        "-u",
+        "--download-media",
+        type=str,
+        default="",  # if -u is not used
+        action="store",
+        nargs="?",  # makes the word optional
+        const=MEDIA_DIR_DEFAULT,  # when -u is used, but no dir added
+        help="If set and listening, "
+        "then program will download "
+        "received media files (e.g. image, audio, video, text, PDF files). "
+        "media will be downloaded to local directory. "
+        "By default, media will be downloaded to "
+        f'is "{MEDIA_DIR_DEFAULT}". '
+        "You can overwrite default with your preferred directory. "
+        "If media is encrypted it will be decrypted and stored decrypted. "
+        "By default media files will not be downloaded.",
+    )
+    ap.add_argument(
         "-o",
         "--os-notify",
         required=False,
@@ -2912,6 +3151,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     logger = logging.getLogger(PROG_WITHOUT_EXT)
 
     initial_check_of_args()
+    if not is_download_media_dir_valid():
+        sys.exit(1)
     create_pid_file()
 
     try:
@@ -2949,5 +3190,3 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         logger.debug("Keyboard interrupt received.")
     cleanup()
     sys.exit(1)
-
-# EOF
