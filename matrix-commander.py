@@ -684,7 +684,7 @@ class Callbacks(object):
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if pargs.download_media:
+                if (pargs.download_media != ""):
                     # download unencrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
@@ -704,7 +704,7 @@ class Callbacks(object):
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if pargs.download_media:
+                if (pargs.download_media != ""):
                     # download encrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
@@ -2739,7 +2739,7 @@ def initial_check_of_args() -> None:  # noqa: C901
             "either. Specify --listen or --tail "
             "and run program again."
         )
-    elif pargs.listen == NEVER and not pargs.download_media:
+    elif pargs.listen == NEVER and (pargs.download_media != ""):
         t = (
             "If neither --listen nor --tail are used, "
             "then --download-media must not be used "
