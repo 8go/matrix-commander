@@ -286,7 +286,7 @@ optional arguments:
                         specified room in order to send messages there.
                         Messages cannot be sent to arbitrary rooms. When
                         specifying the room id some shells require the
-                        exclamation mark to be escaped with a blackslash.
+                        exclamation mark to be escaped with a backslash.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
@@ -2824,7 +2824,7 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "in order to send messages there. Messages cannot "
         "be sent to arbitrary rooms. When specifying the "
         "room id some shells require the exclamation mark "
-        "to be escaped with a blackslash.",
+        "to be escaped with a backslash.",
     )
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
