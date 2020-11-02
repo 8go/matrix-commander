@@ -1,0 +1,44 @@
+= Matrix commander with Docker
+
+NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
+For other systems, this options has no influence and can be ignored or removed.
+
+== Building the image
+
+From the root folder of the git repository, run:
+
+```
+docker build -t matrix-commander . -f docker/Dockerfile
+```
+
+This will create an image called `matrix-commander`.
+
+
+== Using the image
+
+This image requires a folder where `matrix-commander` will store data for credentials and end-to-end encryption.
+This folder must be provided to further `run` commands using the `/data` mountpoint.
+
+=== Initialization (only do this once)
+
+Run this command to initialize the `matrix-commander` data folder with new credentials − you must answer all the questions that will pop up interactively (homeserver, username, etc.):
+```
+docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander
+```
+
+You can now use this data folder to send messages or verify your session.
+
+
+=== Send a message to a room
+
+Given an initialized data folder, run this command to send a message to a room:
+```
+docker run --rm -v /my/chosen/folder:/data:z matrix-commander -r "<room id>" -m "<some message>"
+```
+
+=== Verify the session 
+
+Given an initialized data folder, run this command to start the verification of the matrix-commander session from another existing matrix session:
+```
+docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --verify
+```
