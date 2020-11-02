@@ -1,0 +1,12 @@
+aiohttp
+aiofiles
+argparse
+asyncio
+datetime
+logging
+markdown
+matrix-nio[e2e]>=0.14.1
+notify2
+Pillow
+python_magic
+uuid
