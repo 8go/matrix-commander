@@ -43,7 +43,7 @@ Use cases for this program could be
 
 # Give it a Star
 If you like it, use it, fork it, make a Pull Request or contribute.
-Please give it a GitHub Star right now so others find it more easily. <3
+Please give it a :star: on GitHub right now so others find it more easily. :heart:
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
@@ -141,9 +141,11 @@ This simple Matrix client written in Python allows you to send and
 receive messages and verify other devices. End-to-end encryption is enabled
 by default and cannot be turned off.
 
-# Dependencies
+# Dependencies, Requirements
 
 - Python 3.8 or higher (3.7 will NOT work) installed
+- `libolm-dev` must be installed as it is required by `matrix-nio`
+  - `libolm-devel` on Debian/Ubuntu, `libolm-dev` on Fedora, `libolm` on MacOS
 - matrix-nio must be installed, see https://github.com/poljar/matrix-nio
   - pip3 install --user --upgrade matrix-nio[e2e]
 - python3 package markdown must be installed to support MarkDown format
@@ -154,10 +156,10 @@ by default and cannot be turned off.
   - pip3 install --user --upgrade notify2
 - python3 package urllib must be installed to support media download
   - pip3 install --user --upgrade urllib
-- this file must be installed, and should have execution permissions
+- the matrix-commander.py file must be installed, and should have execution permissions
   - chmod 755 matrix-commander.py
-- for a full list see the import statements at the beginning of the Python
-  source code.
+- for a full list or requirements look at the `requirements.txt` file
+  - `pip install -r requirements.txt` to automatically install all required Python packages
 
 # Examples of calling `matrix-commander`
 
