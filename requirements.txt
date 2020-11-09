@@ -1,9 +1,8 @@
 aiohttp
-aiofiles
+aiofiles<0.5.0,>=0.4.0
 argparse
 asyncio
 datetime
-logging
 markdown
 matrix-nio[e2e]>=0.14.1
 notify2
