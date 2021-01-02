@@ -287,6 +287,11 @@ optional arguments:
                         Messages cannot be sent to arbitrary rooms. When
                         specifying the room id some shells require the
                         exclamation mark to be escaped with a backslash.
+  -g ALIAS [ALIAS ...], --room-create ALIAS [ALIAS ...]
+                        Create this room or these rooms. One or multiple
+                        room aliases can be specified. The room (or multiple
+                        ones) provided in the arguments will be created.
+                        The user must be permitted to create rooms.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
@@ -512,6 +517,7 @@ from nio import (
     crypto,
     AsyncClient,
     AsyncClientConfig,
+    EnableEncryptionBuilder,
     KeyVerificationCancel,
     KeyVerificationEvent,
     KeyVerificationKey,
@@ -526,11 +532,11 @@ from nio import (
     RedactionEvent,
     RoomAliasEvent,
     RoomEncryptedAudio,
-    RoomEncryptionEvent,
     RoomEncryptedFile,
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
+    RoomEncryptionEvent,
     RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
@@ -1376,7 +1382,7 @@ def determine_rooms(room_id) -> list:
     if not pargs.room:
         logger.debug(
             "Room id was provided via credentials file. "
-            "No rooms given in commans line.  "
+            "No rooms given in commands line.  "
             f'Setting rooms to "{room_id}".'
         )
         return [room_id]  # list of 1
@@ -1392,6 +1398,19 @@ def determine_rooms(room_id) -> list:
             "from command line."
         )
         return rooms
+
+
+async def create_rooms(client):
+    for alias in pargs.room_create:
+        logger.debug(f'Creating room with alias "{alias}".')
+        result = await client.room_create(
+            alias=alias,
+            name=alias,
+            initial_state=[
+                EnableEncryptionBuilder().as_dict(),
+            ],
+        )
+        logger.debug(result)
 
 
 async def send_file(client, rooms, file):
@@ -2591,6 +2610,8 @@ async def main_send() -> None:
         # Required for participating in encrypted rooms
         if client.should_upload_keys:
             await client.keys_upload()
+        if pargs.room_create:
+            await create_rooms(client)
         # must sync first to get room ids for encrypted rooms
         # since we only send a msg and then stop we can use sync() instead of
         # sync_forever() (await client.sync_forever(30000, full_state=True))
@@ -2683,6 +2704,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
+        or pargs.room_create
         or pargs.listen != NEVER
         or pargs.rename_device
     ):
@@ -2699,6 +2721,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
+        or pargs.room_create
         or pargs.listen != NEVER
         or pargs.verify
     ):
@@ -2714,10 +2737,12 @@ def initial_check_of_args() -> None:  # noqa: C901
             "If --listen is specified, only listening can be done. "
             "No messages, images, or files can be sent."
         )
-    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
+    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and (
+        pargs.room or pargs.room_create
+    ):
         t = (
             "If --listen once or --listen forever are specified, "
-            "--room must not be specified because "
+            "--room or --room-create must not be specified because "
             "these options listen in ALL rooms."
         )
     elif (
@@ -2826,6 +2851,19 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "room id some shells require the exclamation mark "
         "to be escaped with a backslash.",
     )
+    ap.add_argument(
+        "-g",
+        "--room-create",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Create this room or these rooms. One or multiple "
+        "room aliases can be specified. The room (or multiple "
+        "ones) provided in the arguments will be created. "
+        "The user must be permitted to create rooms.",
+    )
+
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
     # e.g. message=[ 'm1', 'm2' ]
