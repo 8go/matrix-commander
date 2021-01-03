@@ -287,11 +287,14 @@ optional arguments:
                         Messages cannot be sent to arbitrary rooms. When
                         specifying the room id some shells require the
                         exclamation mark to be escaped with a backslash.
-  -g ALIAS [ALIAS ...], --room-create ALIAS [ALIAS ...]
+  --room-create ALIAS [ALIAS ...]
                         Create this room or these rooms. One or multiple
                         room aliases can be specified. The room (or multiple
                         ones) provided in the arguments will be created.
                         The user must be permitted to create rooms.
+  --room-invite USER [USER ...]
+                        Invite one ore more users to the rooms given via
+                        --room. The user must be permitted to invite users.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
