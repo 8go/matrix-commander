@@ -1106,7 +1106,7 @@ def create_pid_file() -> None:
     except Exception:
         logger.debug(
             f'Failed to create PID file "{PID_FILE_DEFAULT}" '
-            f"to store process id {pid}."
+            f"to store process id {os.getpid()}."
         )
 
 
