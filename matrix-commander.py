@@ -2194,9 +2194,9 @@ async def listen_forever(client: AsyncClient) -> None:
         (RoomMessage, RedactedEvent, RedactionEvent,),
     )
     print(
-        "This program is ready and for its Matrix messages. To stop "
-        "program type Control-C on keyboard or send signal to "
-        f"process {os.getpid()}. PID can also be found in "
+        "This program is ready and listening for its Matrix messages."
+        " To stop program type Control-C on keyboard or send signal"
+        f" to process {os.getpid()}. PID can also be found in "
         f'file "{PID_FILE_DEFAULT}".',
         flush=True,
     )
