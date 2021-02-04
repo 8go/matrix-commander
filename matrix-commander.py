@@ -2755,7 +2755,9 @@ def initial_check_of_args() -> None:  # noqa: C901
 
 # according to linter: function is too complex, C901
 if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
-    logging.basicConfig()  # initialize root logger, a must
+    logging.basicConfig(  # initialize root logger, a must
+        format="{levelname:>8}: {name:>16}: {message}", style="{"
+    )
     # set log level on root
     if "DEBUG" in os.environ:
         logging.getLogger().setLevel(logging.DEBUG)
