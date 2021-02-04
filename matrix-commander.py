@@ -2812,7 +2812,9 @@ def initial_check_of_args() -> None:  # noqa: C901
 
 # according to linter: function is too complex, C901
 if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
-    logging.basicConfig()  # initialize root logger, a must
+    logging.basicConfig(  # initialize root logger, a must
+        format="{levelname:>8}: {name:>16}: {message}", style="{"
+    )
     # set log level on root
     if "DEBUG" in os.environ:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -2842,9 +2844,10 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     ap.add_argument(
         "-d",
         "--debug",
-        required=False,
-        action="store_true",
-        help="Print debug information",
+        action="count",
+        default=0,
+        help="Print debug information. Use twice (-d -d) to enable debug "
+        "information for everthing.",
     )
     ap.add_argument(
         "-c",
@@ -3222,11 +3225,15 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     )
 
     pargs = ap.parse_args()
-    if pargs.debug:
-        # set log level on root logger
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger().info("Debug is turned on.")
+
     logger = logging.getLogger(PROG_WITHOUT_EXT)
+    if pargs.debug > 0:
+        if pargs.debug > 1:
+            # turn on debug logging for EVERYTHING
+            logging.getLogger().setLevel(logging.DEBUG)
+        # turn on debug logging for matrix-commander
+        logger.setLevel(logging.DEBUG)
+        logger.debug(f"Debug is turned on. debug={pargs.debug}")
 
     initial_check_of_args()
     if not is_download_media_dir_valid():
