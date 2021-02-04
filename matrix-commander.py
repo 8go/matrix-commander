@@ -399,6 +399,8 @@ optional arguments:
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
+  --print-event-id      If set and listening, then program will print also the
+                        event id foreach message or other event.
   -u [DOWNLOAD_MEDIA], --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
@@ -473,6 +475,10 @@ optional arguments:
 - then `flake` linter/formater
 - then `black` linter/formater
 - linelength: 79
+- isort $files
+- flake8 $files
+- python3 -m black  --line-length 79 $files
+
 
 # Things to do, Things missing
 
@@ -501,6 +507,7 @@ import textwrap
 import traceback
 import urllib.request
 import uuid
+from urllib.parse import urlparse
 
 import aiofiles
 import aiofiles.os
@@ -509,7 +516,6 @@ import notify2
 from aiohttp import ClientConnectorError
 from markdown import markdown
 from nio import (
-    crypto,
     AsyncClient,
     AsyncClientConfig,
     KeyVerificationCancel,
@@ -526,11 +532,11 @@ from nio import (
     RedactionEvent,
     RoomAliasEvent,
     RoomEncryptedAudio,
-    RoomEncryptionEvent,
     RoomEncryptedFile,
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
+    RoomEncryptionEvent,
     RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
@@ -553,8 +559,8 @@ from nio import (
     UnknownEvent,
     UpdateDeviceError,
     UploadResponse,
+    crypto,
 )
-from urllib.parse import urlparse
 from PIL import Image
 
 # matrix-commander
@@ -656,7 +662,8 @@ class Callbacks(object):
         try:
             logger.debug(
                 f"message_callback(): for room {room} received this "
-                f"event: {type(event)} {event}"
+                f"event: type: {type(event)}, event_id: {event.event_id}, "
+                f"event: {event}"
             )
             if not pargs.listen_self:
                 if event.sender == self.client.user:
@@ -684,7 +691,7 @@ class Callbacks(object):
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if (pargs.download_media != ""):
+                if pargs.download_media != "":
                     # download unencrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
@@ -704,7 +711,7 @@ class Callbacks(object):
                 media_url = await self.client.mxc_to_http(media_mxc)
                 logger.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if (pargs.download_media != ""):
+                if pargs.download_media != "":
                     # download encrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
@@ -827,11 +834,16 @@ class Callbacks(object):
             room_nick = room.display_name
             if not room_nick or room_nick == "Empty Room" or room_nick == "":
                 room_nick = "Undetermined"
+            if pargs.print_event_id:
+                event_id_detail = f" | {event.event_id}"
+            else:
+                event_id_detail = ""
             complete_msg = (
                 "Message received for room "
                 f"{room_nick} [{room.room_id}] | "
                 f"sender {sender_nick} "
                 f"[{event.sender}] | {event_datetime} | {msg}"
+                f"{event_id_detail}"
             )
             logger.debug(complete_msg)
             print(complete_msg, flush=True)
@@ -2744,7 +2756,7 @@ def initial_check_of_args() -> None:  # noqa: C901
             "If neither --listen nor --tail are used, "
             "then --download-media must not be used "
             "either. Specify --listen or --tail "
-            "and run program again."
+            f"and run program again. ({pargs.download_media})"
         )
     else:
         logger.debug("All arguments are valid. All checks passed.")
@@ -3083,6 +3095,15 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "By default messages from oneself are not printed.",
     )
     ap.add_argument(
+        # no single char flag
+        "--print-event-id",
+        required=False,
+        action="store_true",
+        help="If set and listening, "
+        "then program will print also the event id for"
+        "each message or other event.",
+    )
+    ap.add_argument(
         "-u",
         "--download-media",
         type=str,
@@ -3190,3 +3211,5 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         logger.debug("Keyboard interrupt received.")
     cleanup()
     sys.exit(1)
+
+# EOF
