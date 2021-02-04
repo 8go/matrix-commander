@@ -153,6 +153,7 @@ by default and cannot be turned off.
 - python3 package python_magic must be installed to support image sending
   - pip3 install --user --upgrade python_magic
 - python3 package notify2 must be installed to support OS notifications
+  - pip3 install --user --upgrade dbus-python # might be required on some platforms
   - pip3 install --user --upgrade notify2
 - python3 package urllib must be installed to support media download
   - pip3 install --user --upgrade urllib
