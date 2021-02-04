@@ -475,9 +475,9 @@ optional arguments:
 - then `flake` linter/formater
 - then `black` linter/formater
 - linelength: 79
-- isort $files
-- flake8 $files
-- python3 -m black  --line-length 79 $files
+  - isort matrix-commander.py
+  - flake8 matrix-commander.py
+  - python3 -m black --line-length 79 matrix-commander.py
 
 
 # Things to do, Things missing
