@@ -1991,44 +1991,47 @@ async def create_credentials_file(
             "was created for you."
         )
 
-    # Initialize the matrix client
-    client = AsyncClient(
-        homeserver, user_id, store_path=store_dir, config=client_config,
-    )
-
-    pw = getpass.getpass()
-    resp = await client.login(pw, device_name=device_name)
-    # check that we logged in succesfully
-    if isinstance(resp, LoginResponse):
-        # when writing, always write to primary location (e.g. .)
-        write_credentials_to_disk(
-            homeserver,
-            resp.user_id,
-            resp.device_id,
-            resp.access_token,
-            room_id,
-            pargs.credentials,
+    try:
+        # Initialize the matrix client
+        client = AsyncClient(
+            homeserver, user_id, store_path=store_dir, config=client_config,
         )
-        text = f"""
+
+        pw = getpass.getpass()
+        resp = await client.login(pw, device_name=device_name)
+        # check that we logged in succesfully
+        if isinstance(resp, LoginResponse):
+            # when writing, always write to primary location (e.g. .)
+            write_credentials_to_disk(
+                homeserver,
+                resp.user_id,
+                resp.device_id,
+                resp.access_token,
+                room_id,
+                pargs.credentials,
+            )
+            text = f"""
                 Log in using a password was successful.
                 Credentials were stored in file \"{pargs.credentials}\".
                 Run program \"{PROG_WITH_EXT}\" again to
                 login with credentials and to send a message.
                 If you plan on having many credential files, consider
                 moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
-        print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
-    else:
-        logger.info(
-            f"The program {PROG_WITH_EXT} failed. "
-            "Most likely wrong credentials were entered."
-            "Sorry."
-        )
-        logger.info(
-            f'homeserver="{homeserver}"; user="{user_id}"; '
-            f'room_id="{room_id}"'
-            f"Failed to log in: {resp}"
-        )
-    await client.close()
+            print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
+        else:
+            logger.info(
+                f"The program {PROG_WITH_EXT} failed. "
+                "Most likely wrong credentials were entered."
+                "Sorry."
+            )
+            logger.info(
+                f'homeserver="{homeserver}"; user="{user_id}"; '
+                f'room_id="{room_id}"'
+                f"Failed to log in: {resp}"
+            )
+    finally:
+        if client:
+            await client.close()
     cleanup()
     sys.exit(1)
 
@@ -2118,8 +2121,6 @@ async def listen_once(client: AsyncClient) -> None:
         logger.info(f"Sync failed. Error is: {resp}")
     # sync() forces the message_callback() to fire
     # for each new message presented in the sync().
-    # After sync() with message callbacks we are done: close and quit.
-    await client.close()
 
 
 async def listen_once_alternative(client: AsyncClient) -> None:
@@ -2230,7 +2231,6 @@ async def listen_once_alternative(client: AsyncClient) -> None:
                 logger.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
-    await client.close()
 
 
 # according to pylama: function too complex: C901 # noqa: C901
@@ -2261,16 +2261,13 @@ async def listen_tail(  # noqa: C901
     except ClientConnectorError:
         logger.info("sync() failed. Do you have connectivity to internet?")
         logger.debug(traceback.format_exc())
-        await client.close()
         return
     except Exception:
         logger.info("sync() failed.")
         logger.debug(traceback.format_exc())
-        await client.close()
         return
     if isinstance(resp_s, SyncError):
         logger.debug(f"sync failed with resp = {resp_s}")
-        await client.close()
         return
     # this prints a summary of all new messages currently waiting in the queue
     logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
@@ -2280,7 +2277,6 @@ async def listen_tail(  # noqa: C901
     logger.debug(f"client.rooms = {client.rooms}")
     if not resp_s.rooms.join:  # no Rooms!
         logger.debug(f"sync returned no rooms = {resp_s.rooms.join}")
-        await client.close()
         return
 
     # Set up event callbacks
@@ -2332,7 +2328,6 @@ async def listen_tail(  # noqa: C901
                 logger.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
-    await client.close()
 
 
 async def read_all_events_in_direction(
@@ -2412,16 +2407,13 @@ async def listen_all(  # noqa: C901
     except ClientConnectorError:
         logger.info("sync() failed. Do you have connectivity to internet?")
         logger.debug(traceback.format_exc())
-        await client.close()
         return
     except Exception:
         logger.info("sync() failed.")
         logger.debug(traceback.format_exc())
-        await client.close()
         return
     if isinstance(resp_s, SyncError):
         logger.debug(f"sync failed with resp = {resp_s}")
-        await client.close()
         return
     # this prints a summary of all new messages currently waiting in the queue
     logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
@@ -2431,7 +2423,6 @@ async def listen_all(  # noqa: C901
     logger.debug(f"client.rooms = {client.rooms}")
     if not resp_s.rooms.join:  # no Rooms!
         logger.debug(f"sync returned no rooms = {resp_s.rooms.join}")
-        await client.close()
         return
 
     # Set up event callbacks
@@ -2479,7 +2470,6 @@ async def listen_all(  # noqa: C901
                 logger.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
-    await client.close()
 
 
 async def main_listen() -> None:
@@ -2493,28 +2483,32 @@ async def main_listen() -> None:
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(
-        credentials_file, store_dir
-    )
-    # Sync encryption keys with the server
-    # Required for participating in encrypted rooms
-    if client.should_upload_keys:
-        await client.keys_upload()
-    logger.debug(f"Listening type: {pargs.listen}")
-    if pargs.listen == FOREVER:
-        await listen_forever(client)
-    elif pargs.listen == ONCE:
-        await listen_once(client)
-        # await listen_once_alternative(client) # an alternative implementation
-    elif pargs.listen == TAIL:
-        await listen_tail(client, credentials)
-    elif pargs.listen == ALL:
-        await listen_all(client, credentials)
-    else:
-        logger.debug(
-            f'Unrecognized listening type "{pargs.listen}". ' "Closing client."
+    try:
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
         )
-        await client.close()
+        # Sync encryption keys with the server
+        # Required for participating in encrypted rooms
+        if client.should_upload_keys:
+            await client.keys_upload()
+        logger.debug(f"Listening type: {pargs.listen}")
+        if pargs.listen == FOREVER:
+            await listen_forever(client)
+        elif pargs.listen == ONCE:
+            await listen_once(client)
+            # await listen_once_alternative(client) # an alternative implementation
+        elif pargs.listen == TAIL:
+            await listen_tail(client, credentials)
+        elif pargs.listen == ALL:
+            await listen_all(client, credentials)
+        else:
+            logger.debug(
+                f'Unrecognized listening type "{pargs.listen}". '
+                "Closing client."
+            )
+    finally:
+        if client:
+            await client.close()
 
 
 async def main_rename_device() -> None:
@@ -2528,16 +2522,19 @@ async def main_rename_device() -> None:
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(
-        credentials_file, store_dir
-    )
-    content = {"display_name": pargs.rename_device}
-    resp = await client.update_device(credentials["device_id"], content)
-    if isinstance(resp, UpdateDeviceError):
-        logger.debug(f"update_device failed with {resp}")
-    else:
-        logger.debug(f"update_device successful with {resp}")
-    await client.close()
+    try:
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
+        )
+        content = {"display_name": pargs.rename_device}
+        resp = await client.update_device(credentials["device_id"], content)
+        if isinstance(resp, UpdateDeviceError):
+            logger.debug(f"update_device failed with {resp}")
+        else:
+            logger.debug(f"update_device successful with {resp}")
+    finally:
+        if client:
+            await client.close()
 
 
 async def main_verify() -> None:
@@ -2551,26 +2548,29 @@ async def main_verify() -> None:
         cleanup()
         sys.exit(1)
     logger.debug("Credentials file does exist.")
-    client, credentials = login_using_credentials_file(
-        credentials_file, store_dir
-    )
-    # Set up event callbacks
-    callbacks = Callbacks(client)
-    client.add_to_device_callback(
-        callbacks.to_device_callback, (KeyVerificationEvent,)
-    )
-    # Sync encryption keys with the server
-    # Required for participating in encrypted rooms
-    if client.should_upload_keys:
-        await client.keys_upload()
-    print(
-        "This program is ready and waiting for the other party to initiate "
-        'an emoji verification with us by selecting "Verify by Emoji" '
-        "in their Matrix client."
-    )
-    # the sync_loop will be terminated by user hitting Control-C to stop
-    await client.sync_forever(timeout=30000, full_state=True)
-
+    try:
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
+        )
+        # Set up event callbacks
+        callbacks = Callbacks(client)
+        client.add_to_device_callback(
+            callbacks.to_device_callback, (KeyVerificationEvent,)
+        )
+        # Sync encryption keys with the server
+        # Required for participating in encrypted rooms
+        if client.should_upload_keys:
+            await client.keys_upload()
+        print(
+            "This program is ready and waiting for the other party to initiate "
+            'an emoji verification with us by selecting "Verify by Emoji" '
+            "in their Matrix client."
+        )
+        # the sync_loop will be terminated by user hitting Control-C to stop
+        await client.sync_forever(timeout=30000, full_state=True)
+    finally:
+        if client:
+            await client.close()
 
 async def main_send() -> None:
     """Create credentials, or use credentials to log in and send messages."""
@@ -2579,8 +2579,8 @@ async def main_send() -> None:
     if not os.path.isfile(credentials_file):
         logger.debug("Credentials file does not exist.")
         await create_credentials_file(credentials_file, store_dir)
-    else:
-        logger.debug("Credentials file does exist.")
+    logger.debug("Credentials file does exist.")
+    try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
@@ -2598,7 +2598,9 @@ async def main_send() -> None:
         # Now we can send messages as the user
         await process_arguments_and_input(client, rooms)
         logger.debug("Messages were sent. We close the client and quit")
-        await client.close()
+    finally:
+        if client:
+            await client.close()
 
 
 def is_download_media_dir_valid() -> bool:
