@@ -885,8 +885,8 @@ class Callbacks(object):
                 "Message received for room "
                 f"{room_nick} [{room.room_id}] | "
                 f"sender {sender_nick} "
-                f"[{event.sender}] | {event_datetime} | {msg}"
-                f"{event_id_detail}"
+                f"[{event.sender}] | {event_datetime}"
+                f"{event_id_detail} | {msg}"
             )
             logger.debug(complete_msg)
             print(complete_msg, flush=True)
