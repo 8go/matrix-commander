@@ -9,11 +9,12 @@ r"""matrix-commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](matrix-commander-logo.svg)
+![logo](logos/matrix-commander-logo.svg)
 
 # matrix-commander
 
-Simple but convenient CLI-based Matrix client app for sending and receiving.
+Simple but convenient CLI-based Matrix client app for sending, receiving, 
+creating rooms, inviting, verifying, and so much more.
 
 - `matrix-commander` is a simple command-line [Matrix](https://matrix.org/)
   client.
@@ -22,6 +23,8 @@ Simple but convenient CLI-based Matrix client app for sending and receiving.
       other arbitrary files
     - listen to and receive Matrix messages
     - perform Matrix emoji verification
+    - create rooms
+    -invite to rooms
 - It exclusively offers a command-line interface (CLI).
 - Hence the word-play: matrix-command(lin)er
 - There is no GUI and there are no windows (except for pop-up windows in
@@ -50,7 +53,8 @@ Use cases for this program could be
 
 # Give it a Star
 If you like it, use it, fork it, make a Pull Request or contribute.
-Please give it a GitHub Star right now so others find it more easily. <3
+Please give it a :star: on Github right now so others find it more easily.
+:heart:
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
@@ -156,6 +160,8 @@ by default and cannot be turned off.
 # Dependencies
 
 - Python 3.8 or higher (3.7 will NOT work) installed
+- libolm-dev must be installed as it is required by matrix-nio
+  - libolm-dev on Debian/Ubuntu, libolm-devel on Fedora, libolm on MacOS
 - matrix-nio must be installed, see https://github.com/poljar/matrix-nio
   - pip3 install --user --upgrade matrix-nio[e2e]
 - python3 package markdown must be installed to support MarkDown format
@@ -175,7 +181,8 @@ by default and cannot be turned off.
   - run `pip install -r requirements.txt` to automatically install 
     all required Python packages
   - if you e.g. run on a headless server and don't want dbus-python and
-    notify2, please remove these 2 lines from the `requirements.txt` file
+    notify2, please remove the corresponding 2 lines from 
+    the `requirements.txt` file
 
 # Examples of calling `matrix-commander`
 
@@ -508,12 +515,13 @@ optional arguments:
 # Things to do, Things missing
 
 - help me add config file handling
+- see Issues on Github
 
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
 - Enjoy!
-- Pull requests are welcome  <3
+- Pull requests are welcome  :heart:
 
 """
 
