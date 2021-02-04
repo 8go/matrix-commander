@@ -287,6 +287,14 @@ optional arguments:
                         Messages cannot be sent to arbitrary rooms. When
                         specifying the room id some shells require the
                         exclamation mark to be escaped with a backslash.
+  --room-create ALIAS [ALIAS ...]
+                        Create this room or these rooms. One or multiple
+                        room aliases can be specified. The room (or multiple
+                        ones) provided in the arguments will be created.
+                        The user must be permitted to create rooms.
+  --room-invite USER [USER ...]
+                        Invite one ore more users to the rooms given via
+                        --room. The user must be permitted to invite users.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
@@ -512,6 +520,7 @@ from nio import (
     crypto,
     AsyncClient,
     AsyncClientConfig,
+    EnableEncryptionBuilder,
     KeyVerificationCancel,
     KeyVerificationEvent,
     KeyVerificationKey,
@@ -526,11 +535,11 @@ from nio import (
     RedactionEvent,
     RoomAliasEvent,
     RoomEncryptedAudio,
-    RoomEncryptionEvent,
     RoomEncryptedFile,
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
+    RoomEncryptionEvent,
     RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
@@ -1376,7 +1385,7 @@ def determine_rooms(room_id) -> list:
     if not pargs.room:
         logger.debug(
             "Room id was provided via credentials file. "
-            "No rooms given in commans line.  "
+            "No rooms given in commands line.  "
             f'Setting rooms to "{room_id}".'
         )
         return [room_id]  # list of 1
@@ -1392,6 +1401,45 @@ def determine_rooms(room_id) -> list:
             "from command line."
         )
         return rooms
+
+
+async def create_rooms(client):
+    for alias in pargs.room_create:
+        logger.debug(f'Creating room with alias "{alias}".')
+        result = await client.room_create(
+            alias=alias,
+            initial_state=[
+                EnableEncryptionBuilder().as_dict(),
+            ],
+        )
+        logger.info(
+            f'Created room "{alias}".'
+        )
+
+
+async def invite_to_rooms(client, rooms, users):
+    try:
+        for room_id in rooms:
+            if is_room_alias(room_id):
+                resp = await client.room_resolve_alias(room_id)
+                if isinstance(resp, RoomResolveAliasError):
+                    print(f"room_resolve_alias failed with {resp}")
+                room_id = resp.room_id
+                logger.debug(
+                    f'Mapping room alias "{resp.room_alias}" to '
+                    f'room id "{resp.room_id}".'
+                )
+            for user in users:
+                await client.room_invite(
+                    room_id,
+                    user
+                )
+                logger.info(
+                    f'User "{user}" was invited to "{room_id}".'
+                )
+    except Exception:
+        logger.debug("User invite failed. Sorry. Here is the traceback.")
+        logger.debug(traceback.format_exc())
 
 
 async def send_file(client, rooms, file):
@@ -1524,7 +1572,7 @@ async def send_file(client, rooms, file):
             await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            logger.debug(f'This file was sent: "{file}" to room "{room_id}".')
+            logger.info(f'This file was sent: "{file}" to room "{room_id}".')
     except Exception:
         logger.debug(
             f"File send of file {file} failed. "
@@ -1769,11 +1817,11 @@ async def send_message(client, rooms, message):  # noqa: C901
                 content=content,
                 ignore_unverified_devices=True,
             )
-            logger.debug(
+            logger.info(
                 f'This message was sent: "{message}" to room "{room_id}".'
             )
     except Exception:
-        logger.debug("Image send failed. Sorry. Here is the traceback.")
+        logger.debug("Message send failed. Sorry. Here is the traceback.")
         logger.debug(traceback.format_exc())
 
 
@@ -2591,6 +2639,10 @@ async def main_send() -> None:
         # Required for participating in encrypted rooms
         if client.should_upload_keys:
             await client.keys_upload()
+        if pargs.room_create:
+            await create_rooms(client)
+        if pargs.room_invite and pargs.room:
+            await invite_to_rooms(client, pargs.room, pargs.room_invite)
         # must sync first to get room ids for encrypted rooms
         # since we only send a msg and then stop we can use sync() instead of
         # sync_forever() (await client.sync_forever(30000, full_state=True))
@@ -2683,6 +2735,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
+        or pargs.room_create
         or pargs.listen != NEVER
         or pargs.rename_device
     ):
@@ -2699,6 +2752,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
+        or pargs.room_create
+        or pargs.room_invite
         or pargs.listen != NEVER
         or pargs.verify
     ):
@@ -2714,10 +2769,12 @@ def initial_check_of_args() -> None:  # noqa: C901
             "If --listen is specified, only listening can be done. "
             "No messages, images, or files can be sent."
         )
-    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
+    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and (
+        pargs.room or pargs.room_create or pargs.room_invite
+    ):
         t = (
             "If --listen once or --listen forever are specified, "
-            "--room must not be specified because "
+            "--room or --room-create must not be specified because "
             "these options listen in ALL rooms."
         )
     elif (
@@ -2826,6 +2883,27 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "room id some shells require the exclamation mark "
         "to be escaped with a backslash.",
     )
+    ap.add_argument(
+        "--room-create",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Create this room or these rooms. One or multiple "
+        "room aliases can be specified. The room (or multiple "
+        "ones) provided in the arguments will be created. "
+        "The user must be permitted to create rooms.",
+    )
+    ap.add_argument(
+        "--room-invite",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Invite one ore more users to the rooms given via "
+        "--room. The user must be permitted to invite users.",
+    )
+
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
     # e.g. message=[ 'm1', 'm2' ]
