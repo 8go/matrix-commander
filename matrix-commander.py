@@ -513,7 +513,6 @@ import uuid
 import aiofiles
 import aiofiles.os
 import magic
-import notify2
 from aiohttp import ClientConnectorError
 from markdown import markdown
 from nio import (
@@ -565,6 +564,14 @@ from nio import (
 )
 from urllib.parse import urlparse
 from PIL import Image
+
+try:
+    import notify2
+
+    HAVE_NOTIFY = True
+except ImportError:
+    HAVE_NOTIFY = False
+
 
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
@@ -1038,6 +1045,14 @@ def notify(title: str, content: str, image_url: str):
     If the system is running headless or any problem happens with
     operating system notifications, ignore it.
     """
+    if not HAVE_NOTIFY:
+        logger.warning(
+            "notify2 or dbus is not installed. Notifications will not be "
+            "displayed.\n"
+            "Check notify2 and dbus are installed or remove the "
+            "--os-notify option."
+        )
+        return
     try:
         if image_url:
             notused, avatar_file = tempfile.mkstemp()
