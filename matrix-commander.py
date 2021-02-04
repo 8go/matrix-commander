@@ -24,7 +24,7 @@ creating rooms, inviting, verifying, and so much more.
     - listen to and receive Matrix messages
     - perform Matrix emoji verification
     - create rooms
-    -invite to rooms
+    - invite to rooms
 - It exclusively offers a command-line interface (CLI).
 - Hence the word-play: matrix-command(lin)er
 - There is no GUI and there are no windows (except for pop-up windows in
