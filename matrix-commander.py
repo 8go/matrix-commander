@@ -13,7 +13,7 @@ https://github.com/poljar/matrix-nio)
 
 # matrix-commander
 
-Simple but convenient CLI-based Matrix client app for sending, receiving, 
+Simple but convenient CLI-based Matrix client app for sending, receiving,
 creating rooms, inviting, verifying, and so much more.
 
 - `matrix-commander` is a simple command-line [Matrix](https://matrix.org/)
@@ -146,10 +146,12 @@ The program can accept verification request and verify other devices
 via emojis. Do do so use the --verify option and the program will
 await incoming verification request and act accordingly.
 
-# Creating Rooms and Sending Invitations
+# Room Operations, Actions on Rooms
 
-The program can create rooms and send invitations to join rooms to
-others (given that user has the appropriate permissions).
+The program can create rooms, join, leave and forget rooms.
+It can also send invitations to join rooms to
+others (given that user has the appropriate permissions) as
+well as ban, unban and kick other users from rooms.
 
 # Summary, TLDR
 
@@ -174,14 +176,14 @@ by default and cannot be turned off.
   - pip3 install --user --upgrade notify2 # optional
 - python3 package urllib must be installed to support media download
   - pip3 install --user --upgrade urllib
-- the matrix-commander.py file must be installed, and should have 
+- the matrix-commander.py file must be installed, and should have
   execution permissions
   - chmod 755 matrix-commander.py
 - for a full list or requirements look at the `requirements.txt` file
-  - run `pip install -r requirements.txt` to automatically install 
+  - run `pip install -r requirements.txt` to automatically install
     all required Python packages
   - if you e.g. run on a headless server and don't want dbus-python and
-    notify2, please remove the corresponding 2 lines from 
+    notify2, please remove the corresponding 2 lines from
     the `requirements.txt` file
 
 # Examples of calling `matrix-commander`
@@ -230,7 +232,7 @@ $ # send 1 image and no text
 $ matrix-commander.py -i photo1.jpg -m ""
 $ # send 1 audio and 1 text to 2 rooms
 $ matrix-commander.py -a song.mp3 -m "Do you like this song?" \
-    -r "!someroom1:example.com" "!someroom2:example.com"
+    -r '!someroom1:example.com' '!someroom2:example.com'
 $ # send a .pdf file and a video with a text
 $ matrix-commander.py -f example.pdf video.mp4 -m "Here are the promised files"
 $ # listen forever, get msgs in real-time and notify me via OS
@@ -255,6 +257,41 @@ $ matrix-commander.py --rename-device "my new name"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
+$ # create rooms without name and topic, just with alias, use a simple alias
+$ matrix-commander.py --room-create roomAlias1
+$ # don't use a well formed alias like '#roomAlias1:example.com' as it will
+$ # confuse the server!
+$ # BAD: matrix-commander.py --room-create roomAlias1 '#roomAlias1:example.com'
+$ matrix-commander.py --room-create roomAlias2
+$ # create rooms with name and topic
+$ matrix-commander.py --room-create roomAlias3 --name 'Fancy Room' \
+    --topic 'All about Matrix'
+$ matrix-commander.py --room-create roomAlias4 roomAlias5 \
+    --name 'Fancy Room 4' -name 'Cute Room 5' \
+    --topic 'All about Matrix 4' 'All about Nio 5'
+$ # join rooms
+$ matrix-commander.py --room-join '!someroomId1:example.com' \
+    '!someroomId2:example.com' '#roomAlias1:example.com'
+$ # leave rooms
+$ matrix-commander.py --room-leave '#roomAlias1:example.com' \
+    '!someroomId2:example.com'
+$ # forget rooms, you have to first leave a room before you forget it
+$ matrix-commander.py --room-forget '#roomAlias1:example.com'
+$ # invite users to rooms
+$ matrix-commander.py --room-invite '#roomAlias1:example.com' \
+    --user '@user1:example.com' '@user2:example.com'
+$ # ban users from rooms
+$ matrix-commander.py --room-ban '!someroom1:example.com' \
+    '!someroom2:example.com' \
+    --user '@user1:example.com' '@user2:example.com'
+$ # unban users from rooms, remember after unbanning you have to invite again
+$ matrix-commander.py --room-unban '!someroom1:example.com' \
+    '!someroom2:example.com' \
+    --user '@user1:example.com' '@user2:example.com'
+$ # kick users from rooms
+$ matrix-commander.py --room-kick '!someroom1:example.com' \
+    '#roomAlias2:example.com' \
+    --user '@user1:example.com' '@user2:example.com'
 
 ```
 
@@ -262,41 +299,49 @@ $ matrix-commander.py --listen forever --listen-self --download-media mymedia
 ```
 usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
+                           [--room-join ROOM_JOIN [ROOM_JOIN ...]]
+                           [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
+                           [--room-forget ROOM_FORGET [ROOM_FORGET ...]]
                            [--room-invite ROOM_INVITE [ROOM_INVITE ...]]
+                           [--room-ban ROOM_BAN [ROOM_BAN ...]]
+                           [--room-unban ROOM_UNBAN [ROOM_UNBAN ...]]
+                           [--room-kick ROOM_KICK [ROOM_KICK ...]]
+                           [--user USER [USER ...]] [--name NAME [NAME ...]]
+                           [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
                            [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [-v [VERIFY]] [-x RENAME_DEVICE] [--version]
 
-On first run this program will configure itself. On further runs this program
-implements a simple Matrix CLI client that can send messages, listen to
-messages and verify devices. It can send one or multiple message to one or
-multiple Matrix rooms. The text messages can be of various formats such as
-"text", "html", "markdown" or "code". Images, audio or arbitrary files can be
-sent as well. For receiving there are three main options: listen forever,
-listen once and quit, and get the last N messages and quit. Emoji
-verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. matrix-nio
-(https://github.com/poljar/matrix-nio) and end-to-end encryption packages
-must be installed. See dependencies in source code (or README.md). For even
-more explications run this program with the --help option or read the full
-documentation in the source code.
+Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
+program will configure itself. On further runs this program implements a
+simple Matrix CLI client that can send messages, listen to messages, verify
+devices, etc. It can send one or multiple message to one or multiple Matrix
+rooms. The text messages can be of various formats such as "text", "html",
+"markdown" or "code". Images, audio or arbitrary files can be sent as well.
+For receiving there are three main options: listen forever, listen once and
+quit, and get the last N messages and quit. Emoji verification is built-in
+which can be used to verify devices. End-to-end encryption is enabled by
+default and cannot be turned off. ─── See dependencies in source code or in
+README.md on Github. For even more explications and examples also read the
+documentation provided in the top portion of the source code and in the
+GithubREADME.md file.
 
 optional arguments:
   -h, --help            show this help message and exit
   -d, --debug           Print debug information. Use twice (-d -d) to enable
-                        debug information for everthing.
+                        more verbose debugging information.
   -c CREDENTIALS, --credentials CREDENTIALS
-                        On first run, information about homeserver, user,
-                        room id, etc. will be written to a credentials file.
-                        By default, this file is "credentials.json". On
-                        further runs the credentials file is read to permit
-                        logging into the correct Matrix account and sending
-                        messages to the preconfigured room. If this option is
-                        provided, the provided file name will be used as
-                        credentials file instead of the default one.
+                        On first run, information about homeserver, user, room
+                        id, etc. will be written to a credentials file. By
+                        default, this file is "credentials.json". On further
+                        runs the credentials file is read to permit logging
+                        into the correct Matrix account and sending messages
+                        to the preconfigured room. If this option is provided,
+                        the provided file name will be used as credentials
+                        file instead of the default one.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
                         Send to this room or these rooms. None, one or
                         multiple rooms can be specified. The default room is
@@ -312,26 +357,82 @@ optional arguments:
                         Create this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
                         provided in the arguments will be created. The user
-                        must be permitted to create rooms.
+                        must be permitted to create rooms.Combine --room-
+                        create with --name and --topic to add names and topics
+                        to the room(s) to be created.
+  --room-join ROOM_JOIN [ROOM_JOIN ...]
+                        Join this room or these rooms. One or multiple room
+                        aliases can be specified. The room (or multiple ones)
+                        provided in the arguments will be joined. The user
+                        must have permissions to join these rooms.
+  --room-leave ROOM_LEAVE [ROOM_LEAVE ...]
+                        Leave this room or these rooms. One or multiple room
+                        aliases can be specified. The room (or multiple ones)
+                        provided in the arguments will be left.
+  --room-forget ROOM_FORGET [ROOM_FORGET ...]
+                        After leaving a room you should (most likely) forget
+                        the room. Forgetting a room removes the users' room
+                        history. One or multiple room aliases can be
+                        specified. The room (or multiple ones) provided in the
+                        arguments will be forgotten. If all users forget a
+                        room, the room can eventually be deleted on the
+                        server.
   --room-invite ROOM_INVITE [ROOM_INVITE ...]
-                        Invite one ore more users to the rooms given via
-                        --room. The user must be permitted to invite users.
+                        Invite one ore more users to join one or more rooms.
+                        Specify the user(s) as arguments to --user. Specify
+                        the rooms as arguments to this option, i.e. as
+                        arguments to --room-invite. The user must have
+                        permissions to invite users.
+  --room-ban ROOM_BAN [ROOM_BAN ...]
+                        Ban one ore more users from one or more rooms. Specify
+                        the user(s) as arguments to --user. Specify the rooms
+                        as arguments to this option, i.e. as arguments to
+                        --room-ban. The user must have permissions to ban
+                        users.
+  --room-unban ROOM_UNBAN [ROOM_UNBAN ...]
+                        Unban one ore more users from one or more rooms.
+                        Specify the user(s) as arguments to --user. Specify
+                        the rooms as arguments to this option, i.e. as
+                        arguments to --room-unban. The user must have
+                        permissions to unban users.
+  --room-kick ROOM_KICK [ROOM_KICK ...]
+                        Kick one ore more users from one or more rooms.
+                        Specify the user(s) as arguments to --user. Specify
+                        the rooms as arguments to this option, i.e. as
+                        arguments to --room-kick. The user must have
+                        permissions to kick users.
+  --user USER [USER ...]
+                        Specify one or multiple users. This option is only
+                        meaningful in combination with options like --room-
+                        invite, --room-ban, --room-unban, --room-kick. This
+                        option --user specifies the users to be used with
+                        these other room commands (like invite, ban, etc.)
+  --name NAME [NAME ...]
+                        Specify one or multiple names. This option is only
+                        meaningful in combination with option --room-create.
+                        This option --name specifies the names to be used with
+                        the command --room-create.
+  --topic TOPIC [TOPIC ...]
+                        Specify one or multiple topics. This option is only
+                        meaningful in combination with option --room-create.
+                        This option --topic specifies the topics to be used
+                        with the command --room-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
-                        stdin, i.e. keyboard. This option can be used
-                        multiple time to send multiple messages. If there is
-                        data is piped into this program, then first data from
-                        the pipe is published, then messages from this option
-                        are published.
+                        stdin, i.e. keyboard. This option can be used multiple
+                        time to send multiple messages. If there is data is
+                        piped into this program, then first data from the pipe
+                        is published, then messages from this option are
+                        published.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
-                        Send this image. This option can be used multiple
-                        time to send multiple images. First images are send,
-                        then text messages are send.
+                        Send this image. This option can be used multiple time
+                        to send multiple images. First images are send, then
+                        text messages are send.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
-                        Send this audio file. This option can be used
-                        multiple time to send multiple audio files. First
-                        audios are send, then text messages are send.
+                        Send this audio file. This option can be used multiple
+                        time to send multiple audio files. First audios are
+                        send, then text messages are send.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
                         be used multiple time to send multiple files. First
@@ -359,10 +460,10 @@ optional arguments:
                         default, i.e. if not set, no messages will be split.
   -j CONFIG, --config CONFIG
                         Location of a config file. By default, no config file
-                        is used. If this option is provided, the provided
-                        file name will be used to read configuration from.
-  -n, --notice          Send message as notice. If not specified, message
-                        will be sent as text.
+                        is used. If this option is provided, the provided file
+                        name will be used to read configuration from.
+  -n, --notice          Send message as notice. If not specified, message will
+                        be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
                         always turned on and will always be used where
                         possible. It cannot be turned off. This flag does
@@ -375,62 +476,61 @@ optional arguments:
                         needed. If this option is provided, the provided
                         directory name will be used as persistent storage
                         directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same
-                        store for the same device. The store directory can be
-                        shared between multiple different devices and users.
+                        multiple executions of this program use the same store
+                        for the same device. The store directory can be shared
+                        between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
-                        and "all". By default, --listen is set to "never".
-                        So, by default no listening will be done. Set it to
-                        "forever" to listen for and print incoming messages
-                        to stdout. "--listen forever" will listen to all
-                        messages on all rooms forever. To stop listening
-                        "forever", use Control-C on the keyboard or send a
-                        signal to the process or service. The PID for
-                        signaling can be found in a PID file in directory
-                        "/home/user/.run". "--listen once" will get all the
-                        messages from all rooms that are currently queued up.
-                        So, with "once" the program will start, print waiting
-                        messages (if any) and then stop. The timeout for
-                        "once" is set to 10 seconds. So, be patient, it might
-                        take up to that amount of time. "tail" reads and
-                        prints the last N messages from the specified rooms,
-                        then quits. The number N can be set with the --tail
-                        option. With "tail" some messages read might be old,
-                        i.e. already read before, some might be new, i.e.
-                        never read before. It prints the messages and then
-                        the program stops. Messages are sorted, last-first.
-                        Look at --tail as that option is related to --listen
-                        tail. The option "all" gets all messages available,
-                        old and new. Unlike "once" and "forever" that listen
-                        in ALL rooms, "tail" and "all" listen only to the
-                        room specified in the credentials file or the --room
-                        options. Furthermore, when listening to messages, no
-                        messages will be sent. Hence, when listening,
-                        --message must not be used and piped input will be
-                        ignored.
+                        and "all". By default, --listen is set to "never". So,
+                        by default no listening will be done. Set it to
+                        "forever" to listen for and print incoming messages to
+                        stdout. "--listen forever" will listen to all messages
+                        on all rooms forever. To stop listening "forever", use
+                        Control-C on the keyboard or send a signal to the
+                        process or service. The PID for signaling can be found
+                        in a PID file in directory "/home/user/.run". "--
+                        listen once" will get all the messages from all rooms
+                        that are currently queued up. So, with "once" the
+                        program will start, print waiting messages (if any)
+                        and then stop. The timeout for "once" is set to 10
+                        seconds. So, be patient, it might take up to that
+                        amount of time. "tail" reads and prints the last N
+                        messages from the specified rooms, then quits. The
+                        number N can be set with the --tail option. With
+                        "tail" some messages read might be old, i.e. already
+                        read before, some might be new, i.e. never read
+                        before. It prints the messages and then the program
+                        stops. Messages are sorted, last-first. Look at --tail
+                        as that option is related to --listen tail. The option
+                        "all" gets all messages available, old and new. Unlike
+                        "once" and "forever" that listen in ALL rooms, "tail"
+                        and "all" listen only to the room specified in the
+                        credentials file or the --room options. Furthermore,
+                        when listening to messages, no messages will be sent.
+                        Hence, when listening, --message must not be used and
+                        piped input will be ignored.
   -t [TAIL], --tail [TAIL]
                         The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
                         takes one argument, an integer, which we call N here.
-                        If there are fewer than N messages in a room, it
-                        reads and prints up to N messages. It gets the last N
-                        messages in reverse order. It print the newest
-                        message first, and the oldest message last. If
-                        --listen-self is not set it will print less than N
-                        messages in many cases because N messages are
-                        obtained, but some of them are discarded by default
-                        if they are from the user itself. Look at --listen as
-                        this option is related to --tail.Furthermore, when
-                        tailing messages, no messages will be sent. Hence,
-                        when tailing or listening, --message must not be used
-                        and piped input will be ignored.
+                        If there are fewer than N messages in a room, it reads
+                        and prints up to N messages. It gets the last N
+                        messages in reverse order. It print the newest message
+                        first, and the oldest message last. If --listen-self
+                        is not set it will print less than N messages in many
+                        cases because N messages are obtained, but some of
+                        them are discarded by default if they are from the
+                        user itself. Look at --listen as this option is
+                        related to --tail.Furthermore, when tailing messages,
+                        no messages will be sent. Hence, when tailing or
+                        listening, --message must not be used and piped input
+                        will be ignored.
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
-  --print-event-id      If set and listening, then program will print also
-                        the event id foreach message or other event.
+  --print-event-id      If set and listening, then program will print also the
+                        event id foreach message or other event.
   -u [DOWNLOAD_MEDIA], --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
@@ -438,8 +538,8 @@ optional arguments:
                         directory. By default, media will be downloaded to is
                         "./media/". You can overwrite default with your
                         preferred directory. If media is encrypted it will be
-                        decrypted and stored decrypted. By default media
-                        files will not be downloaded.
+                        decrypted and stored decrypted. By default media files
+                        will not be downloaded.
   -o, --os-notify       If set and listening, then program will attempt to
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
@@ -456,9 +556,11 @@ optional arguments:
                         send messages or files when you verify.
   -x RENAME_DEVICE, --rename-device RENAME_DEVICE
                         Rename the current device to the new device name
-                        provided. No other operations like sending,
-                        listening, or verifying are allowed when renaming the
-                        device.
+                        provided. No other operations like sending, listening,
+                        or verifying are allowed when renaming the device.
+  --version             Print version information. After printing version
+                        information program will continue to run. This is
+                        useful for having version number in the log files.
 ```
 
 # Features
@@ -488,7 +590,13 @@ optional arguments:
 - Receiving and downloading media files
   - including automatic decryption
 - Creating new rooms
-- Sending invitations to other users to join rooms
+- Joining rooms
+- Leaving rooms
+- Forgetting rooms
+- Inviting other users to rooms
+- Banning from rooms
+- Unbanning from rooms
+- Kicking from rooms
 - Supports renaming of device
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
@@ -504,7 +612,7 @@ optional arguments:
   sorted, linted and formated.
 - `pylama:format=pep8:linters=pep8`
 - first `isort` import sorter
-- then `flake` linter/formater
+- then `flake8` linter/formater
 - then `black` linter/formater
 - linelength: 79
   - isort matrix-commander.py
@@ -525,7 +633,7 @@ optional arguments:
 
 """
 
-# automatically sorted by isort, 
+# automatically sorted by isort,
 # then formatted by black --line-length 79
 import argparse
 import asyncio
@@ -553,6 +661,7 @@ from nio import (
     AsyncClient,
     AsyncClientConfig,
     EnableEncryptionBuilder,
+    JoinError,
     KeyVerificationCancel,
     KeyVerificationEvent,
     KeyVerificationKey,
@@ -566,12 +675,18 @@ from nio import (
     RedactedEvent,
     RedactionEvent,
     RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
     RoomEncryptedAudio,
     RoomEncryptedFile,
     RoomEncryptedImage,
     RoomEncryptedMedia,
     RoomEncryptedVideo,
     RoomEncryptionEvent,
+    RoomForgetError,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
     RoomMemberEvent,
     RoomMessage,
     RoomMessageAudio,
@@ -588,6 +703,7 @@ from nio import (
     RoomNameEvent,
     RoomReadMarkersError,
     RoomResolveAliasError,
+    RoomUnbanError,
     SyncError,
     SyncResponse,
     ToDeviceError,
@@ -606,6 +722,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 
+# version number
+VERSION = "2021-February-05"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -1088,7 +1206,7 @@ def notify(title: str, content: str, image_url: str):
         logger.warning(
             "notify2 or dbus is not installed. Notifications will not be "
             "displayed.\n"
-            "Check notify2 and dbus are installed or remove the "
+            "Make sure that notify2 and dbus are installed or remove the "
             "--os-notify option."
         )
         return
@@ -1418,8 +1536,8 @@ def determine_store_dir() -> str:
         "Could not find existing store directory anywhere. "
         "A new one will be created. "
     )
-    logger.info(text1 + text2)
-    print(text1 + text2)
+    logger.debug(text1 + text2)
+    print(textwrap.fill(textwrap.dedent(text1 + text2).strip(), width=79))
     return pargs_store_norm  # create in the specified, local dir without path
 
 
@@ -1457,43 +1575,242 @@ def determine_rooms(room_id) -> list:
         return rooms
 
 
-async def create_rooms(client):
-    for alias in pargs.room_create:
-        logger.debug(f'Creating room with alias "{alias}".')
-        result = await client.room_create(
-            alias=alias,
-            initial_state=[
-                EnableEncryptionBuilder().as_dict(),
-            ],
-        )
-        logger.info(
-            f'Created room "{alias}".'
-        )
+async def map_roomalias_to_roomid(client, alias) -> str:
+    """Attempt to convert room alias to room_id.
+
+    Arguments:
+    ---------
+    client : nio client
+    alias : can be an alias in the form of '#someRoomALias:example.com'
+        can also be a room_id in the form of '!someRoomId:example.com'
+
+    room_id : room from credentials file
+
+    If an alias try to get the corresponding room_id.
+    If anything fails it returns the original input.
+
+    Return corresponding room_id or on failure the original alias.
+
+    """
+    ret = alias
+    if is_room_alias(alias):
+        resp = await client.room_resolve_alias(alias)
+        if isinstance(resp, RoomResolveAliasError):
+            logger.error(
+                f"room_resolve_alias for alias {alias} failed with {resp}. "
+                f"Trying operation with input {alias} anyway. Might fail."
+            )
+        else:
+            ret = resp.room_id
+            logger.debug(
+                f'Mapped room alias "{alias}" to room id "{ret}". '
+                f"({resp.room_alias}, {resp.room_id})."
+            )
+    return ret
+
+
+async def create_rooms(client, room_aliases, names, topics):
+    """Create one or multiple rooms.
+
+    Arguments:
+    ---------
+    client : nio client
+    room_aliases : list of room aliases in the form of "sampleAlias"
+            These aliases will then be used by the server and
+            the server creates the definite alias in the form
+            of "#sampleAlias:example.com" from it.
+            Do not attempt to use "#sampleAlias:example.com"
+            as it will confuse the server.
+    names : list of names for rooms
+    topics : list of room topics
+
+    """
+    try:
+        index = 0
+        for alias in room_aliases:
+            alias = alias.replace(r"\!", "!")  # remove possible escape
+            # alias is a true alias, not a room id
+            # "alias1" will be converted into "#alias1:example.com"
+            try:
+                name = names[index]
+            except IndexError:
+                name = ""
+            try:
+                topic = topics[index]
+            except IndexError:
+                topic = ""
+            logger.debug(
+                f'Creating room with room alias "{alias}", '
+                f'name "{name}", and topic "{topic}".'
+            )
+            resp = await client.room_create(
+                alias=alias,
+                name=name,  # room name
+                topic=topic,  # room topic
+                initial_state=[EnableEncryptionBuilder().as_dict()],
+            )
+            if isinstance(resp, RoomCreateError):
+                logger.error(f"Room_create failed with {resp}")
+            else:
+                logger.info(f'Created room "{alias}".')
+            index = index + 1
+    except Exception:
+        logger.error("Room creation failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def join_rooms(client, rooms):
+    """Join one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            logger.debug(f'Joining room with room alias "{room_id}".')
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            resp = await client.join(room_id)
+            if isinstance(resp, JoinError):
+                logger.error(f"join failed with {resp}")
+            else:
+                logger.info(f'Joined room "{room_id}" successfully.')
+    except Exception:
+        logger.error("Joining rooms failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def leave_rooms(client, rooms):
+    """Leave one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            logger.debug(f'Leaving room with room alias "{room_id}".')
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            resp = await client.room_leave(room_id)
+            if isinstance(resp, RoomLeaveError):
+                logger.error(f"Leave failed with {resp}")
+            else:
+                logger.info(f'Left room "{room_id}".')
+    except Exception:
+        logger.error("Room leave failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def forget_rooms(client, rooms):
+    """Forget one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            logger.debug(f'Forgetting room with room alias "{room_id}".')
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            resp = await client.room_forget(room_id)
+            if isinstance(resp, RoomForgetError):
+                logger.error(f"Forget failed with {resp}")
+            else:
+                logger.info(f'Forgot room "{room_id}".')
+    except Exception:
+        logger.error("Room forget failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def invite_to_rooms(client, rooms, users):
+    """Invite one or multiple users to one or multiple rooms."""
     try:
         for room_id in rooms:
-            if is_room_alias(room_id):
-                resp = await client.room_resolve_alias(room_id)
-                if isinstance(resp, RoomResolveAliasError):
-                    print(f"room_resolve_alias failed with {resp}")
-                room_id = resp.room_id
-                logger.debug(
-                    f'Mapping room alias "{resp.room_alias}" to '
-                    f'room id "{resp.room_id}".'
-                )
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            room_id = await map_roomalias_to_roomid(client, room_id)
             for user in users:
-                await client.room_invite(
-                    room_id,
-                    user
+                logger.debug(
+                    f'Inviting user "{user}" to room with '
+                    f'room alias "{room_id}".'
                 )
-                logger.info(
-                    f'User "{user}" was invited to "{room_id}".'
-                )
+                resp = await client.room_invite(room_id, user)
+                if isinstance(resp, RoomInviteError):
+                    logger.error(f"room_invite failed with {resp}")
+                else:
+                    logger.info(
+                        f'User "{user}" was successfully invited '
+                        f'to room "{room_id}".'
+                    )
     except Exception:
-        logger.debug("User invite failed. Sorry. Here is the traceback.")
-        logger.debug(traceback.format_exc())
+        logger.error("User invite failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def ban_from_rooms(client, rooms, users):
+    """Ban one or multiple users from one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            for user in users:
+                logger.debug(
+                    f'Banning user "{user}" from room with '
+                    f'room alias "{room_id}".'
+                )
+                resp = await client.room_ban(room_id, user)
+                if isinstance(resp, RoomBanError):
+                    logger.error(f"room_ban failed with {resp}")
+                else:
+                    logger.info(
+                        f'User "{user}" was successfully banned '
+                        f'from room "{room_id}".'
+                    )
+    except Exception:
+        logger.error("User ban failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def unban_from_rooms(client, rooms, users):
+    """Unban one or multiple users from one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            for user in users:
+                logger.debug(
+                    f'Unbanning user "{user}" from room with '
+                    f'room alias "{room_id}".'
+                )
+                resp = await client.room_unban(room_id, user)
+                if isinstance(resp, RoomUnbanError):
+                    logger.error(f"room_unban failed with {resp}")
+                else:
+                    logger.info(
+                        f'User "{user}" was successfully unbanned '
+                        f'from room "{room_id}".'
+                    )
+    except Exception:
+        logger.error("User unban failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+async def kick_from_rooms(client, rooms, users):
+    """Kick one or multiple users from one or multiple rooms."""
+    try:
+        for room_id in rooms:
+            # room_id can be #roomAlias or !roomId
+            room_id = room_id.replace(r"\!", "!")  # remove possible escape
+            room_id = await map_roomalias_to_roomid(client, room_id)
+            for user in users:
+                logger.debug(
+                    f'Kicking user "{user}" from room with '
+                    f'room alias "{room_id}".'
+                )
+                resp = await client.room_kick(room_id, user)
+                if isinstance(resp, RoomKickError):
+                    logger.error(f"room_kick failed with {resp}")
+                else:
+                    logger.info(
+                        f'User "{user}" was successfully kicked '
+                        f'from room "{room_id}".'
+                    )
+    except Exception:
+        logger.error("User kick failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def send_file(client, rooms, file):
@@ -1628,11 +1945,8 @@ async def send_file(client, rooms, file):
             )
             logger.info(f'This file was sent: "{file}" to room "{room_id}".')
     except Exception:
-        logger.debug(
-            f"File send of file {file} failed. "
-            "Sorry. Here is the traceback."
-        )
-        logger.debug(traceback.format_exc())
+        logger.error(f"File send of file {file} failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def send_image(client, rooms, image):
@@ -1786,11 +2100,8 @@ async def send_image(client, rooms, image):
                 f'This image file was sent: "{image}" to room "{room_id}".'
             )
     except Exception:
-        logger.debug(
-            f"Image send of file {image} failed. "
-            "Sorry. Here is the traceback."
-        )
-        logger.debug(traceback.format_exc())
+        logger.error(f"Image send of file {image} failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 # according to linter: function is too complex, C901
@@ -1875,8 +2186,8 @@ async def send_message(client, rooms, message):  # noqa: C901
                 f'This message was sent: "{message}" to room "{room_id}".'
             )
     except Exception:
-        logger.debug("Message send failed. Sorry. Here is the traceback.")
-        logger.debug(traceback.format_exc())
+        logger.error("Message send failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 def get_messages_from_pipe() -> list:
@@ -2598,13 +2909,14 @@ async def main_listen() -> None:
             await listen_forever(client)
         elif pargs.listen == ONCE:
             await listen_once(client)
-            # await listen_once_alternative(client) # an alternative implementation
+            # could use 'await listen_once_alternative(client)'
+            # as an alternative implementation
         elif pargs.listen == TAIL:
             await listen_tail(client, credentials)
         elif pargs.listen == ALL:
             await listen_all(client, credentials)
         else:
-            logger.debug(
+            logger.error(
                 f'Unrecognized listening type "{pargs.listen}". '
                 "Closing client."
             )
@@ -2631,9 +2943,64 @@ async def main_rename_device() -> None:
         content = {"display_name": pargs.rename_device}
         resp = await client.update_device(credentials["device_id"], content)
         if isinstance(resp, UpdateDeviceError):
-            logger.debug(f"update_device failed with {resp}")
+            logger.error(f"update_device failed with {resp}")
         else:
             logger.debug(f"update_device successful with {resp}")
+    finally:
+        if client:
+            await client.close()
+
+
+# according to pylama: function too complex: C901 # noqa: C901
+
+
+async def main_room_actions() -> None:  # noqa: C901
+    """Perform various room actions such as create, join, etc."""
+    credentials_file = determine_credentials_file()
+    store_dir = determine_store_dir()
+    if not os.path.isfile(credentials_file):
+        logger.debug(
+            "Credentials file must be created first before one can verify."
+        )
+        cleanup()
+        sys.exit(1)
+    logger.debug("Credentials file does exist.")
+    try:
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
+        )
+        if pargs.room_create:
+            await create_rooms(
+                client, pargs.room_create, pargs.name, pargs.topic
+            )
+        if pargs.room_join:
+            await join_rooms(client, pargs.room_join)
+        if pargs.room_leave:
+            await leave_rooms(client, pargs.room_leave)
+        if pargs.room_forget:
+            await forget_rooms(client, pargs.room_forget)
+        if pargs.room_invite and pargs.user:
+            await invite_to_rooms(client, pargs.room_invite, pargs.user)
+        if pargs.room_ban and pargs.user:
+            await ban_from_rooms(client, pargs.room_ban, pargs.user)
+        if pargs.room_unban and pargs.user:
+            await unban_from_rooms(client, pargs.room_unban, pargs.user)
+        if pargs.room_kick and pargs.user:
+            await kick_from_rooms(client, pargs.room_kick, pargs.user)
+        if (
+            pargs.room_invite
+            or pargs.room_ban
+            or pargs.room_unban
+            or pargs.room_kick
+        ) and not pargs.user:
+            logger.warning(
+                "No room action(s) were performed because no users "
+                "were specified. Use --user option to specify users."
+            )
+        logger.debug(
+            "Room action(s) were performed or attempted. "
+            "We close the client and quit"
+        )
     finally:
         if client:
             await client.close()
@@ -2664,8 +3031,9 @@ async def main_verify() -> None:
         if client.should_upload_keys:
             await client.keys_upload()
         print(
-            "This program is ready and waiting for the other party to initiate "
-            'an emoji verification with us by selecting "Verify by Emoji" '
+            "This program is ready and waiting for the other party to "
+            "initiate an emoji verification with us by selecting "
+            '"Verify by Emoji"'
             "in their Matrix client."
         )
         # the sync_loop will be terminated by user hitting Control-C to stop
@@ -2673,6 +3041,7 @@ async def main_verify() -> None:
     finally:
         if client:
             await client.close()
+
 
 async def main_send() -> None:
     """Create credentials, or use credentials to log in and send messages."""
@@ -2693,10 +3062,6 @@ async def main_send() -> None:
         # Required for participating in encrypted rooms
         if client.should_upload_keys:
             await client.keys_upload()
-        if pargs.room_create:
-            await create_rooms(client)
-        if pargs.room_invite and pargs.room:
-            await invite_to_rooms(client, pargs.room, pargs.room_invite)
         # must sync first to get room ids for encrypted rooms
         # since we only send a msg and then stop we can use sync() instead of
         # sync_forever() (await client.sync_forever(30000, full_state=True))
@@ -2748,6 +3113,21 @@ def is_download_media_dir_valid() -> bool:
         return True
 
 
+def version() -> None:
+    """Print version info."""
+    version_info = (
+        "\n"
+        f" _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}\n"
+        " _|_|  _|_|    _|            _|     a Matrix CLI client\n"
+        " _|  _|  _|    _|              _|   \n"
+        f" _|      _|    _|            _|     version {VERSION}\n"
+        " _|      _|      _|_|_|    _|       enjoy and submit PRs\n"
+        "\n"
+    )
+    print(version_info)
+    logger.debug(version_info)
+
+
 # according to pylama: function too complex: C901 # noqa: C901
 def initial_check_of_args() -> None:  # noqa: C901
     """Check arguments."""
@@ -2762,6 +3142,20 @@ def initial_check_of_args() -> None:  # noqa: C901
     if pargs.listen == NEVER and pargs.tail != 0:
         pargs.listen = TAIL  # --tail turns on --listen TAIL
         logger.debug('--listen set to "tail" because "--tail" is used.')
+    if (
+        pargs.room_create
+        or pargs.room_join
+        or pargs.room_leave
+        or pargs.room_forget
+        or pargs.room_invite
+        or pargs.room_ban
+        or pargs.room_unban
+        or pargs.room_kick
+    ):
+        room_action = True
+    else:
+        room_action = False
+
     # Secondly, the checks
     if pargs.config:
         t = (
@@ -2791,14 +3185,15 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
-        or pargs.room_create
+        or room_action
         or pargs.listen != NEVER
         or pargs.rename_device
     ):
         t = (
             "If --verify is specified, only verify can be done. "
             "No messages, images, or files can be sent."
-            "No listening or tailing allowed. No renaming."
+            "No listening or tailing allowed. No renaming. "
+            "No actions on rooms."
         )
     elif pargs.rename_device and (pargs.rename_device == ""):
         t = "Don't use an empty name for --rename_device."
@@ -2808,29 +3203,46 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.audio
         or pargs.file
         or pargs.room
-        or pargs.room_create
-        or pargs.room_invite
+        or room_action
         or pargs.listen != NEVER
         or pargs.verify
     ):
         t = (
             "If --rename_device is specified, only rename can be done. "
             "No messages, images, or files can be sent."
-            "No listening or tailing allowed. No verification."
+            "No listening or tailing allowed. No verification. "
+            "No actions on rooms."
         )
     elif pargs.listen != NEVER and (
-        pargs.message or pargs.image or pargs.audio or pargs.file
+        pargs.message
+        or pargs.image
+        or pargs.audio
+        or pargs.file
+        or room_action
     ):
         t = (
             "If --listen is specified, only listening can be done. "
             "No messages, images, or files can be sent."
+            "No room actions allowed."
         )
-    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and (
-        pargs.room or pargs.room_create or pargs.room_invite
+    elif (pargs.message or pargs.image or pargs.audio or pargs.file) and (
+        pargs.listen != NEVER or room_action
     ):
         t = (
+            "If sending (-m, -i, -a, -f) is specified, only sending can be "
+            "done. No listening allowed. "
+            "No room actions allowed."
+        )
+    elif (pargs.user) and not room_action:
+        t = (
+            "If --user is specified, only room action can be "
+            "done. "
+            "Specify a room option like --room-create or remove --user."
+        )
+    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
+        t = (
             "If --listen once or --listen forever are specified, "
-            "--room or --room-create must not be specified because "
+            "--room must not be specified because "
             "these options listen in ALL rooms."
         )
     elif (
@@ -2869,7 +3281,7 @@ def initial_check_of_args() -> None:  # noqa: C901
 # according to linter: function is too complex, C901
 if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     logging.basicConfig(  # initialize root logger, a must
-        format="{levelname:>8}: {name:>16}: {message}", style="{"
+        format="{asctime}: {levelname:>8}: {name:>16}: {message}", style="{"
     )
     # set log level on root
     if "DEBUG" in os.environ:
@@ -2879,22 +3291,28 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
 
     # Construct the argument parser
     ap = argparse.ArgumentParser(
-        description="On first run this program will configure itself. "
-        "On further runs this program implements a simple Matrix CLI client "
-        "that can send messages, listen to messages and verify devices. "
-        "It can send one or multiple message to one or multiple Matrix  "
-        'rooms. The text messages can be of various formats such as "text", '
-        '"html", "markdown" or "code". Images, audio or arbitrary files '
-        "can be sent as well. For receiving there are three main options: "
-        "listen forever, listen once and quit, and get the last N messages "
-        "and quit. Emoji verification is built-in which can be used "
-        "to verify devices. End-to-end encryption is enabled by default "
-        "and cannot be turned off. "
-        "matrix-nio (https://github.com/poljar/matrix-nio) and end-to-end "
-        "encryption packages must be installed. "
-        "See dependencies in source code (or README.md). For even more "
-        "explications run this program with the --help option or read the "
-        "full documentation in the source code."
+        description=(
+            f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. ─── "
+            "On first run this program will configure itself. "
+            "On further runs this program implements a simple Matrix CLI "
+            "client that can send messages, listen to messages, verify "
+            "devices, etc. It can send one or multiple message to one or "
+            "multiple Matrix rooms. The text messages can be of various "
+            'formats such as "text", "html", "markdown" or "code". '
+            "Images, audio or arbitrary files can be sent as well. "
+            "For receiving there are three main options: listen forever, "
+            "listen once and quit, and get the last N messages "
+            "and quit. Emoji verification is built-in which can be used "
+            "to verify devices. End-to-end encryption is enabled by default "
+            "and cannot be turned off.  ─── "
+            "See dependencies in source code or in README.md on Github. "
+            "For even more explications and examples also read the "
+            "documentation provided in the top portion of the source code  "
+            "and in the GithubREADME.md file."
+        ),
+        epilog="You are running "
+        f"version {VERSION}. Enjoy, star on Github and contribute by "
+        "submitting a Pull Request. ",
     )
     # Add the arguments to the parser
     ap.add_argument(
@@ -2902,8 +3320,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "--debug",
         action="count",
         default=0,
-        help="Print debug information. Use twice (-d -d) to enable debug "
-        "information for everthing.",
+        help="Print debug information. Use twice (-d -d) to enable more "
+        "verbose debugging information.",
     )
     ap.add_argument(
         "-c",
@@ -2951,7 +3369,44 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         help="Create this room or these rooms. One or multiple "
         "room aliases can be specified. The room (or multiple "
         "ones) provided in the arguments will be created. "
-        "The user must be permitted to create rooms.",
+        "The user must be permitted to create rooms."
+        "Combine --room-create with --name and --topic to add "
+        "names and topics to the room(s) to be created.",
+    )
+    ap.add_argument(
+        "--room-join",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Join this room or these rooms. One or multiple "
+        "room aliases can be specified. The room (or multiple "
+        "ones) provided in the arguments will be joined. "
+        "The user must have permissions to join these rooms.",
+    )
+    ap.add_argument(
+        "--room-leave",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Leave this room or these rooms. One or multiple "
+        "room aliases can be specified. The room (or multiple "
+        "ones) provided in the arguments will be left. ",
+    )
+    ap.add_argument(
+        "--room-forget",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="After leaving a room you should (most likely) forget the room. "
+        "Forgetting a room removes the users' room history. "
+        "One or multiple "
+        "room aliases can be specified. The room (or multiple "
+        "ones) provided in the arguments will be forgotten. "
+        "If all users forget a room, the room can eventually be "
+        "deleted on the server.",
     )
     ap.add_argument(
         "--room-invite",
@@ -2959,10 +3414,81 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         action="extend",
         nargs="+",
         type=str,
-        help="Invite one ore more users to the rooms given via "
-        "--room. The user must be permitted to invite users.",
+        help="Invite one ore more users to join one or more rooms. "
+        "Specify the user(s) as arguments to --user. "
+        "Specify the rooms as arguments to this option, i.e. "
+        "as arguments to --room-invite. "
+        "The user must have permissions to invite users.",
     )
-
+    ap.add_argument(
+        "--room-ban",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Ban one ore more users from one or more rooms. "
+        "Specify the user(s) as arguments to --user. "
+        "Specify the rooms as arguments to this option, i.e. "
+        "as arguments to --room-ban. "
+        "The user must have permissions to ban users.",
+    )
+    ap.add_argument(
+        "--room-unban",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Unban one ore more users from one or more rooms. "
+        "Specify the user(s) as arguments to --user. "
+        "Specify the rooms as arguments to this option, i.e. "
+        "as arguments to --room-unban. "
+        "The user must have permissions to unban users.",
+    )
+    ap.add_argument(
+        "--room-kick",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Kick one ore more users from one or more rooms. "
+        "Specify the user(s) as arguments to --user. "
+        "Specify the rooms as arguments to this option, i.e. "
+        "as arguments to --room-kick. "
+        "The user must have permissions to kick users.",
+    )
+    ap.add_argument(
+        "--user",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Specify one or multiple users. This option is only meaningful "
+        "in combination with options like --room-invite, --room-ban, "
+        "--room-unban, --room-kick. This option --user specifies the users "
+        "to be used with these other room commands (like invite, ban, etc.)",
+    )
+    ap.add_argument(
+        "--name",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Specify one or multiple names. This option is only meaningful "
+        "in combination with option --room-create. "
+        "This option --name specifies the names "
+        "to be used with the command --room-create.",
+    )
+    ap.add_argument(
+        "--topic",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Specify one or multiple topics. This option is only meaningful "
+        "in combination with option --room-create. "
+        "This option --topic specifies the topics "
+        "to be used with the command --room-create.",
+    )
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
     # e.g. message=[ 'm1', 'm2' ]
@@ -3288,6 +3814,15 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "sending, listening, or verifying are allowed when "
         "renaming the device. ",
     )
+    ap.add_argument(
+        # no single char flag
+        "--version",
+        required=False,
+        action="store_true",
+        help="Print version information. After printing version information "
+        "program will continue to run. This is useful for having version "
+        "number in the log files.",
+    )
 
     pargs = ap.parse_args()
 
@@ -3299,6 +3834,9 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         # turn on debug logging for matrix-commander
         logger.setLevel(logging.DEBUG)
         logger.debug(f"Debug is turned on. debug={pargs.debug}")
+
+    if pargs.version:
+        version()  # continue execution
 
     initial_check_of_args()
     if not is_download_media_dir_valid():
@@ -3317,6 +3855,17 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             or pargs.listen == ALL
         ):
             asyncio.get_event_loop().run_until_complete(main_listen())
+        elif (
+            pargs.room_create
+            or pargs.room_join
+            or pargs.room_leave
+            or pargs.room_forget
+            or pargs.room_invite
+            or pargs.room_ban
+            or pargs.room_unban
+            or pargs.room_kick
+        ):
+            asyncio.get_event_loop().run_until_complete(main_room_actions())
         else:
             asyncio.get_event_loop().run_until_complete(main_send())
         logger.debug(f"The program {PROG_WITH_EXT} terminated successfully.")
