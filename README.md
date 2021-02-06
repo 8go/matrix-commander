@@ -285,12 +285,14 @@ $ # kick users from rooms
 $ matrix-commander.py --room-kick '!someroom1:example.com' \
     '#roomAlias2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
-
+$ # set log levels, INFO for matrix-commander and ERROR for modules below
+$ matrix-commander.py -m "test" --log-level INFO ERROR
 ```
 
 # Usage
 ```
-usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
+                           [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -324,8 +326,22 @@ GithubREADME.md file.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           Print debug information. Use twice (-d -d) to enable
-                        more verbose debugging information.
+  -d, --debug           Print debug information. If used once, only the log
+                        level of matrix-commander is set to DEBUG. If used
+                        twice ("-d -d" or "-dd") then log levels of both
+                        matrix-commander and underlying modules are set to
+                        DEBUG. "-d" is a shortcut for "--log-level DEBUG". See
+                        also --log-level. "-d" takes precedence over "--log-
+                        level".
+  --log-level LOG_LEVEL [LOG_LEVEL ...]
+                        Set the log level(s). Possible values are "DEBUG",
+                        "INFO", "WARNING", "ERROR", and "CRITICAL". If
+                        --log_level is used with one level argument, only the
+                        log level of matrix-commander is set to the specified
+                        value. If --log_level is used with two level argument
+                        (e.g. "--log-level WARNING ERROR") then log levels of
+                        both matrix-commander and underlying modules are set
+                        to the specified values. See also --debug.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -623,3 +639,4 @@ optional arguments:
 - Thanks to all of you who already have contributed! So appreciated!
 - Enjoy!
 - Pull requests are welcome  :heart:
+
