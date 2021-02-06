@@ -292,12 +292,14 @@ $ # kick users from rooms
 $ matrix-commander.py --room-kick '!someroom1:example.com' \
     '#roomAlias2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
-
+$ # set log levels, INFO for matrix-commander and ERROR for modules below
+$ matrix-commander.py -m "test" --log-level INFO ERROR
 ```
 
 # Usage
 ```
-usage: matrix-commander.py [-h] [-d] [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
+                           [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -331,8 +333,22 @@ GithubREADME.md file.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           Print debug information. Use twice (-d -d) to enable
-                        more verbose debugging information.
+  -d, --debug           Print debug information. If used once, only the log
+                        level of matrix-commander is set to DEBUG. If used
+                        twice ("-d -d" or "-dd") then log levels of both
+                        matrix-commander and underlying modules are set to
+                        DEBUG. "-d" is a shortcut for "--log-level DEBUG". See
+                        also --log-level. "-d" takes precedence over "--log-
+                        level".
+  --log-level LOG_LEVEL [LOG_LEVEL ...]
+                        Set the log level(s). Possible values are "DEBUG",
+                        "INFO", "WARNING", "ERROR", and "CRITICAL". If
+                        --log_level is used with one level argument, only the
+                        log level of matrix-commander is set to the specified
+                        value. If --log_level is used with two level argument
+                        (e.g. "--log-level WARNING ERROR") then log levels of
+                        both matrix-commander and underlying modules are set
+                        to the specified values. See also --debug.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -723,7 +739,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-February-05"
+VERSION = "2021-February-08"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -3109,7 +3125,7 @@ def is_download_media_dir_valid() -> bool:
                 f"{dl} for you. ({exc})"
             )
             return False
-        logger.debug("Created media download directory " f'"{dl}" for you.')
+        logger.debug(f'Created media download directory "{dl}" for you.')
         return True
 
 
@@ -3117,15 +3133,36 @@ def version() -> None:
     """Print version info."""
     version_info = (
         "\n"
-        f" _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}\n"
-        " _|_|  _|_|    _|            _|     a Matrix CLI client\n"
-        " _|  _|  _|    _|              _|   \n"
-        f" _|      _|    _|            _|     version {VERSION}\n"
-        " _|      _|      _|_|_|    _|       enjoy and submit PRs\n"
+        f"  _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}\n"
+        "  _|_|  _|_|    _|            _|     a Matrix CLI client\n"
+        "  _|  _|  _|    _|              _|   \n"
+        f"  _|      _|    _|            _|     version {VERSION}\n"
+        "  _|      _|      _|_|_|    _|       enjoy and submit PRs\n"
         "\n"
     )
     print(version_info)
     logger.debug(version_info)
+
+
+def initial_check_of_log_args() -> str:
+    """Check logging related arguments."""
+    if not pargs.log_level:
+        return
+    t = ""
+    for i in range(len(pargs.log_level)):
+        up = pargs.log_level[i].upper()
+        pargs.log_level[i] = up
+        if up not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+            t = (
+                '--log-level only allows values "DEBUG", "INFO", "WARNING", '
+                '"ERROR", or "CRITICAL". --log-level argument incorrect. '
+                f"({up})"
+            )
+    if t == "":
+        return
+    else:
+        logger.error(t)
+        sys.exit(1)
 
 
 # according to pylama: function too complex: C901 # noqa: C901
@@ -3320,8 +3357,28 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "--debug",
         action="count",
         default=0,
-        help="Print debug information. Use twice (-d -d) to enable more "
-        "verbose debugging information.",
+        help="Print debug information. If used once, only the log level of "
+        f"{PROG_WITHOUT_EXT} is set to DEBUG. "
+        'If used twice ("-d -d" or "-dd") then '
+        f"log levels of both {PROG_WITHOUT_EXT} and underlying modules are "
+        'set to DEBUG. "-d" is a shortcut for "--log-level DEBUG". '
+        'See also --log-level. "-d" takes precedence over "--log-level". ',
+    )
+    ap.add_argument(
+        "--log-level",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Set the log level(s). Possible values are "
+        '"DEBUG", "INFO", "WARNING", "ERROR", and "CRITICAL". '
+        "If --log_level is used with one level argument, only the log level "
+        f"of {PROG_WITHOUT_EXT} is set to the specified value. "
+        "If --log_level is used with two level argument "
+        '(e.g. "--log-level WARNING ERROR") then '
+        f"log levels of both {PROG_WITHOUT_EXT} and underlying modules are "
+        "set to the specified values. "
+        "See also --debug.",
     )
     ap.add_argument(
         "-c",
@@ -3827,21 +3884,41 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     pargs = ap.parse_args()
 
     logger = logging.getLogger(PROG_WITHOUT_EXT)
+    if pargs.log_level:
+        initial_check_of_log_args()
+        if len(pargs.log_level) > 0:
+            if len(pargs.log_level) > 1:
+                # set log level for EVERYTHING
+                logging.getLogger().setLevel(pargs.log_level[1])
+            # set log level for matrix-commander
+            logger.setLevel(pargs.log_level[0])
+            logger.debug(
+                f"Log level is set for module {PROG_WITHOUT_EXT}. "
+                f"log_level={pargs.log_level[0]}"
+            )
+            if len(pargs.log_level) > 1:
+                # only now that local log level is set, we can log prev. info
+                logger.debug(
+                    f"Log level is set for modules below {PROG_WITHOUT_EXT}. "
+                    f"log_level={pargs.log_level[1]}"
+                )
     if pargs.debug > 0:
         if pargs.debug > 1:
             # turn on debug logging for EVERYTHING
             logging.getLogger().setLevel(logging.DEBUG)
         # turn on debug logging for matrix-commander
         logger.setLevel(logging.DEBUG)
-        logger.debug(f"Debug is turned on. debug={pargs.debug}")
-
-    if pargs.version:
-        version()  # continue execution
+        logger.debug(f"Debug is turned on. debug count={pargs.debug}")
+        if len(pargs.log_level) > 0:
+            logger.warning("Debug option -d overwrote option --log-level.")
 
     initial_check_of_args()
     if not is_download_media_dir_valid():
         sys.exit(1)
     create_pid_file()
+
+    if pargs.version:
+        version()  # continue execution
 
     try:
         if pargs.verify:
