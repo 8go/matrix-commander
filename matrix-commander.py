@@ -739,7 +739,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-February-08"
+VERSION = "2021-February-25"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -3909,7 +3909,7 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         # turn on debug logging for matrix-commander
         logger.setLevel(logging.DEBUG)
         logger.debug(f"Debug is turned on. debug count={pargs.debug}")
-        if len(pargs.log_level) > 0:
+        if pargs.log_level and len(pargs.log_level) > 0:
             logger.warning("Debug option -d overwrote option --log-level.")
 
     initial_check_of_args()
