@@ -634,9 +634,17 @@ optional arguments:
 - help me add config file handling
 - see Issues on Github
 
+
+# Complementary Projects
+
+- `matrix-commander` nicely complements `matrix-eno-bot`
+- If you need some interactive behavior that `matrix-commander` cannot cover, 
+  check out the simple bot called [matrix-eno-bot](https://github.com/8go/matrix-eno-bot). Both work nicely together. 
+
+
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
 - Enjoy!
-- Pull requests are welcome  :heart:
+- Pull requests on :octocat: are welcome  :heart:
 
