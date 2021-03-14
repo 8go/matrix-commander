@@ -312,8 +312,8 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                           [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
+                           [-n] [-e] [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE] [--version]
 
@@ -478,6 +478,14 @@ optional arguments:
                         Location of a config file. By default, no config file
                         is used. If this option is provided, the provided file
                         name will be used to read configuration from.
+  --proxy PROXY         Optionally specify a proxy for connectivity. By
+                        default, i.e. if this option is not set, no proxy is
+                        used. If this option is used a proxy URL must be
+                        provided. The provided proxy URL will be used for the
+                        HTTP connection to the server. The proxy supports
+                        SOCKS4(a), SOCKS5, and HTTP (tunneling). Examples of
+                        valid URLs are "http://10.10.10.10:8118" or
+                        "socks5://user:password@127.0.0.1:1080".
   -n, --notice          Send message as notice. If not specified, message will
                         be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
@@ -739,7 +747,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-February-25"
+VERSION = "2021-March-14"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -1042,7 +1050,7 @@ class Callbacks(object):
             client = self.client
 
             if isinstance(event, KeyVerificationStart):  # first step
-                """ first step: receive KeyVerificationStart
+                """first step: receive KeyVerificationStart
                 KeyVerificationStart(
                     source={'content':
                             {'method': 'm.sas.v1',
@@ -1091,7 +1099,7 @@ class Callbacks(object):
                     print(f"to_device failed with {resp}")
 
             elif isinstance(event, KeyVerificationCancel):  # anytime
-                """ at any time: receive KeyVerificationCancel
+                """at any time: receive KeyVerificationCancel
                 KeyVerificationCancel(source={
                     'content': {'code': 'm.mismatched_sas',
                                 'reason': 'Mismatched authentication string',
@@ -1114,7 +1122,7 @@ class Callbacks(object):
                 )
 
             elif isinstance(event, KeyVerificationKey):  # second step
-                """ Second step is to receive KeyVerificationKey
+                """Second step is to receive KeyVerificationKey
                 KeyVerificationKey(
                     source={'content': {
                             'key': 'SomeCryptoKey',
@@ -1160,7 +1168,7 @@ class Callbacks(object):
                         print(f"cancel_key_verification failed with {resp}")
 
             elif isinstance(event, KeyVerificationMac):  # third step
-                """ Third step is to receive KeyVerificationMac
+                """Third step is to receive KeyVerificationMac
                 KeyVerificationMac(
                     source={'content': {
                         'mac': {'ed25519:DEVICEIDXY': 'SomeKey1',
@@ -2215,7 +2223,9 @@ def get_messages_from_pipe() -> list:
     Currently there is at most 1 msg in the returned list.
     """
     messages = []
-    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[0]  # noqa
+    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+        0
+    ]  # noqa
     if not stdin_ready:
         logger.debug(
             "stdin is not ready. "
@@ -2271,7 +2281,9 @@ def get_messages_from_keyboard() -> list:
             "messages provided in arguments with -m."
         )
         return messages  # return empty list because mesgs in -m
-    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[0]  # noqa
+    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+        0
+    ]  # noqa
     if not stdin_ready:
         logger.debug(
             "stdin is not ready. "
@@ -2420,10 +2432,17 @@ async def create_credentials_file(
             "was created for you."
         )
 
+    if pargs.proxy:
+        logger.info(f"Proxy {pargs.proxy} will be used.")
+
     try:
         # Initialize the matrix client
         client = AsyncClient(
-            homeserver, user_id, store_path=store_dir, config=client_config,
+            homeserver,
+            user_id,
+            store_path=store_dir,
+            config=client_config,
+            proxy=pargs.proxy,
         )
 
         pw = getpass.getpass()
@@ -2497,6 +2516,7 @@ def login_using_credentials_file(
         device_id=credentials["device_id"],
         store_path=store_dir,
         config=client_config,
+        proxy=pargs.proxy,
     )
     client.restore_login(
         user_id=credentials["user_id"],
@@ -2508,6 +2528,8 @@ def login_using_credentials_file(
         "Logged in using stored credentials from "
         f'credentials file "{credentials_file}".'
     )
+    if pargs.proxy:
+        logger.debug(f"Proxy {pargs.proxy} will be used for connectivity.")
     logger.debug(f"Logged_in() = {client.logged_in}")
     return (client, credentials)
 
@@ -2518,7 +2540,11 @@ async def listen_forever(client: AsyncClient) -> None:
     callbacks = Callbacks(client)
     client.add_event_callback(
         callbacks.message_callback,
-        (RoomMessage, RedactedEvent, RedactionEvent,),
+        (
+            RoomMessage,
+            RedactedEvent,
+            RedactionEvent,
+        ),
     )
     print(
         "This program is ready and listening for its Matrix messages."
@@ -2665,7 +2691,7 @@ async def listen_once_alternative(client: AsyncClient) -> None:
 # according to pylama: function too complex: C901 # noqa: C901
 async def listen_tail(  # noqa: C901
     client: AsyncClient, credentials: dict
-) -> None:
+) -> None:  # noqa: C901
     """Get the last N messages, then quit.
 
     Arguments:
@@ -2814,7 +2840,7 @@ async def read_all_events_in_direction(
 # according to pylama: function too complex: C901 # noqa: C901
 async def listen_all(  # noqa: C901
     client: AsyncClient, credentials: dict
-) -> None:
+) -> None:  # noqa: C901
     """Get all messages, then quit.
 
     Arguments:
@@ -3192,6 +3218,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         room_action = True
     else:
         room_action = False
+    if pargs.proxy == "":
+        pargs.proxy = None
 
     # Secondly, the checks
     if pargs.config:
@@ -3307,6 +3335,16 @@ def initial_check_of_args() -> None:  # noqa: C901
             "then --download-media must not be used "
             "either. Specify --listen or --tail "
             f"and run program again. ({pargs.download_media})"
+        )
+    elif pargs.proxy and not (
+        pargs.proxy.startswith("http://")
+        or pargs.proxy.startswith("socks4://")
+        or pargs.proxy.startswith("socks5://")
+    ):
+        t = (
+            "Proxy is not correct. Proxy should start with "
+            '"http://", "socks4://" or "socks5://". '
+            f' Your proxy is set to "{pargs.proxy}".'
         )
     else:
         logger.debug("All arguments are valid. All checks passed.")
@@ -3675,6 +3713,22 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "config file is used. "
         "If this option is provided, the provided file name "
         "will be used to read configuration from. ",
+    )
+    # -p is already used for --split
+    ap.add_argument(
+        "--proxy",
+        required=False,
+        type=str,
+        help="Optionally specify a proxy for connectivity. By default, "
+        "i.e. if this option is not set, no proxy is used. "
+        "If this option is used a proxy URL must be provided. "
+        "The provided proxy URL "
+        "will be used for the HTTP connection to the server. "
+        "The proxy supports SOCKS4(a), SOCKS5, and HTTP (tunneling). "
+        'Examples of valid URLs are "http://10.10.10.10:8118" '
+        'or "socks5://user:password@127.0.0.1:1080". '
+        'URLs with "https" or "socks4a" are not valid. Only '
+        '"http", "socks4" and "socks5" are valid.',
     )
     ap.add_argument(
         "-n",
