@@ -305,8 +305,8 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                           [-z] [-k] [-p SPLIT] [-j CONFIG] [-n] [-e]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
+                           [-n] [-e] [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE] [--version]
 
@@ -471,6 +471,14 @@ optional arguments:
                         Location of a config file. By default, no config file
                         is used. If this option is provided, the provided file
                         name will be used to read configuration from.
+  --proxy PROXY         Optionally specify a proxy for connectivity. By
+                        default, i.e. if this option is not set, no proxy is
+                        used. If this option is used a proxy URL must be
+                        provided. The provided proxy URL will be used for the
+                        HTTP connection to the server. The proxy supports
+                        SOCKS4(a), SOCKS5, and HTTP (tunneling). Examples of
+                        valid URLs are "http://10.10.10.10:8118" or
+                        "socks5://user:password@127.0.0.1:1080".
   -n, --notice          Send message as notice. If not specified, message will
                         be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
