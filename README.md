@@ -47,7 +47,7 @@ Use cases for this program could be
 # Give it a Star
 If you like it, use it, fork it, make a Pull Request or contribute.
 Please give it a :star: on Github right now so others find it more easily.
-:heart:
+:heart: Getting close to 100 :star:s, impressive :clap:, please keep them coming!
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
