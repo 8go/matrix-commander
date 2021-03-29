@@ -678,7 +678,7 @@ def s_error(ar): #this will be used to shorten errors
 try:
   import os
 except ImportError:
-  s_error("Module 'OS', witch is required for programm to operate not find. \nInstall module and try again.")
+  s_error("[CRITICAL] Module 'OS', witch is required for programm to operate not find. \nInstall module and try again.")
 
 #list of simple importable modules. 
 modules = {"argparse":[r"https://github.com/python/cpython/blob/3.9/Lib/argparse.py", "argparse"], 
@@ -697,32 +697,32 @@ modules = {"argparse":[r"https://github.com/python/cpython/blob/3.9/Lib/argparse
            "urllib.request":[r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "none"],
            "uuid":[r"https://github.com/python/cpython/blob/3.9/Lib/uuid.py", "uuid"],
            "aiofiles.os":[r"https://github.com/Tinche/aiofiles", "none"],
-           "magic":[r"https://github.com/ahupp/python-magic", "python_magic"],
+           "magic":[r"https://github.com/ahupp/python-magic", "python_magic python-magic-bin"],
 }
 for module in modules:
   try:
-    import module
-  except ImportError:
-    print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
+    exec("import {m}".format(m=module))
+  except ModuleNotFoundError:
+    print("[ERROR] Module '{}' can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
     if(input("=> ").lower().startswith("y")):
       if(not modules.get(module)[1].startswith("none")):
         print("As you wish.\n(Module source is: {})\nStarting pip...".format(modules.get(module)[0]))
         try:
-            os.system("python3 -m pip install "+str(module))
+            os.system("python3 -m pip install "+str(modules.get(module)[1]))
         except Exception:
-            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+            s_error("[CRITICAL]  Module have an issue in its installing.\nEasy way seem not to work. :(.")
         try:
-          import module
+          exec("import {m}".format(m=module))
         except ImportError:
-            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+            s_error("[CRITICAL] Module have an issue on second import.")
       else:
-        s_error("This module seem to not have pip pkg. Exit.")
+        s_error("[CRITICAL] This module seem to not have pip pkg.")
     else:
-      s_error("Okay. Exit.")
-multimodules = { "urllib.parse", {"link":r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "get":"none", "imp":["urlparse"]},
-                "aiohttp", {"link":r"https://github.com/aio-libs/aiohttp-demos", "get":"aiohttp", "imp":["ClientConnectorError"]},
-                "markdown", {"link":r"https://python-markdown.github.io/", "get":"markdown", "imp":["markdown"]},
-                "nio", {"link":r"https://github.com/poljar/matrix-nio", "get":"matrix-nio>0.14.1", "imp":["AsyncClient",
+      s_error("[INFO] Aborted by user!")
+multimodules = { "urllib.parse":{"link":r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "get":"none", "imp":["urlparse"]},
+                "aiohttp":{"link":r"https://github.com/aio-libs/aiohttp-demos", "get":"aiohttp", "imp":["ClientConnectorError"]},
+                "markdown":{"link":r"https://python-markdown.github.io/", "get":"markdown", "imp":["markdown"]},
+                "nio":{"link":r"https://github.com/poljar/matrix-nio", "get":"matrix-nio>0.14.1", "imp":["AsyncClient",
                                                     "AsyncClientConfig",
                                                     "EnableEncryptionBuilder",
                                                    "JoinError",
@@ -775,37 +775,36 @@ multimodules = { "urllib.parse", {"link":r"https://github.com/python/cpython/tre
                                                     'UpdateDeviceError',
                                                     'UploadResponse',
                                                     'crypto']},
-                "PIL", {"link":r"https://python-pillow.org/", "get":"Pillow", "imp":["Image"]}}
+                "PIL":{"link":r"https://python-pillow.org/", "get":"Pillow", "imp":["Image"]}}
 for module in multimodules:
-  for submodule in multimodule.get(module).get("imp"):
+  for submodule in multimodules.get(module).get("imp"):
     try:
-     from module import submodule
-    except ImportError:
-     print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
+     exec("from {mod} import {submod}".format(mod=module, submod=submodule))
+    except ModuleNotFoundError:
+     print("[ERROR] Module '{}' can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)??".format(module))
      if(input("=> ").lower().startswith("y")):
-       if(not modules.get(module)[1].startswith("none")):
+       if(not multimodules.get(module).get("get").startswith("none")):
         print("As you wish.\n(Module source is: {})\nStarting pip...".format(multimodules.get(module).get("link")))
         try:
-            os.popen(r"python3 -m pip install --no-input -q "+ str(multimodules.get(module).get("get")))
+            os.system(r"python3 -m pip install --no-input "+ str(multimodules.get(module).get("get")))
         except Exception:
-            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+            s_error("[CRITICAL]  Module have an issue in its installing.\nEasy way seem not to work. :(.")
         try:
-          import module
+            exec("from {mod} import {submod}".format(mod=module, submod=submodule))
         except ImportError:
-            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+            s_error("[CRITICAL] Module have an issue on second import.")
+        print("[INFO] Installation of module '{}' finished successfully!")
        else:
-          s_error("This module seem to not have pip pkg. Exit.")
+          s_error("[CRITICAL] This module seem to not have pip pkg.")
      else:
-        s_error("Okay. Exit.")
+        s_error("[INFO] Aborted by user!")
 
-        
 try:
     import notify2
-
     HAVE_NOTIFY = True
 except ImportError:
     HAVE_NOTIFY = False
-
+    print("[WARNING] Module 'notify2' can not be imported, you wont get notifications unless fixed.")
 
 # version number
 VERSION = "2021-March-14"
