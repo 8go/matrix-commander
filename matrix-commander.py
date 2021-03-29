@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+
+r""" Warning! Changes made by noob!
+1. Auto-install for required libs.
+2. Some minor fixes.
+
+"""
 r"""matrix-commander.py.
 
 0123456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -659,84 +665,136 @@ optional arguments:
 
 # automatically sorted by isort,
 # then formatted by black --line-length 79
-import argparse
-import asyncio
-import datetime
-import getpass
-import json
-import logging
-import os
-import re  # regular expression
-import select
-import sys
-import tempfile
-import textwrap
-import traceback
-import urllib.request
-import uuid
-from urllib.parse import urlparse
 
-import aiofiles
-import aiofiles.os
-import magic
-from aiohttp import ClientConnectorError
-from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    EnableEncryptionBuilder,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    ProfileGetAvatarResponse,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadResponse,
-    crypto,
-)
-from PIL import Image
+def s_error(ar): #this will be used to shorten errors
+  ar = str(ar)
+  print(ar)
+  input('[Press ENTER continue]')
+  exit()
+
+#here we have to test for OS lib.
+try:
+  import os
+except ImportError:
+  s_error("Module 'OS', witch is required for programm to operate not find. \nInstall module and try again.")
+
+#list of simple importable modules. 
+modules = {"argparse":[r"https://github.com/python/cpython/blob/3.9/Lib/argparse.py", "none"], 
+           "asyncio";[r"https://github.com/python/cpython/tree/3.9/Lib/asyncio/", "none"],
+           'aiofiles':[r"https://github.com/Tinche/aiofiles", ""],
+           "datetime":[r"https://github.com/python/cpython/blob/3.9/Lib/datetime.py", "none"],
+           "getpass":[r"https://github.com/python/cpython/blob/3.9/Lib/getpass.py", "none"],
+           "json":[r"https://github.com/python/cpython/blob/3.9/Lib/json/", "none"],
+           "logging":[r"https://github.com/python/cpython/blob/3.9/Lib/logging", "none"],
+           "re":[r"https://github.com/python/cpython/blob/3.9/Lib/re.py", "none"],
+           "select":[r"<Sourse code not find>", "none"],
+           "sys":[r"<Sourse code not find>", "none"],
+           "tempfile":[r"https://github.com/python/cpython/blob/3.9/Lib/tempfile.py", "none"],
+           "textwrap":[r"https://github.com/python/cpython/blob/3.9/Lib/textwrap.py", "none"],
+           "traceback"[:r"https://github.com/python/cpython/blob/3.9/Lib/traceback.py", "none"],
+           "urllib.request":[r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "none"],
+           "uuid":[r"https://github.com/python/cpython/blob/3.9/Lib/uuid.py", "none"],
+           "aiofiles.os":[r"https://github.com/Tinche/aiofiles", ""],
+           "magic":[r"https://github.com/ahupp/python-magic", ""],
+}
+for module in modules:
+  try:
+    import module
+  except ImportError:
+    print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
+    if(input("=> ").lower().startswith("y")):
+      if(not modules.get(module)[1].startswith("none"):
+        print("As you wish.\n(Module source is: {})\nStarting pip...".format(modules.get(module)[0]))
+        try:
+            os.popen("python3 -m pip install --no-input -q "+str(module))
+        except Exception:
+            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+        try:
+          import module
+        except ImportError:
+            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+      else:
+        s_error("This module seem to not have pip pkg. Exit.")
+    else:
+      s_error("Okay. Exit.")
+multimodules = { "urllib.parse", {"link":r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "get":"none", "imp":["urlparse"]},
+                "aiohttp", {"link":r"https://github.com/aio-libs/aiohttp-demos", "get":"aiohttp", "imp":["ClientConnectorError"]},
+                "markdown", {"link":r"https://python-markdown.github.io/", "get":"markdown", "imp":["markdown"]},
+                "nio", {"link":r"https://github.com/poljar/matrix-nio", "get":"matrix-nio>0.14.1", "imp":["AsyncClient",
+                                                    "AsyncClientConfig",
+                                                    "EnableEncryptionBuilder",
+                                                   "JoinError",
+                                                    "KeyVerificationCancel",
+                                                    "KeyVerificationEvent",
+                                                    "KeyVerificationKey",
+                                                    "KeyVerificationMac",
+                                                    "KeyVerificationStart",
+                                                    "LocalProtocolError",
+                                                    "LoginResponse",
+                                                    "MatrixRoom",
+                                                    "MessageDirection",
+                                                    "ProfileGetAvatarResponse",
+                                                    "RedactedEvent",
+                                                    "RedactionEvent",
+                                                    "RoomAliasEvent",
+                                                    "RoomBanError",
+                                                    "RoomCreateError",
+                                                    "RoomEncryptedAudio",
+                                                    "RoomEncryptedFile",
+                                                    "RoomEncryptedImage",
+                                                    "RoomEncryptedMedia",
+                                                    "RoomEncryptedVideo",
+                                                    "RoomEncryptionEvent",
+                                                    'RoomForgetError',
+                                                    'RoomInviteError',
+                                                    'RoomKickError',
+                                                    'RoomLeaveError',
+                                                    'RoomMemberEvent',
+                                                    'RoomMessage',
+                                                    'RoomMessageAudio',
+                                                    'RoomMessageEmote',
+                                                    'RoomMessageFile',
+                                                    'RoomMessageFormatted',
+                                                    'RoomMessageImage',
+                                                    'RoomMessageMedia',
+                                                    'RoomMessageNotice',
+                                                    'RoomMessagesError',
+                                                    'RoomMessageText',
+                                                    'RoomMessageUnknown',
+                                                    'RoomMessageVideo',
+                                                    'RoomNameEvent',
+                                                    'RoomReadMarkersError',
+                                                    'RoomResolveAliasError',
+                                                    'RoomUnbanError',
+                                                    'SyncError',
+                                                    'SyncResponse',
+                                                    'ToDeviceError',
+                                                    'UnknownEvent',
+                                                    'UpdateDeviceError',
+                                                    'UploadResponse',
+                                                    'crypto']},
+                "PIL", {"link":r"https://python-pillow.org/", "get":"Pillow", "imp":["Image"]}}
+for module in multimodules:
+  for submodule in multimodule.get(module).get("imp")
+    try:
+     from module import submodule
+    except ImportError:
+     print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
+      if(input("=> ").lower().startswith("y")):
+       if(not modules.get(module)[1].startswith("none"):
+        print("As you wish.\n(Module source is: {})\nStarting pip...".format(multimodules.get(module).get("link")))
+        try:
+            os.popen("python3 -m pip install --no-input -q "+str(.format(multimodules.get(module).get("get")))
+        except Exception:
+            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+        try:
+          import module
+        except ImportError:
+            s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
+       else:
+          s_error("This module seem to not have pip pkg. Exit.")
+      else:
+        s_error("Okay. Exit.")
 
 try:
     import notify2
