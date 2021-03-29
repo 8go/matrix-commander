@@ -667,6 +667,7 @@ optional arguments:
 # then formatted by black --line-length 79
 
 
+
 def s_error(ar): #this will be used to shorten errors
   ar = str(ar)
   print(ar)
@@ -707,7 +708,7 @@ for module in modules:
       if(not modules.get(module)[1].startswith("none")):
         print("As you wish.\n(Module source is: {})\nStarting pip...".format(modules.get(module)[0]))
         try:
-            os.popen("python3 -m pip install --no-input -q "+str(module))
+            os.system("python3 -m pip install "+str(module))
         except Exception:
             s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
         try:
@@ -797,6 +798,7 @@ for module in multimodules:
      else:
         s_error("Okay. Exit.")
 
+        
 try:
     import notify2
 
