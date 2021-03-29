@@ -666,6 +666,7 @@ optional arguments:
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 
+
 def s_error(ar): #this will be used to shorten errors
   ar = str(ar)
   print(ar)
@@ -679,23 +680,23 @@ except ImportError:
   s_error("Module 'OS', witch is required for programm to operate not find. \nInstall module and try again.")
 
 #list of simple importable modules. 
-modules = {"argparse":[r"https://github.com/python/cpython/blob/3.9/Lib/argparse.py", "none"], 
-           "asyncio";[r"https://github.com/python/cpython/tree/3.9/Lib/asyncio/", "none"],
-           'aiofiles':[r"https://github.com/Tinche/aiofiles", ""],
-           "datetime":[r"https://github.com/python/cpython/blob/3.9/Lib/datetime.py", "none"],
+modules = {"argparse":[r"https://github.com/python/cpython/blob/3.9/Lib/argparse.py", "argparse"], 
+           "asyncio":[r"https://github.com/python/cpython/tree/3.9/Lib/asyncio/", "asyncio"],
+           'aiofiles':[r"https://github.com/Tinche/aiofiles", "aiofiles<0.5.0"],
+           "datetime":[r"https://github.com/python/cpython/blob/3.9/Lib/datetime.py", "datetime"],
            "getpass":[r"https://github.com/python/cpython/blob/3.9/Lib/getpass.py", "none"],
-           "json":[r"https://github.com/python/cpython/blob/3.9/Lib/json/", "none"],
-           "logging":[r"https://github.com/python/cpython/blob/3.9/Lib/logging", "none"],
+           "json":[r"https://github.com/python/cpython/blob/3.9/Lib/json/", "json"],
+           "logging":[r"https://github.com/python/cpython/blob/3.9/Lib/logging", "dbus-python"],
            "re":[r"https://github.com/python/cpython/blob/3.9/Lib/re.py", "none"],
            "select":[r"<Sourse code not find>", "none"],
            "sys":[r"<Sourse code not find>", "none"],
            "tempfile":[r"https://github.com/python/cpython/blob/3.9/Lib/tempfile.py", "none"],
            "textwrap":[r"https://github.com/python/cpython/blob/3.9/Lib/textwrap.py", "none"],
-           "traceback"[:r"https://github.com/python/cpython/blob/3.9/Lib/traceback.py", "none"],
+           "traceback":[r"https://github.com/python/cpython/blob/3.9/Lib/traceback.py", "none"],
            "urllib.request":[r"https://github.com/python/cpython/tree/3.9/Lib/urllib", "none"],
-           "uuid":[r"https://github.com/python/cpython/blob/3.9/Lib/uuid.py", "none"],
-           "aiofiles.os":[r"https://github.com/Tinche/aiofiles", ""],
-           "magic":[r"https://github.com/ahupp/python-magic", ""],
+           "uuid":[r"https://github.com/python/cpython/blob/3.9/Lib/uuid.py", "uuid"],
+           "aiofiles.os":[r"https://github.com/Tinche/aiofiles", "none"],
+           "magic":[r"https://github.com/ahupp/python-magic", "python_magic"],
 }
 for module in modules:
   try:
@@ -703,7 +704,7 @@ for module in modules:
   except ImportError:
     print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
     if(input("=> ").lower().startswith("y")):
-      if(not modules.get(module)[1].startswith("none"):
+      if(not modules.get(module)[1].startswith("none")):
         print("As you wish.\n(Module source is: {})\nStarting pip...".format(modules.get(module)[0]))
         try:
             os.popen("python3 -m pip install --no-input -q "+str(module))
@@ -775,16 +776,16 @@ multimodules = { "urllib.parse", {"link":r"https://github.com/python/cpython/tre
                                                     'crypto']},
                 "PIL", {"link":r"https://python-pillow.org/", "get":"Pillow", "imp":["Image"]}}
 for module in multimodules:
-  for submodule in multimodule.get(module).get("imp")
+  for submodule in multimodule.get(module).get("imp"):
     try:
      from module import submodule
     except ImportError:
      print("We have an error! Module {} can not be imported due to it beeing inadvalibe. Do you wish to try to install it with pip (Y/N)?".format(module))
-      if(input("=> ").lower().startswith("y")):
-       if(not modules.get(module)[1].startswith("none"):
+     if(input("=> ").lower().startswith("y")):
+       if(not modules.get(module)[1].startswith("none")):
         print("As you wish.\n(Module source is: {})\nStarting pip...".format(multimodules.get(module).get("link")))
         try:
-            os.popen("python3 -m pip install --no-input -q "+str(.format(multimodules.get(module).get("get")))
+            os.popen(r"python3 -m pip install --no-input -q "+ str(multimodules.get(module).get("get")))
         except Exception:
             s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
         try:
@@ -793,7 +794,7 @@ for module in multimodules:
             s_error("Module have an issue in its installing.\nEasy way seem not to work. :(.\nExit.")
        else:
           s_error("This module seem to not have pip pkg. Exit.")
-      else:
+     else:
         s_error("Okay. Exit.")
 
 try:
