@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-
-
-r""" Warning! Changes made by noob!
-1. Auto-install for required libs.
-2. Some minor fixes.
-
-"""
 r"""matrix-commander.py.
 
 0123456789012345678901234567890123456789012345678901234567890123456789012345678
