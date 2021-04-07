@@ -1,4 +1,4 @@
-= Matrix commander with Docker
+= matrix-commander with Docker
 
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
 For other systems, this options has no influence and can be ignored or removed.
@@ -42,3 +42,33 @@ Given an initialized data folder, run this command to start the verification of 
 ```
 docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --verify
 ```
+
+= matrix-commander with Docker on Raspberry Pi (4b, 32bit, running buster of Raspberry Pi OS)
+
+See Issue #25 for more info:
+
+https://github.com/8go/matrix-commander/issues/25
+
+The libraries
+```
+libffi-devel libjpeg-devel zlib-devel
+```
+were added to the 
+```
+dnf install
+```
+command.
+
+The command
+```
+pip3 install wheel && 
+```
+was added to the
+```
+pip3 install
+```
+command.
+
+See commit
+https://github.com/8go/matrix-commander/commit/5089d71513685bec6443388dcd105d177191a25e
+.
