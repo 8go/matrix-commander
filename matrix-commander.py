@@ -2174,9 +2174,11 @@ async def send_message(client, rooms, message):  # noqa: C901
 
     if pargs.code:
         logger.debug('Sending message in format "code".')
-        formatted_message = "<pre><code>" + message + "</code></pre>"
+        formatted_message = "<pre><code>" + message + "\n</code></pre>\n"
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
+        # next line: work-around for Element Android
+        message = "```\n" + message + "\n```"  # to format it as code
     elif pargs.markdown:
         logger.debug(
             "Converting message from MarkDown into HTML. "
