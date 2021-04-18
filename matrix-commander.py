@@ -294,6 +294,12 @@ $ matrix-commander.py --room-kick '!someroom1:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # set log levels, INFO for matrix-commander and ERROR for modules below
 $ matrix-commander.py -m "test" --log-level INFO ERROR
+$ # example of how to quote text correctly, e.g. JSON text
+$ matrix-commander -m '{title: "hello", message: "here it is"}'
+$ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
+$ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
+$ matrix-commander -m "Don't do this"
+$ matrix-commander -m 'He said "No" to me.'
 ```
 
 # Usage
