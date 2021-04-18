@@ -43,6 +43,28 @@ Given an initialized data folder, run this command to start the verification of 
 docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --verify
 ```
 
+=== How to deal with pipes
+
+When using docker, please understand how docker works with pipes. Read issue 27
+https://github.com/8go/matrix-commander/issues/27
+
+This has nothing to do with matrix-commander, but nontheless here are some examples.
+
+In a nutshell: 
+```
+df -h | docker run --rm -v ./data:/data matrix-commander --code
+```
+The above line will *NOT* work. This is not how pipes work in docker.
+```
+docker run --rm -ti -v ./data:/data matrix-commander -k -m "$(df -h| head -2)"
+```
+The above line works, as there is no pipe into docker.
+```
+df -h | head -2 | docker run --rm -i -v ./data:/data matrix-commander --code
+```
+The above line works, because -t is *NOT* used.
+
+
 = matrix-commander with Docker on Raspberry Pi (4b, 32bit, running buster of Raspberry Pi OS)
 
 See Issue #25 for more info:
