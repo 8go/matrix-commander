@@ -1930,11 +1930,12 @@ async def send_file(client, rooms, file):
 
     file_stat = await aiofiles.os.stat(file)
     async with aiofiles.open(file, "r+b") as f:
-        resp, maybe_keys = await client.upload(
+        resp, decryption_keys = await client.upload(
             f,
             content_type=mime_type,  # application/pdf
             filename=os.path.basename(file),
             filesize=file_stat.st_size,
+            encrypt=True,
         )
     if isinstance(resp, UploadResponse):
         logger.debug(
@@ -1965,7 +1966,13 @@ async def send_file(client, rooms, file):
         "body": os.path.basename(file),  # descriptive title
         "info": {"size": file_stat.st_size, "mimetype": mime_type},
         "msgtype": msg_type,
-        "url": resp.content_uri,
+        "file": {
+            "url": resp.content_uri,
+            "key": decryption_keys["key"],
+            "iv": decryption_keys["iv"],
+            "hashes": decryption_keys["hashes"],
+            "v": decryption_keys["v"],
+        },
     }
 
     try:
@@ -2034,7 +2041,7 @@ async def send_image(client, rooms, image):
         logger.debug(
             f"Image file {image} is not a file. Doesn't exist or "
             "is a directory."
-            "This image is being droppend and NOT sent."
+            "This image is being dropped and NOT sent."
         )
         return
 
@@ -2049,7 +2056,7 @@ async def send_image(client, rooms, image):
             f"Image file {image} is not an image file. Should be "
             ".jpg, .jpeg, .gif, or .png. "
             f"[{os.path.splitext(image)[1].lower()}]"
-            "This image is being droppend and NOT sent."
+            "This image is being dropped and NOT sent."
         )
         return
 
@@ -2070,14 +2077,18 @@ async def send_image(client, rooms, image):
     # first do an upload of image, see upload() documentation
     # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
     # then send URI of upload to room
+    # Note that encrypted upload works even with unencrypted rooms; the
+    # decryption keys will not be protected, obviously, but no special
+    # treatment is required.
 
     file_stat = await aiofiles.os.stat(image)
     async with aiofiles.open(image, "r+b") as f:
-        resp, maybe_keys = await client.upload(
+        resp, decryption_keys = await client.upload(
             f,
             content_type=mime_type,  # image/jpeg
             filename=os.path.basename(image),
             filesize=file_stat.st_size,
+            encrypt=True
         )
     if isinstance(resp, UploadResponse):
         logger.debug(
@@ -2112,13 +2123,13 @@ async def send_image(client, rooms, image):
             # "thumbnail_file": None,
         },
         "msgtype": "m.image",
-        "url": resp.content_uri,
-        # "file": {
-        #    # image/jpeg
-        #    "mimetype": mime_type,
-        #    # e.g. "mxc://example.com/someStrangeUriKey",
-        #    "url": resp.content_uri,
-        #    "v": "v2"
+        "file": {
+            "url": resp.content_uri,
+            "key": decryption_keys["key"],
+            "iv": decryption_keys["iv"],
+            "hashes": decryption_keys["hashes"],
+            "v": decryption_keys["v"],
+        },
     }
 
     try:
