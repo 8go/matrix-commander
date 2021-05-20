@@ -1657,17 +1657,21 @@ async def create_rooms(client, room_aliases, names, topics):
     """
     try:
         index = 0
+        logger.debug(
+            f'Trying to create rooms with room aliases "{room_aliases}", '
+            f'names "{names}", and topics "{topics}".'
+        )
         for alias in room_aliases:
             alias = alias.replace(r"\!", "!")  # remove possible escape
             # alias is a true alias, not a room id
             # "alias1" will be converted into "#alias1:example.com"
             try:
                 name = names[index]
-            except IndexError:
+            except (IndexError, TypeError):
                 name = ""
             try:
                 topic = topics[index]
-            except IndexError:
+            except (IndexError, TypeError):
                 topic = ""
             logger.debug(
                 f'Creating room with room alias "{alias}", '
