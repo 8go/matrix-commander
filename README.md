@@ -659,6 +659,7 @@ optional arguments:
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
+  - ❤️ and 👍 to @fyfe, @berlincount, @ezwen, @Scriptkiddi, @pelzvieh, etc. 
 - Enjoy!
 - Pull requests on :octocat: are welcome  :heart:
 
