@@ -92,6 +92,11 @@ _matrix-commander ()
             local keys=(never once forever tail all)
             COMPREPLY=( $(compgen -W "${keys[*]}" -- "$cur") )
             ;;
+        -j|--config)
+            COMPREPLY=( $(compgen -f -- "$cur") )
+            ;;
+            COMPREPLY=( $(compgen -W "${keys[*]}" -- "$cur") )
+            ;;
         *)
             return 1
             ;;
