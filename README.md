@@ -47,7 +47,7 @@ Use cases for this program could be
 # Give it a Star
 If you like it, use it, fork it, make a Pull Request or contribute.
 Please give it a :star: on Github right now so others find it more easily.
-:heart: Getting close to 100 :star:s, impressive :clap:, please keep them coming!
+:heart:
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
@@ -642,24 +642,31 @@ optional arguments:
   - flake8 matrix-commander.py
   - python3 -m black --line-length 79 matrix-commander.py
 
+# License
+
+This program is free software: you can redistribute it and/or modify it 
+under the terms of the GNU General Public License as published by the 
+Free Software Foundation, either version 3 of the License, or 
+(at your option) any later version. 
+
+When preparing to package `matrix-commander` for NIX the question
+came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was 
+deemed to be better. As such the license was changed from GPL3Only
+to GPL3Plus on May 25, 2021. Versions before this date are licensed
+under GPL3. Versions on or after this date are GPL3Plus, i.e. 
+GPL3 or later.
+
+See [GPL3 at FSF](https://www.fsf.org/licensing/).
+
 
 # Things to do, Things missing
 
-- help me add config file handling
-- see Issues on Github
-
-
-# Complementary Projects
-
-- `matrix-commander` nicely complements `matrix-eno-bot`
-- If you need some interactive behavior that `matrix-commander` cannot cover, 
-  check out the simple bot called [matrix-eno-bot](https://github.com/8go/matrix-eno-bot). Both work nicely together. 
-
+- see [Issues](https://github.com/8go/matrix-commander/issues) on Github 
 
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
-  - ❤️ and 👍 to @fyfe, @berlincount, @ezwen, @Scriptkiddi, @pelzvieh, etc. 
+  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi, 
+    @pelzvieh, etc. 
 - Enjoy!
-- Pull requests on :octocat: are welcome  :heart:
-
+- Pull requests are welcome  :heart:
