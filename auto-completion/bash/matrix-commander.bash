@@ -16,7 +16,7 @@ _matrix-commander ()
 {
     COMPREPLY=()
     local IFS=$'\n'
-    local -a opts
+    local -a opts keys
     cur=${COMP_WORDS[COMP_CWORD]}
 
     # prev is generally not useful since nargs=+
@@ -75,7 +75,7 @@ _matrix-commander ()
 
     case "$opt" in
         --log-level)
-            local keys=(DEBUG INFO WARNING ERROR CRITICAL)
+            keys=(DEBUG INFO WARNING ERROR CRITICAL)
             COMPREPLY=( $(compgen -W "${keys[*]}" -- "$cur") )
             ;;
         -c|--credentials)
@@ -89,7 +89,7 @@ _matrix-commander ()
             COMPREPLY=( $(compgen -d -- "$cur") )
             ;;
         -l|--listen)
-            local keys=(never once forever tail all)
+            keys=(never once forever tail all)
             COMPREPLY=( $(compgen -W "${keys[*]}" -- "$cur") )
             ;;
         -j|--config)
