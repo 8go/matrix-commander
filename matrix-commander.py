@@ -649,15 +649,32 @@ optional arguments:
   - flake8 matrix-commander.py
   - python3 -m black --line-length 79 matrix-commander.py
 
+# License
+
+This program is free software: you can redistribute it and/or modify it 
+under the terms of the GNU General Public License as published by the 
+Free Software Foundation, either version 3 of the License, or 
+(at your option) any later version. 
+
+When preparing to package `matrix-commander` for NIX the question
+came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was 
+deemed to be better. As such the license was changed from GPL3Only
+to GPL3Plus on May 25, 2021. Versions before this date are licensed
+under GPL3. Versions on or after this date are GPL3Plus, i.e. 
+GPL3 or later.
+
+See [GPL3 at FSF](https://www.fsf.org/licensing/).
+
 
 # Things to do, Things missing
 
-- help me add config file handling
-- see Issues on Github
+- see [Issues](https://github.com/8go/matrix-commander/issues) on Github 
 
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
+  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi, 
+    @pelzvieh, etc. 
 - Enjoy!
 - Pull requests are welcome  :heart:
 
@@ -753,7 +770,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-March-14"
+VERSION = "2021-May-25"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
