@@ -70,9 +70,6 @@ _matrix-commander ()
     # argument to option
     opt=$(_matrix-commander-get-last-option)
 
-    printf '%s\n' "${COMP_WORDS[@]}" > $HOME/bruh
-    printf "opt is $opt" >> $HOME/bruh
-
     case "$opt" in
         --log-level)
             keys=(DEBUG INFO WARNING ERROR CRITICAL)
