@@ -95,6 +95,8 @@ _matrix-commander ()
         -j|--config)
             COMPREPLY=( $(compgen -f -- "$cur") )
             ;;
+        -v|--verify)
+            keys=(emoji)
             COMPREPLY=( $(compgen -W "${keys[*]}" -- "$cur") )
             ;;
         *)
