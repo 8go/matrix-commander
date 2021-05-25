@@ -5,6 +5,7 @@ _matrix-commander-get-last-option ()
     for (( i = ${#COMP_WORDS[@]} - 1; i >= 0; i-- )); do
         if [[ "${COMP_WORDS[i]}" = -* ]]; then
             lastopt="${COMP_WORDS[i]}"
+            break
         fi
     done
 
