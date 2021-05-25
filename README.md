@@ -628,6 +628,15 @@ optional arguments:
 - Logging (at various levels)
 - In-source documentation
 - Can be run as a service
+- Autocompletion for shells like bash (thanks to PR from @mizlan :clap:)
+
+# Autocompletion
+
+Auto-completion is provided for shells (e.g. bash), courtesy of @mizlan).
+
+Here is a sample snapshot of auto-completion in action:
+
+![autocompletion](https://user-images.githubusercontent.com/44309097/119535440-d722c680-bd3c-11eb-9281-7cdfae7546d8.png)
 
 # For Developers
 
@@ -667,6 +676,6 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi, 
-    @pelzvieh, etc. 
+    @pelzvieh, @mizlan, etc. 
 - Enjoy!
 - Pull requests are welcome  :heart:
