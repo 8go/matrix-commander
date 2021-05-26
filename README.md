@@ -628,15 +628,15 @@ optional arguments:
 - Logging (at various levels)
 - In-source documentation
 - Can be run as a service
-- Autocompletion for shells like bash (thanks to PR from @mizlan :clap:)
+- Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 
 # Autocompletion
 
-Auto-completion is provided for shells (e.g. bash), courtesy of @mizlan).
+Tab completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
-Here is a sample snapshot of auto-completion in action:
+Here is a sample snapshot of tab completion in action:
 
-![autocompletion](./screenshots/tab_complete.png)
+![tab completion](./screenshots/tab_complete.png)
 
 # For Developers
 
