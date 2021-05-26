@@ -636,7 +636,7 @@ Auto-completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
 Here is a sample snapshot of auto-completion in action:
 
-![autocompletion](https://user-images.githubusercontent.com/44309097/119535440-d722c680-bd3c-11eb-9281-7cdfae7546d8.png)
+![autocompletion](./screenshots/tab_complete.png)
 
 # For Developers
 
