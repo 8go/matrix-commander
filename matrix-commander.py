@@ -770,7 +770,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-May-25"
+VERSION = "2021-Jul-23"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -4050,11 +4050,11 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         )
         logger.info(traceback.format_exc())
     except Exception:
-        logger.info(
+        logger.error(
             f"The program {PROG_WITH_EXT} failed. "
             "Sorry. Here is the traceback."
         )
-        logger.info(traceback.format_exc())
+        logger.error(traceback.format_exc())
         # traceback.print_exc(file=sys.stdout)
     except KeyboardInterrupt:
         logger.debug("Keyboard interrupt received.")
