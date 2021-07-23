@@ -4039,7 +4039,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             asyncio.get_event_loop().run_until_complete(main_room_actions())
         else:
             asyncio.get_event_loop().run_until_complete(main_send())
-        logger.debug(f"The program {PROG_WITH_EXT} terminated successfully.")
+        # the next can be reached on success or failure 
+        logger.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError:
         logger.info(
             f"The program {PROG_WITH_EXT} ran into a timeout. "
