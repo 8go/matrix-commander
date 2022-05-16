@@ -1,0 +1,6 @@
+# Do not include credentials created at runtime.
+/store/
+credentials.json
+
+# Also do not include the media directory.
+/media/
