@@ -779,7 +779,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2021-Jul-23"
+VERSION = "2022-May-16"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
