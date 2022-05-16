@@ -779,7 +779,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2022-May-16"
+VERSION = "2022-May-16-a"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -4152,18 +4152,18 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
 
     try:
         if pargs.verify:
-            asyncio.get_event_loop().run_until_complete(main_verify())
+            asyncio.run(main_verify())
         elif pargs.display_name:
-            asyncio.get_event_loop().run_until_complete(main_rename_user())
+            asyncio.run(main_rename_user())
         elif pargs.rename_device:
-            asyncio.get_event_loop().run_until_complete(main_rename_device())
+            asyncio.run(main_rename_device())
         elif (
             pargs.listen == FOREVER
             or pargs.listen == ONCE
             or pargs.listen == TAIL
             or pargs.listen == ALL
         ):
-            asyncio.get_event_loop().run_until_complete(main_listen())
+            asyncio.run(main_listen())
         elif (
             pargs.room_create
             or pargs.room_join
@@ -4174,9 +4174,9 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             or pargs.room_unban
             or pargs.room_kick
         ):
-            asyncio.get_event_loop().run_until_complete(main_room_actions())
+            asyncio.run(main_room_actions())
         else:
-            asyncio.get_event_loop().run_until_complete(main_send())
+            asyncio.run(main_send())
         # the next can be reached on success or failure
         logger.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError:
