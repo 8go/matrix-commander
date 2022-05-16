@@ -691,6 +691,8 @@ import logging
 import os
 import re  # regular expression
 import select
+import shutil
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -702,7 +704,7 @@ from urllib.parse import urlparse
 import aiofiles
 import aiofiles.os
 import magic
-from aiohttp import ClientConnectorError
+from aiohttp import ClientConnectorError, ClientSession, web
 from markdown import markdown
 from nio import (
     AsyncClient,
@@ -2109,7 +2111,7 @@ async def send_image(client, rooms, image):
             content_type=mime_type,  # image/jpeg
             filename=os.path.basename(image),
             filesize=file_stat.st_size,
-            encrypt=True
+            encrypt=True,
         )
     if isinstance(resp, UploadResponse):
         logger.debug(
@@ -2448,14 +2450,97 @@ async def create_credentials_file(
         homeserver.startswith("https://") or homeserver.startswith("http://")
     ):
         homeserver = "https://" + homeserver
-    user_id = "@user:example.org"
-    user_id = input(f"Enter your full user ID: [{user_id}] ")
+
+    if pargs.proxy:
+        logger.info(f"Proxy {pargs.proxy} will be used.")
+
+    # check for password/SSO
+    async with ClientSession() as session:
+        async with session.get(
+            f"{homeserver}/_matrix/client/r0/login",
+            raise_for_status=True,
+            proxy=pargs.proxy,
+        ) as response:
+            flow_types = {
+                x["type"] for x in (await response.json()).get("flows", [])
+            }
+            logger.debug("Supported login flows: %r", flow_types)
+
+            password = "m.login.password" in flow_types
+            sso = "m.login.sso" in flow_types and "m.login.token" in flow_types
+
+    if not sso and password:
+        user_id = "@user:example.org"
+        user_id = input(f"Enter your full user ID: [{user_id}] ")
+    else:
+        user_id = ""
+
     device_name = PROG_WITHOUT_EXT
     device_name = input(f"Choose a name for this device: [{device_name}] ")
     if device_name == "":
         device_name = PROG_WITHOUT_EXT  # default
     room_id = "!SomeRoomIdString:example.org"
     room_id = input(f"Enter your room ID: [{room_id}] ")
+
+    if sso:
+        # startup server to handle response
+        stop_server_evt = asyncio.Event()
+        login_token = None
+
+        async def handle(request):
+            nonlocal login_token
+            login_token = request.query.get("loginToken")
+            stop_server_evt.set()
+            return web.Response(
+                body="Login complete. You can now close this page."
+            )
+
+        app = web.Application()
+        app.add_routes([web.get("/", handle)])
+
+        logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "localhost", 38080)
+        await site.start()
+
+        try:
+            print("Launching browser to complete SSO login.")
+            if pargs.proxy:
+                logger.warning(
+                    "Specified proxy cannot be configured for browser."
+                )
+
+            # launch web-browser
+            if sys.platform.startswith("darwin"):
+                cmd = [shutil.which("open")]
+            elif sys.platform.startswith("win"):
+                cmd = ["start"]
+            else:
+                cmd = [shutil.which("x-www-browser")]
+            cmd.append(
+                f"{homeserver}/_matrix/client/r0/login/sso/redirect"
+                "?redirectUrl=http://localhost:38080/"
+            )
+            subprocess.check_output(cmd)
+
+            # wait and shutdown server
+            try:
+                await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
+            except asyncio.TimeoutError:
+                logger.info(
+                    f"The program {PROG_WITH_EXT} failed. "
+                    "No response was received from SSO provider. "
+                    "Sorry."
+                )
+                sys.exit(1)
+
+        finally:
+            await runner.cleanup()
+
+    elif not password:
+        logger.info("No supported login method found for homeserver")
+        sys.exit(1)
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
@@ -2472,21 +2557,28 @@ async def create_credentials_file(
             "was created for you."
         )
 
-    if pargs.proxy:
-        logger.info(f"Proxy {pargs.proxy} will be used.")
+    # Initialize the matrix client
 
+    client = AsyncClient(
+        homeserver,
+        user_id,
+        store_path=store_dir,
+        config=client_config,
+        proxy=pargs.proxy,
+    )
     try:
-        # Initialize the matrix client
-        client = AsyncClient(
-            homeserver,
-            user_id,
-            store_path=store_dir,
-            config=client_config,
-            proxy=pargs.proxy,
-        )
 
-        pw = getpass.getpass()
-        resp = await client.login(pw, device_name=device_name)
+        if sso:
+            resp = await client.login(
+                token=login_token, device_name=device_name
+            )
+            method = "SSO"
+
+        else:
+            pw = getpass.getpass()
+            resp = await client.login(pw, device_name=device_name)
+            method = "a password"
+
         # check that we logged in succesfully
         if isinstance(resp, LoginResponse):
             # when writing, always write to primary location (e.g. .)
@@ -2499,7 +2591,7 @@ async def create_credentials_file(
                 pargs.credentials,
             )
             text = f"""
-                Log in using a password was successful.
+                Log in using {method} was successful.
                 Credentials were stored in file \"{pargs.credentials}\".
                 Run program \"{PROG_WITH_EXT}\" again to
                 login with credentials and to send a message.
@@ -2518,8 +2610,7 @@ async def create_credentials_file(
                 f"Failed to log in: {resp}"
             )
     finally:
-        if client:
-            await client.close()
+        await client.close()
     cleanup()
     sys.exit(1)
 
@@ -4039,7 +4130,7 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             asyncio.get_event_loop().run_until_complete(main_room_actions())
         else:
             asyncio.get_event_loop().run_until_complete(main_send())
-        # the next can be reached on success or failure 
+        # the next can be reached on success or failure
         logger.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError:
         logger.info(
