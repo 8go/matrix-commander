@@ -1056,12 +1056,15 @@ class Callbacks(object):
                 event_id_detail = f" | {event.event_id}"
             else:
                 event_id_detail = ""
+            # Prevent faking messages by prefixing each line of a multiline
+            # message with space.
+            fixed_msg = re.sub('\n', '\n    ', msg)
             complete_msg = (
                 "Message received for room "
                 f"{room_nick} [{room.room_id}] | "
                 f"sender {sender_nick} "
                 f"[{event.sender}] | {event_datetime}"
-                f"{event_id_detail} | {msg}"
+                f"{event_id_detail} | {fixed_msg}"
             )
             logger.debug(complete_msg)
             print(complete_msg, flush=True)
