@@ -3,6 +3,8 @@
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
 For other systems, this options has no influence and can be ignored or removed.
 
+The provided `Dockerfile` is for Fedora, specifically Fedora 33. If you want to use `Debian`, `Ubuntu` or otherwise, you *must* adjust the `Dockerfile` (e.g. change `dnf` to `apt` and so forth).
+
 == Building the image
 
 From the root folder of the git repository, run:
