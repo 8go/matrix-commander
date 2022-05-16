@@ -252,8 +252,10 @@ $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander.py --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
 $ matrix-commander.py --listen all --listen-self
-$ # rename device-name, sometimes also called display-name
+$ # rename device-name, sometimes also called device display-name
 $ matrix-commander.py --rename-device "my new name"
+$ # set display-name for authenticated user
+$ matrix-commander.py --display-name "Alex"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
@@ -588,6 +590,10 @@ optional arguments:
                         Rename the current device to the new device name
                         provided. No other operations like sending, listening,
                         or verifying are allowed when renaming the device.
+  --display-name DISPLAY_NAME
+                        Set the display name for the current user to the value
+                        provided. No other operations like sending, listening,
+                        or verifying are allowed when setting the display name.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
@@ -721,6 +727,7 @@ from nio import (
     MatrixRoom,
     MessageDirection,
     ProfileGetAvatarResponse,
+    ProfileSetDisplayNameError,
     RedactedEvent,
     RedactionEvent,
     RoomAliasEvent,
@@ -822,7 +829,8 @@ TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
 VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
-RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -m is not specified
+RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -x is not specified
+DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name not given
 
 
 def choose_available_filename(filename):
@@ -3124,6 +3132,31 @@ async def main_rename_device() -> None:
             await client.close()
 
 
+async def main_rename_user() -> None:
+    """Use credentials to log in and rename the login users display name."""
+    credentials_file = determine_credentials_file()
+    store_dir = determine_store_dir()
+    if not os.path.isfile(credentials_file):
+        logger.debug(
+            "Credentials file must be created first before one can rename."
+        )
+        cleanup()
+        sys.exit(1)
+    logger.debug("Credentials file does exist.")
+    try:
+        client, credentials = login_using_credentials_file(
+            credentials_file, store_dir
+        )
+        resp = await client.set_displayname(pargs.display_name)
+        if isinstance(resp, ProfileSetDisplayNameError):
+            logger.error(f"set_displayname failed with {resp}")
+        else:
+            logger.debug(f"set_displayname successful with {resp}")
+    finally:
+        if client:
+            await client.close()
+
+
 # according to pylama: function too complex: C901 # noqa: C901
 
 
@@ -4057,6 +4090,15 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "renaming the device. ",
     )
     ap.add_argument(
+        "--display-name",
+        required=False,
+        type=str,
+        default=DISPLAY_NAME_UNUSED_DEFAULT,  # when option isn't used
+        help="Set the display name for the current user to the value "
+        "provided. No other operations like sending, listening, or "
+        "verifying are allowed when setting the display name. ",
+    )
+    ap.add_argument(
         # no single char flag
         "--version",
         required=False,
@@ -4108,6 +4150,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     try:
         if pargs.verify:
             asyncio.get_event_loop().run_until_complete(main_verify())
+        elif pargs.display_name:
+            asyncio.get_event_loop().run_until_complete(main_rename_user())
         elif pargs.rename_device:
             asyncio.get_event_loop().run_until_complete(main_rename_device())
         elif (
