@@ -4195,6 +4195,6 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     except KeyboardInterrupt:
         logger.debug("Keyboard interrupt received.")
     cleanup()
-    sys.exit(1)
+    sys.exit(0)
 
 # EOF
