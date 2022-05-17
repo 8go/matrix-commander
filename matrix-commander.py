@@ -323,7 +323,9 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
                            [-n] [-e] [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE] [--version]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -493,7 +495,9 @@ optional arguments:
                         HTTP connection to the server. The proxy supports
                         SOCKS4(a), SOCKS5, and HTTP (tunneling). Examples of
                         valid URLs are "http://10.10.10.10:8118" or
-                        "socks5://user:password@127.0.0.1:1080".
+                        "socks5://user:password@127.0.0.1:1080". URLs with
+                        "https" or "socks4a" are not valid. Only "http",
+                        "socks4" and "socks5" are valid.
   -n, --notice          Send message as notice. If not specified, message will
                         be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
@@ -593,7 +597,13 @@ optional arguments:
   --display-name DISPLAY_NAME
                         Set the display name for the current user to the value
                         provided. No other operations like sending, listening,
-                        or verifying are allowed when setting the display name.
+                        or verifying are allowed when setting the display
+                        name.
+  --no-ssl              Skip SSL verification. By default (if this option is
+                        not used) the SSL certificate is validated for the
+                        connection. But, if this option is used, then the SSL
+                        certificate validation will be skipped. This is useful
+                        for home-servers that have no SSL certificate.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
@@ -657,16 +667,16 @@ optional arguments:
 
 # License
 
-This program is free software: you can redistribute it and/or modify it 
-under the terms of the GNU General Public License as published by the 
-Free Software Foundation, either version 3 of the License, or 
-(at your option) any later version. 
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
 When preparing to package `matrix-commander` for NIX the question
-came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was 
+came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was
 deemed to be better. As such the license was changed from GPL3Only
 to GPL3Plus on May 25, 2021. Versions before this date are licensed
-under GPL3. Versions on or after this date are GPL3Plus, i.e. 
+under GPL3. Versions on or after this date are GPL3Plus, i.e.
 GPL3 or later.
 
 See [GPL3 at FSF](https://www.fsf.org/licensing/).
@@ -674,13 +684,13 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 # Things to do, Things missing
 
-- see [Issues](https://github.com/8go/matrix-commander/issues) on Github 
+- see [Issues](https://github.com/8go/matrix-commander/issues) on Github
 
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
-  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi, 
-    @pelzvieh, etc. 
+  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
+    @pelzvieh, etc.
 - Enjoy!
 - Pull requests are welcome  :heart:
 
@@ -779,7 +789,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2022-May-16-a"
+VERSION = "2022-May-17"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -830,7 +840,8 @@ TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
 VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
 RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -x is not specified
-DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name not given
+DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name is not given
+NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 
 
 def choose_available_filename(filename):
@@ -1058,7 +1069,7 @@ class Callbacks(object):
                 event_id_detail = ""
             # Prevent faking messages by prefixing each line of a multiline
             # message with space.
-            fixed_msg = re.sub('\n', '\n    ', msg)
+            fixed_msg = re.sub("\n", "\n    ", msg)
             complete_msg = (
                 "Message received for room "
                 f"{room_nick} [{room.room_id}] | "
@@ -2462,6 +2473,17 @@ async def create_credentials_file(
     ):
         homeserver = "https://" + homeserver
 
+    if pargs.no_ssl is True:
+        logger.info(
+            "SSL will be not be used. The SSL certificate validation "
+            "will be skipped for this connection."
+        )
+    else:
+        logger.info(
+            "SSL will be used. Default SSL certificate validation "
+            "will be done for this connection."
+        )
+
     if pargs.proxy:
         logger.info(f"Proxy {pargs.proxy} will be used.")
 
@@ -2519,7 +2541,8 @@ async def create_credentials_file(
             print("Launching browser to complete SSO login.")
             if pargs.proxy:
                 logger.warning(
-                    "Specified proxy cannot be configured for browser."
+                    f"Specified proxy {pargs.proxy} cannot "
+                    "be configured for browser."
                 )
 
             # launch web-browser
@@ -2575,6 +2598,7 @@ async def create_credentials_file(
         user_id,
         store_path=store_dir,
         config=client_config,
+        ssl=(False if pargs.no_ssl is True else None),
         proxy=pargs.proxy,
     )
     try:
@@ -2658,8 +2682,10 @@ def login_using_credentials_file(
         device_id=credentials["device_id"],
         store_path=store_dir,
         config=client_config,
+        ssl=(False if pargs.no_ssl is True else None),
         proxy=pargs.proxy,
     )
+
     client.restore_login(
         user_id=credentials["user_id"],
         device_id=credentials["device_id"],
@@ -2670,6 +2696,16 @@ def login_using_credentials_file(
         "Logged in using stored credentials from "
         f'credentials file "{credentials_file}".'
     )
+    if pargs.no_ssl is True:
+        logger.debug(
+            "SSL will be not be used. The SSL certificate validation "
+            "will be skipped for this connection."
+        )
+    else:
+        logger.debug(
+            "SSL will be used. Default SSL certificate validation "
+            "will be done for this connection."
+        )
     if pargs.proxy:
         logger.debug(f"Proxy {pargs.proxy} will be used for connectivity.")
     logger.debug(f"Logged_in() = {client.logged_in}")
@@ -3385,6 +3421,9 @@ def initial_check_of_args() -> None:  # noqa: C901
         room_action = True
     else:
         room_action = False
+    # only 2 SSL states allowed: None (SSL default on), False (SSL off)
+    if pargs.no_ssl is not True:
+        pargs.no_ssl = None
     if pargs.proxy == "":
         pargs.proxy = None
 
@@ -4100,6 +4139,17 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         help="Set the display name for the current user to the value "
         "provided. No other operations like sending, listening, or "
         "verifying are allowed when setting the display name. ",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--no-ssl",
+        required=False,
+        action="store_true",
+        default=NO_SSL_UNUSED_DEFAULT,  # when option isn't used
+        help="Skip SSL verification. By default (if this option is not used) "
+        "the SSL certificate is validated for the connection. But, if this "
+        "option is used, then the SSL certificate validation will be skipped. "
+        "This is useful for home-servers that have no SSL certificate.",
     )
     ap.add_argument(
         # no single char flag
