@@ -256,6 +256,8 @@ $ # rename device-name, sometimes also called device display-name
 $ matrix-commander.py --rename-device "my new name"
 $ # set display-name for authenticated user
 $ matrix-commander.py --display-name "Alex"
+$ # skip SSL certificate verification for a homeserver without SSL
+$ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
@@ -789,7 +791,7 @@ except ImportError:
 
 
 # version number
-VERSION = "2022-May-17"
+VERSION = "2022-May-18"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -1550,15 +1552,6 @@ def determine_store_dir() -> str:
     if not pargs.encrypted:
         return None
     pargs_store_norm = os.path.normpath(pargs.store)  # normailzed for humans
-    text2 = (
-        "It will need to be verified.\n"
-        "The store directory will be created in the "
-        f'directory "{pargs_store_norm}". Optionally, consider moving '
-        "the persistent storage directory files inside "
-        f'"{pargs_store_norm}" into '
-        f'the directory "{STORE_DIR_LASTRESORT}" '
-        "for a more consistent experience."
-    )
     if os.path.isdir(pargs.store):
         logger.debug(
             "Found an existing store in directory "
@@ -1566,17 +1559,17 @@ def determine_store_dir() -> str:
             "It will be used."
         )
         return pargs_store_norm
+    text0 = "Could not find an existing store directory anywhere. "
     if pargs.store != STORE_DIR_DEFAULT and pargs.store != os.path.basename(
         pargs.store
     ):
-        text1 = (
+        text0 = (
             f'Store directory "{pargs_store_norm}" was specified by '
-            "user, it is a directory with path, but it "
-            "does not exist. Hence it will be created there. "
+            "user, it is a directory with a path, but the directory "
+            "does not exist. "
         )
-        logger.info(text1 + text2)
-        print(text1 + text2)
-        return pargs_store_norm  # create in the specified, directory with path
+        # fall through towards ending of function to print and return value
+        # create in the specified, directory with path
     if pargs.store == STORE_DIR_DEFAULT and os.path.isdir(
         STORE_DIR_LASTRESORT
     ):
@@ -1603,12 +1596,54 @@ def determine_store_dir() -> str:
                 f'"{last_resort}" directory. It will be used.'
             )
             return last_resort
-    text1 = (
-        "Could not find existing store directory anywhere. "
-        "A new one will be created. "
+    text1 = "There are 2 possibilities:"
+    text2 = (
+        f"1) This is the first time you use {PROG_WITHOUT_EXT} or you want "
+        "to create a new store. "
+        "In this first case just continue, and a new store will be created. "
+        "It will need to be verified. "
+        "The store directory will be created in the directory "
+        f'"{pargs_store_norm}". '
+        "Optionally, consider moving he persistant storage directory files "
+        f'inside "{pargs_store_norm}" into '
+        f'the directory "{STORE_DIR_LASTRESORT}" '
+        "for a more consistent experience."
     )
-    logger.debug(text1 + text2)
-    print(textwrap.fill(textwrap.dedent(text1 + text2).strip(), width=79))
+    text3 = (
+        "2) You specified the store location incorrectly or you started "
+        f"{PROG_WITHOUT_EXT} from the wrong directory. "
+        "In this second case abort, change you directory if needed or set the "
+        f"store option correctly. Then start {PROG_WITHOUT_EXT} again."
+    )
+    logger.debug(text0 + "\n" + text1 + "\n" + text2 + "\n" + text3)
+    print(
+        textwrap.fill(
+            text0,
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    print(
+        textwrap.fill(
+            text1,
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    print(
+        textwrap.fill(
+            text2,
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    print(
+        textwrap.fill(
+            text3,
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
     return pargs_store_norm  # create in the specified, local dir without path
 
 
@@ -2449,7 +2484,8 @@ async def process_arguments_and_input(client, rooms):
     await send_messages_and_files(client, rooms, messages_all_split)
 
 
-async def create_credentials_file(
+# according to pylama: function too complex: C901 # noqa: C901
+async def create_credentials_file(  # noqa: C901
     credentials_file: str, store_dir: str
 ) -> None:
     """Log in, create credentials file, log out and exit.
@@ -2460,12 +2496,48 @@ async def create_credentials_file(
         store_dir: str : location of persistent storage store directory
 
     """
-    text = f"""
+    text0 = f"""
             Credentials file \"{pargs.credentials}\" was not found.
-            First time use? Setting up new credentials?
-            Asking for homeserver, user, password and
+            There are 2 possibilities for this."""
+    text1 = f"""
+            1) This is your first time use? Setting up new credentials?
+            Then welcome to {PROG_WITHOUT_EXT}. Continue, and in the next
+            step you will be asked for homeserver, user, password and
             room id to create a credentials file."""
-    print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
+    text2 = f"""
+            2) You specified the credentials location incorrectly
+            or you started {PROG_WITHOUT_EXT} from the wrong directory.
+            Abort, change you directory if needed or set the credentials
+            option correctly. Then start {PROG_WITHOUT_EXT} again."""
+    print(
+        textwrap.fill(
+            textwrap.dedent(text0).strip(),
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    print(
+        textwrap.fill(
+            textwrap.dedent(text1).strip(),
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    print(
+        textwrap.fill(
+            textwrap.dedent(text2).strip(),
+            width=79,
+            subsequent_indent="   ",
+        )
+    )
+    confirm = input(
+        "Continue to create new credentials? (Yes or Ctrl-C to abort) "
+    )
+    if confirm.lower() != "yes" and confirm.lower() != "y":
+        print("")  # add newline to stdout to separate any log info
+        logger.info("Aborting.")
+        cleanup()
+        sys.exit(1)
     homeserver = "https://matrix.example.org"
     homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
     if not (
@@ -3110,8 +3182,13 @@ async def main_listen() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug(
-            "Credentials file must be created first before one can verify."
+        logger.info(
+            f"""Credentials file was not found.
+            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
+            Did you specify the credentials options incorrectly?
+            Credentials file must be created first before one can
+            listen.
+            Aborting due to missing or not-found credentials file."""
         )
         cleanup()
         sys.exit(1)
@@ -3150,8 +3227,13 @@ async def main_rename_device() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug(
-            "Credentials file must be created first before one can verify."
+        logger.info(
+            f"""Credentials file was not found.
+            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
+            Did you specify the credentials options incorrectly?
+            Credentials file must be created first before one can
+            rename device.
+            Aborting due to missing or not-found credentials file."""
         )
         cleanup()
         sys.exit(1)
@@ -3176,8 +3258,13 @@ async def main_rename_user() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug(
-            "Credentials file must be created first before one can rename."
+        logger.info(
+            f"""Credentials file was not found.
+            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
+            Did you specify the credentials options incorrectly?
+            Credentials file must be created first before one can
+            rename user.
+            Aborting due to missing or not-found credentials file."""
         )
         cleanup()
         sys.exit(1)
@@ -3197,15 +3284,18 @@ async def main_rename_user() -> None:
 
 
 # according to pylama: function too complex: C901 # noqa: C901
-
-
 async def main_room_actions() -> None:  # noqa: C901
     """Perform various room actions such as create, join, etc."""
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug(
-            "Credentials file must be created first before one can verify."
+        logger.info(
+            f"""Credentials file was not found.
+            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
+            Did you specify the credentials options incorrectly?
+            Credentials file must be created first before one can
+            perform room actions.
+            Aborting due to missing or not-found credentials file."""
         )
         cleanup()
         sys.exit(1)
@@ -3256,8 +3346,13 @@ async def main_verify() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug(
-            "Credentials file must be created first before one can verify."
+        logger.info(
+            f"""Credentials file was not found.
+            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
+            Did you specify the credentials options incorrectly?
+            Credentials file must be created first before one can
+            verify.
+            Aborting due to missing or not-found credentials file."""
         )
         cleanup()
         sys.exit(1)
