@@ -245,8 +245,12 @@ $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander.py --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
 $ matrix-commander.py --listen all --listen-self
-$ # rename device-name, sometimes also called display-name
+$ # rename device-name, sometimes also called device display-name
 $ matrix-commander.py --rename-device "my new name"
+$ # set display-name for authenticated user
+$ matrix-commander.py --display-name "Alex"
+$ # skip SSL certificate verification for a homeserver without SSL
+$ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
@@ -314,7 +318,9 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
                            [-n] [-e] [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE] [--version]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -484,7 +490,9 @@ optional arguments:
                         HTTP connection to the server. The proxy supports
                         SOCKS4(a), SOCKS5, and HTTP (tunneling). Examples of
                         valid URLs are "http://10.10.10.10:8118" or
-                        "socks5://user:password@127.0.0.1:1080".
+                        "socks5://user:password@127.0.0.1:1080". URLs with
+                        "https" or "socks4a" are not valid. Only "http",
+                        "socks4" and "socks5" are valid.
   -n, --notice          Send message as notice. If not specified, message will
                         be sent as text.
   -e, --encrypted       Send message end-to-end encrypted. Encryption is
@@ -581,6 +589,16 @@ optional arguments:
                         Rename the current device to the new device name
                         provided. No other operations like sending, listening,
                         or verifying are allowed when renaming the device.
+  --display-name DISPLAY_NAME
+                        Set the display name for the current user to the value
+                        provided. No other operations like sending, listening,
+                        or verifying are allowed when setting the display
+                        name.
+  --no-ssl              Skip SSL verification. By default (if this option is
+                        not used) the SSL certificate is validated for the
+                        connection. But, if this option is used, then the SSL
+                        certificate validation will be skipped. This is useful
+                        for home-servers that have no SSL certificate.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
@@ -653,16 +671,16 @@ Here is a sample snapshot of tab completion in action:
 
 # License
 
-This program is free software: you can redistribute it and/or modify it 
-under the terms of the GNU General Public License as published by the 
-Free Software Foundation, either version 3 of the License, or 
-(at your option) any later version. 
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
 When preparing to package `matrix-commander` for NIX the question
-came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was 
+came up if `matrix-commander` is GPL3Only or GPL3Plus. GPL3PLus was
 deemed to be better. As such the license was changed from GPL3Only
 to GPL3Plus on May 25, 2021. Versions before this date are licensed
-under GPL3. Versions on or after this date are GPL3Plus, i.e. 
+under GPL3. Versions on or after this date are GPL3Plus, i.e.
 GPL3 or later.
 
 See [GPL3 at FSF](https://www.fsf.org/licensing/).
@@ -670,12 +688,12 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 # Things to do, Things missing
 
-- see [Issues](https://github.com/8go/matrix-commander/issues) on Github 
+- see [Issues](https://github.com/8go/matrix-commander/issues) on Github
 
 # Final Remarks
 
 - Thanks to all of you who already have contributed! So appreciated!
-  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi, 
-    @pelzvieh, @mizlan, etc. 
+  - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
+    @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti, etc.
 - Enjoy!
 - Pull requests are welcome  :heart:
