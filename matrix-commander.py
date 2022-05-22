@@ -189,7 +189,9 @@ by default and cannot be turned off.
 # Examples of calling `matrix-commander`
 
 ```
-$ matrix-commander.py #  first run; this will configure everything
+$ matrix-commander.py # first run; this will configure everything
+$ matrix-commander.py --no-sso # alternative first run without Single Sign-On;
+$   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
 $ mkdir $HOME/.config/matrix-commander # optional
@@ -345,7 +347,8 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--version]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -644,11 +647,26 @@ optional arguments:
                         the path and file to your SSL certificate. If used
                         together with the "--no-ssl" parameter, this option is
                         meaningless and an error will be raised.
+  --no-sso              This argument is optional. If it is not used, the
+                        default login method will be used. This default login
+                        method is: SSO (Single Sign-On). SSO starts a web
+                        browser and connects the user to a webpage on the
+                        server for login. SSO will only work if the server
+                        supports it and if there is access to a browser. If
+                        this argument is used, then SSO will be avoided. This
+                        is useful on headless homeservers where there is no
+                        browser installed or accessible. It is also useful if
+                        the user prefers to login via a password. So, if SSO
+                        should be avoided and a password login is preferred
+                        then set this option. This option is only meaningful
+                        on the first run that initializes matrix-commander.
+                        Once credentials are established this option is
+                        irrelevant and it will simply be ignored.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-21. Enjoy, star on Github and contribute by
+You are running version 2022-05-22. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
@@ -716,6 +734,7 @@ Here is a sample snapshot of tab completion in action:
   - isort matrix-commander.py
   - flake8 matrix-commander.py
   - python3 -m black --line-length 79 matrix-commander.py
+- there is a script called `lintmc.sh` in `scripts` directory for that
 
 # License
 
@@ -845,7 +864,7 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-21"
+VERSION = "2022-05-22"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -899,6 +918,7 @@ RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -x is not specified
 DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name is not given
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
+NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
 
 
 class GlobalState:
@@ -2660,6 +2680,8 @@ async def create_credentials_file(  # noqa: C901
         sys.exit(1)
     homeserver = "https://matrix.example.org"
     homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
+    if not homeserver:
+        homeserver = "https://matrix.example.org"  # better error msg later
     if not (
         homeserver.startswith("https://") or homeserver.startswith("http://")
     ):
@@ -2669,7 +2691,7 @@ async def create_credentials_file(  # noqa: C901
         logger.info(f"Proxy {pargs.proxy} will be used.")
 
     # check for password/SSO
-    connector = TCPConnector(gs.ssl)  # setting sslcontext
+    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
     async with ClientSession(connector=connector) as session:
         async with session.get(
             f"{homeserver}/_matrix/client/r0/login",
@@ -2684,7 +2706,21 @@ async def create_credentials_file(  # noqa: C901
             password = "m.login.password" in flow_types
             sso = "m.login.sso" in flow_types and "m.login.token" in flow_types
 
+    # SSO: Single Sign-On:
+    # see https://matrix.org/docs/guides/sso-for-client-developers
+    if sso:
+        logger.debug("Server supports SSO for login.")
+        if pargs.no_sso:
+            logger.debug('Due to "--no-sso" argument, SSO will be avoided.')
+            sso = False  # override sso due to --no-sso flag set
+    else:
+        logger.debug(
+            "Server does not support SSO for login. "
+            "Hence, attempting to login with password."
+        )
+
     if not sso and password:
+
         user_id = "@user:example.org"
         user_id = input(f"Enter your full user ID: [{user_id}] ")
     else:
@@ -2738,7 +2774,19 @@ async def create_credentials_file(  # noqa: C901
                 f"{homeserver}/_matrix/client/r0/login/sso/redirect"
                 "?redirectUrl=http://localhost:38080/"
             )
-            subprocess.check_output(cmd)
+            try:
+                subprocess.check_output(cmd)
+            except Exception:
+                logger.info(
+                    "Browser could not be launched. "
+                    "Hence SSO (Single Sign-On) login could not be "
+                    "completed. Sorry. If you think the browser and "
+                    "SSO should work then try again. If you do not have "
+                    "a browser or don't want SSO or want to login with a "
+                    "password instead, then use the '--no-sso' option in "
+                    "the command line."
+                )
+                sys.exit(1)
 
             # wait and shutdown server
             try:
@@ -2755,7 +2803,11 @@ async def create_credentials_file(  # noqa: C901
             await runner.cleanup()
 
     elif not password:
-        logger.info("No supported login method found for homeserver")
+        logger.info(
+            "No supported login method found for homeserver. "
+            "Neither SSO nor password are accepted login "
+            "methods of the server."
+        )
         sys.exit(1)
 
     # Configuration options for the AsyncClient
@@ -2817,13 +2869,13 @@ async def create_credentials_file(  # noqa: C901
         else:
             logger.info(
                 f"The program {PROG_WITH_EXT} failed. "
-                "Most likely wrong credentials were entered."
+                "Most likely wrong credentials were entered. "
                 "Sorry."
             )
             logger.info(
                 f'homeserver="{homeserver}"; user="{user_id}"; '
-                f'room_id="{room_id}"'
-                f"Failed to log in: {resp}"
+                f'room_id="{room_id}"; '
+                f"failed to log in: {resp}"
             )
     finally:
         await client.close()
@@ -4417,6 +4469,26 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "while using your own local SSL certificate. Specify the path and "
         'file to your SSL certificate. If used together with the "--no-ssl" '
         "parameter, this option is meaningless and an error will be raised.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--no-sso",  # no Single Sign-On
+        required=False,
+        action="store_true",
+        default=NO_SSO_UNUSED_DEFAULT,  # when option isn't used
+        help="This argument is optional. If it is not used, the default "
+        "login method will be used. This default login method is: "
+        "SSO (Single Sign-On). SSO starts a web browser and connects the "
+        "user to a webpage on the server for login. SSO will only work if "
+        "the server supports it and if there is access to a browser. "
+        "If this argument is used, then SSO will be avoided. This is useful "
+        "on headless homeservers where there is no browser installed or "
+        "accessible. It is also useful if the user prefers to login via a "
+        "password. So, if SSO should be avoided and a password login is "
+        "preferred then set this option. This option is only meaningful "
+        f"on the first run that initializes {PROG_WITHOUT_EXT}. "
+        "Once credentials are established this option is irrelevant and "
+        "it will simply be ignored.",
     )
     ap.add_argument(
         # no single char flag

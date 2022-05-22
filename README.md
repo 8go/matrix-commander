@@ -182,7 +182,9 @@ by default and cannot be turned off.
 # Examples of calling `matrix-commander`
 
 ```
-$ matrix-commander.py #  first run; this will configure everything
+$ matrix-commander.py # first run; this will configure everything
+$ matrix-commander.py --no-sso # alternative first run without Single Sign-On;
+$   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
 $ mkdir $HOME/.config/matrix-commander # optional
@@ -338,7 +340,8 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--version]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -637,11 +640,26 @@ optional arguments:
                         the path and file to your SSL certificate. If used
                         together with the "--no-ssl" parameter, this option is
                         meaningless and an error will be raised.
+  --no-sso              This argument is optional. If it is not used, the
+                        default login method will be used. This default login
+                        method is: SSO (Single Sign-On). SSO starts a web
+                        browser and connects the user to a webpage on the
+                        server for login. SSO will only work if the server
+                        supports it and if there is access to a browser. If
+                        this argument is used, then SSO will be avoided. This
+                        is useful on headless homeservers where there is no
+                        browser installed or accessible. It is also useful if
+                        the user prefers to login via a password. So, if SSO
+                        should be avoided and a password login is preferred
+                        then set this option. This option is only meaningful
+                        on the first run that initializes matrix-commander.
+                        Once credentials are established this option is
+                        irrelevant and it will simply be ignored.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-21. Enjoy, star on Github and contribute by
+You are running version 2022-05-22. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
@@ -709,6 +727,7 @@ Here is a sample snapshot of tab completion in action:
   - isort matrix-commander.py
   - flake8 matrix-commander.py
   - python3 -m black --line-length 79 matrix-commander.py
+- there is a script called `lintmc.sh` in `scripts` directory for that
 
 # License
 
