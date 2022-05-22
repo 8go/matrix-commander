@@ -1,5 +1,15 @@
 #!/bin/bash
 
-# tiny 1-line script to lint matrix-commander.py
+# tiny script to lint matrix-commander.py
 
-isort matrix-commander.py && flake8 matrix-commander.py && python3 -m black --line-length 79 matrix-commander.py
+FN=matrix-commander.py
+
+if ! [ -f "$FN" ]; then
+    FN="../$FN"
+    if ! [ -f "$FN" ]; then
+        echo -n "ERROR: $(basename -- "$FN") not found. "
+        echo "Neither in local nor in parent directory."
+        exit 1
+    fi
+fi
+isort "$FN" && flake8 "$FN" && python3 -m black --line-length 79 "$FN"
