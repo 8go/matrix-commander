@@ -260,6 +260,8 @@ $ # set display-name for authenticated user
 $ matrix-commander.py --display-name "Alex"
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
+$ # use your own SSL certificate for a homeserver with SSL and local certs
+$ matrix-commander.py --ssl-certificate mycert.crt -m "using my own cert"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
@@ -343,7 +345,7 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
-                           [--version]
+                           [--ssl-certificate SSL_CERTIFICATE] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -630,10 +632,24 @@ optional arguments:
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
                         certificate validation will be skipped. This is useful
-                        for home-servers that have no SSL certificate.
+                        for home-servers that have no SSL certificate. If used
+                        together with the "--ssl-certificate" parameter, this
+                        option is meaningless and an error will be raised.
+  --ssl-certificate SSL_CERTIFICATE
+                        Use this option to use your own local SSL certificate
+                        file. This is an optional parameter. This is useful
+                        for home servers that have their own SSL certificate.
+                        This allows you to use HTTPS/TLS for the connection
+                        while using your own local SSL certificate. Specify
+                        the path and file to your SSL certificate. If used
+                        together with the "--no-ssl" parameter, this option is
+                        meaningless and an error will be raised.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
+
+You are running version 2022-05-22. Enjoy, star on Github and contribute by
+submitting a Pull Request.
 ```
 
 # Features
@@ -744,6 +760,7 @@ import os
 import re  # regular expression
 import select
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -751,12 +768,16 @@ import textwrap
 import traceback
 import urllib.request
 import uuid
+from os import R_OK, access
+from os.path import isfile
+from ssl import SSLContext
+from typing import Union
 from urllib.parse import urlparse
 
 import aiofiles
 import aiofiles.os
 import magic
-from aiohttp import ClientConnectorError, ClientSession, web
+from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
 from nio import (
     AsyncClient,
@@ -824,7 +845,7 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-May-19"
+VERSION = "2022-05-22"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -877,7 +898,24 @@ VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
 RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -x is not specified
 DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name is not given
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
-STDIN_USE = "none"  # to which logic is the stdin pipe assigned to
+SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
+
+
+class GlobalState:
+    """Keep global variables.
+
+    Trivial class to help keep some global state.
+    """
+
+    def __init__(self):
+        """Store global state."""
+        # to which logic (message, image, audio, file) is stdin pipe assigned
+        self.stdin_use: str = "none"
+        # 1) ssl None means default SSL context will be used.
+        # 2) ssl False means SSL certificate validation will be skipped
+        # 3) ssl a valid SSLContext means that the specified context will be
+        #    used. This is useful to using local SSL certificate.
+        self.ssl: Union[None, SSLContext, bool] = None
 
 
 def choose_available_filename(filename):
@@ -2101,8 +2139,6 @@ async def send_file(client, rooms, file):
 
 
 # according to linter: function is too complex, C901
-
-
 async def send_image(client, rooms, image):  # noqa: C901
     """Process image.
 
@@ -2172,8 +2208,8 @@ async def send_image(client, rooms, image):  # noqa: C901
         len_fin_buf = len(fin_buf)
         image = "mc-" + str(uuid.uuid4()) + ".tmp"
         logger.debug(
-            f"Data for image file read from stdin is {len_fin_buf} bytes long. "
-            f'Temporary file created for image is "{image}".'
+            f"{len_fin_buf} bytes of image data read from stdin. "
+            f'Temporary file "{image}" was created for image.'
         )
         fout = open(image, "wb")
         fout.write(fin_buf)
@@ -2426,9 +2462,9 @@ def get_messages_from_pipe() -> list:
         except UnicodeDecodeError:
             logger.info(
                 "Reading from stdin resulted in UnicodeDecodeError. This "
-                "can happen if you try to pipe binary data for a text message. "
-                "Only pipe text via stdin, not binary data. "
-                "No message will be generated."
+                "can happen if you try to pipe binary data for a text "
+                "message. For a text message only pipe text via stdin, "
+                "not binary data. No message will be generated."
             )
     return messages
 
@@ -2531,7 +2567,7 @@ async def process_arguments_and_input(client, rooms):
 
     """
     messages_from_pipe = []
-    if STDIN_USE == "none":  # STDIN is unused
+    if gs.stdin_use == "none":  # STDIN is unused
         messages_from_pipe = get_messages_from_pipe()
     messages_from_keyboard = get_messages_from_keyboard()
     if not pargs.message:
@@ -2540,11 +2576,11 @@ async def process_arguments_and_input(client, rooms):
         messages_from_commandline = []
         for m in pargs.message:
             if m == "\\-":  # escaped -
-                messages_from_commandline += "-"
+                messages_from_commandline += ["-"]
             elif m == "-":  # stdin pipe
                 messages_from_commandline += get_messages_from_pipe()
             else:
-                messages_from_commandline += m
+                messages_from_commandline += [m]
 
     logger.debug(f"Messages from pipe:         {messages_from_pipe}")
     logger.debug(f"Messages from keyboard:     {messages_from_keyboard}")
@@ -2629,22 +2665,12 @@ async def create_credentials_file(  # noqa: C901
     ):
         homeserver = "https://" + homeserver
 
-    if pargs.no_ssl is True:
-        logger.info(
-            "SSL will be not be used. The SSL certificate validation "
-            "will be skipped for this connection."
-        )
-    else:
-        logger.info(
-            "SSL will be used. Default SSL certificate validation "
-            "will be done for this connection."
-        )
-
     if pargs.proxy:
         logger.info(f"Proxy {pargs.proxy} will be used.")
 
     # check for password/SSO
-    async with ClientSession() as session:
+    connector = TCPConnector(gs.ssl)  # setting sslcontext
+    async with ClientSession(connector=connector) as session:
         async with session.get(
             f"{homeserver}/_matrix/client/r0/login",
             raise_for_status=True,
@@ -2748,13 +2774,12 @@ async def create_credentials_file(  # noqa: C901
         )
 
     # Initialize the matrix client
-
     client = AsyncClient(
         homeserver,
         user_id,
         store_path=store_dir,
         config=client_config,
-        ssl=(False if pargs.no_ssl is True else None),
+        ssl=gs.ssl,
         proxy=pargs.proxy,
     )
     try:
@@ -2838,7 +2863,7 @@ def login_using_credentials_file(
         device_id=credentials["device_id"],
         store_path=store_dir,
         config=client_config,
-        ssl=(False if pargs.no_ssl is True else None),
+        ssl=gs.ssl,
         proxy=pargs.proxy,
     )
 
@@ -2852,16 +2877,6 @@ def login_using_credentials_file(
         "Logged in using stored credentials from "
         f'credentials file "{credentials_file}".'
     )
-    if pargs.no_ssl is True:
-        logger.debug(
-            "SSL will be not be used. The SSL certificate validation "
-            "will be skipped for this connection."
-        )
-    else:
-        logger.debug(
-            "SSL will be used. Default SSL certificate validation "
-            "will be done for this connection."
-        )
     if pargs.proxy:
         logger.debug(f"Proxy {pargs.proxy} will be used for connectivity.")
     logger.debug(f"Logged_in() = {client.logged_in}")
@@ -3613,28 +3628,26 @@ def initial_check_of_args() -> None:  # noqa: C901
     STDIN_AUDIO = 0
     STDIN_FILE = 0
     STDIN_TOTAL = 0
-    global STDIN_USE
-    STDIN_USE = "none"
     if pargs.image:
         for image in pargs.image:
             if image == "-":
                 STDIN_IMAGE += 1
-                STDIN_USE = "image"
+                gs.stdin_use = "image"
     if pargs.audio:
         for audio in pargs.audio:
             if audio == "-":
                 STDIN_AUDIO += 1
-                STDIN_USE = "audio"
+                gs.stdin_use = "audio"
     if pargs.file:
         for file in pargs.file:
             if file == "-":
                 STDIN_FILE += 1
-                STDIN_USE = "file"
+                gs.stdin_use = "file"
     if pargs.message:
         for message in pargs.message:
             if message == "-":
                 STDIN_MESSAGE += 1
-                STDIN_USE = "message"
+                gs.stdin_use = "message"
     STDIN_TOTAL = STDIN_MESSAGE + STDIN_IMAGE + STDIN_AUDIO + STDIN_FILE
 
     # Secondly, the checks
@@ -3767,7 +3780,19 @@ def initial_check_of_args() -> None:  # noqa: C901
             'The character "-" is used more than once '
             'to represent "stdin" for piping information '
             f'into "{PROG_WITHOUT_EXT}". Stdin pipe can '
-            "be used at most once. "
+            "be used at most once."
+        )
+    elif pargs.no_ssl and pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
+        t = (
+            "Options --no-ssl and --ssl-certificate cannot be used "
+            "together. Use one or the other."
+        )
+    elif pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT and not (
+        isfile(pargs.ssl_certificate) and access(pargs.ssl_certificate, R_OK)
+    ):
+        t = (
+            f'Certificate file "{pargs.ssl_certificate}" specified with '
+            "--ssl-certificate is either not a file or is not readable."
         )
     else:
         logger.debug("All arguments are valid. All checks passed.")
@@ -4375,7 +4400,23 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         help="Skip SSL verification. By default (if this option is not used) "
         "the SSL certificate is validated for the connection. But, if this "
         "option is used, then the SSL certificate validation will be skipped. "
-        "This is useful for home-servers that have no SSL certificate.",
+        "This is useful for home-servers that have no SSL certificate. "
+        'If used together with the "--ssl-certificate" '
+        "parameter, this option is meaningless and an error will be raised.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--ssl-certificate",
+        required=False,
+        type=str,
+        default=SSL_CERTIFICATE_DEFAULT,  # when option isn't used
+        help="Use this option to use your own local SSL certificate file. "
+        "This is an optional parameter. This is useful for home servers that "
+        "have their own "
+        "SSL certificate. This allows you to use HTTPS/TLS for the connection "
+        "while using your own local SSL certificate. Specify the path and "
+        'file to your SSL certificate. If used together with the "--no-ssl" '
+        "parameter, this option is meaningless and an error will be raised.",
     )
     ap.add_argument(
         # no single char flag
@@ -4388,6 +4429,7 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     )
 
     pargs = ap.parse_args()
+    gs = GlobalState()
 
     logger = logging.getLogger(PROG_WITHOUT_EXT)
     if pargs.log_level:
@@ -4426,7 +4468,27 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     if pargs.version:
         version()  # continue execution
 
-    logger.debug(f'Stdin pipe is assigned to "{STDIN_USE}".')
+    logger.debug(f'Stdin pipe is assigned to "{gs.stdin_use}".')
+    if pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
+        logger.debug(
+            "SSL will be used. A custom SSL certificate was provided. "
+            f'Custom certificate from file "{pargs.ssl_certificate}" will '
+            "be used for this connection."
+        )
+        # type SSLContext
+        gs.ssl = ssl.create_default_context(cafile=pargs.ssl_certificate)
+    elif pargs.no_ssl:
+        logger.debug(
+            "SSL will be not be used. The SSL certificate validation "
+            "will be skipped for this connection."
+        )
+        gs.ssl is False
+    else:
+        logger.debug(
+            "SSL will be used. Default SSL certificate validation "
+            "will be done for this connection."
+        )
+        gs.ssl is None
 
     try:
         if pargs.verify:
