@@ -183,7 +183,7 @@ by default and cannot be turned off.
 
 ```
 $ matrix-commander.py #  first run; this will configure everything
-$ # this created a credentials.json file, and a store directory
+$ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
 $ mkdir $HOME/.config/matrix-commander # optional
 $ mv -i credentials.json $HOME/.config/matrix-commander/
@@ -219,10 +219,12 @@ $ # Send to multiple rooms
 $ matrix-commander.py -m "hi" -r '!r1:example.org' '!r2:example.org'
 $ # Send to multiple rooms, another way
 $ matrix-commander.py -m "hi" -r '!r1:example.org' -r '!r2:example.org'
-$ # send 2 images and 1 text
+$ # send 2 images and 1 text, text will be sent last
 $ matrix-commander.py -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
 $ matrix-commander.py -i photo1.jpg -m ""
+$ # pipe 1 image and no text
+$ cat image1.jpg | matrix-commander.py -i -
 $ # send 1 audio and 1 text to 2 rooms
 $ matrix-commander.py -a song.mp3 -m "Do you like this song?" \
     -r '!someroom1:example.com' '!someroom2:example.com'
@@ -251,6 +253,8 @@ $ # set display-name for authenticated user
 $ matrix-commander.py --display-name "Alex"
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
+$ # use your own SSL certificate for a homeserver with SSL and local certs
+$ matrix-commander.py --ssl-certificate mycert.crt -m "using my own cert"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander.py --listen forever --listen-self --download-media mymedia
@@ -292,11 +296,25 @@ $ matrix-commander.py --room-kick '!someroom1:example.com' \
 $ # set log levels, INFO for matrix-commander and ERROR for modules below
 $ matrix-commander.py -m "test" --log-level INFO ERROR
 $ # example of how to quote text correctly, e.g. JSON text
-$ matrix-commander -m '{title: "hello", message: "here it is"}'
-$ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
-$ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
-$ matrix-commander -m "Don't do this"
-$ matrix-commander -m 'He said "No" to me.'
+$ matrix-commander.py -m '{title: "hello", message: "here it is"}'
+$ matrix-commander.py -m "{title: \"hello\", message: \"here it is\"}"
+$ matrix-commander.py -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
+$ matrix-commander.py -m "Don't do this"
+$ matrix-commander.py -m 'He said "No" to me.'
+$ # example of how to use stdin, how to pipe data into the program
+$ echo "Some text" | matrix-commander.py # send a text msg via pipe
+$ echo "Some text" | matrix-commander.py -m - # long form to send text via pipe
+$ matrix-commander.py -m "\-" # send the literal minus sign as a text msg
+$ cat image1.png | matrix-commander.py -i - # send an image via pipe
+$ matrix-commander.py -i - < image1.png # send an image via pipe
+$ cat image1.png | matrix-commander.py -i - -m "text" # send image and text
+$ # send 3 images out of which the second will be read from stdin via pipe
+$ cat im2.png | matrix-commander.py -i im1.jpg - im3.jpg # send 3 images
+$ echo "text" | matrix-commander.py -i im1.png # first image, then piped text
+$ echo "text" | matrix-commander.py -i im1.png -m - # same, long version
+$ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
+$ # remember, pipe or stdin, i.e. the "-" can be used at most once
+$ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
 ```
 
 # Usage
@@ -320,7 +338,7 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
-                           [--version]
+                           [--ssl-certificate SSL_CERTIFICATE] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -447,9 +465,18 @@ optional arguments:
                         is published, then messages from this option are
                         published.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
-                        Send this image. This option can be used multiple time
-                        to send multiple images. First images are send, then
-                        text messages are send.
+                        Send this image. This option can be used multiple
+                        times to send multiple images. First images are send,
+                        then text messages are send. If you want to feed an
+                        image into matrix-commander via a pipe, via stdin,
+                        then specify the special character '-'. If '-' is
+                        specified as image file name, then the program will
+                        read the image data from stdin. If your image file is
+                        literally named '-' then use '\-' as filename in the
+                        argument. '-' may appear in any position, i.e. '-i
+                        image1.jpg - image3.png' will send 3 images out of
+                        which the second one is read from stdin. '-' may
+                        appear only once overall in all arguments.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
                         Send this audio file. This option can be used multiple
                         time to send multiple audio files. First audios are
@@ -598,10 +625,24 @@ optional arguments:
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
                         certificate validation will be skipped. This is useful
-                        for home-servers that have no SSL certificate.
+                        for home-servers that have no SSL certificate. If used
+                        together with the "--ssl-certificate" parameter, this
+                        option is meaningless and an error will be raised.
+  --ssl-certificate SSL_CERTIFICATE
+                        Use this option to use your own local SSL certificate
+                        file. This is an optional parameter. This is useful
+                        for home servers that have their own SSL certificate.
+                        This allows you to use HTTPS/TLS for the connection
+                        while using your own local SSL certificate. Specify
+                        the path and file to your SSL certificate. If used
+                        together with the "--no-ssl" parameter, this option is
+                        meaningless and an error will be raised.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
+
+You are running version 2022-05-22. Enjoy, star on Github and contribute by
+submitting a Pull Request.
 ```
 
 # Features
@@ -697,3 +738,4 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti, etc.
 - Enjoy!
 - Pull requests are welcome  :heart:
+
