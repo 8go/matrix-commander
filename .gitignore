@@ -1,6 +1,18 @@
 # Do not include credentials created at runtime.
 /store/
+/store.*/
 credentials.json
+credentials.json.*
 
 # Also do not include the media directory.
 /media/
+
+# ignore backups
+README.md.*
+matrix-commander.py.*
+
+# ignore help file
+help.txt
+
+# ignore test directory
+/test/
