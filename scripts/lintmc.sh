@@ -2,7 +2,7 @@
 
 # tiny script to lint matrix-commander.py
 
-FN=matrix-commander.py
+FN="matrix-commander.py"
 
 if ! [ -f "$FN" ]; then
     FN="../$FN"

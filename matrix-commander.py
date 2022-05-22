@@ -648,7 +648,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-22. Enjoy, star on Github and contribute by
+You are running version 2022-05-21. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
@@ -845,7 +845,7 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-22"
+VERSION = "2022-05-21"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
