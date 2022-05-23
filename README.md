@@ -323,6 +323,15 @@ $ audio-generator | matrix-commander.py -a - -m "Like this song?"
 $ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
 $ # remember, pipe or stdin, i.e. the "-" can be used at most once
 $ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
+$ # sending an event: e.g. reacting with an emoji
+$ JSON_REACT_MSC2677='{ "type": "m.reaction",
+    "content": { "m.relates_to": { "rel_type": "m.annotation",
+    "event_id": "%s", "key": "%s" } } }'
+$ TARGET_EVENT="\$...a.valid.event.id" # event to which to react
+$ REACT_EMOJI="😀" # how to react
+$ printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "$REACT_EMOJI" |
+    matrix-commander.py --event -
+$ # for more examples of "matrix-commander.py --event" see test/test-event.sh
 ```
 
 # Usage
@@ -340,14 +349,15 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--user USER [USER ...]] [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
-                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                           [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
-                           [-n] [--encrypted] [-s STORE] [-l [LISTEN]]
-                           [-t [TAIL]] [-y] [--print-event-id]
-                           [-u [DOWNLOAD_MEDIA]] [-o] [-v [VERIFY]]
-                           [-x RENAME_DEVICE] [--display-name DISPLAY_NAME]
-                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
-                           [--no-sso] [--version]
+                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
+                           [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
+                           [-j CONFIG] [--proxy PROXY] [-n] [--encrypted]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -360,8 +370,8 @@ quit, and get the last N messages and quit. Emoji verification is built-in
 which can be used to verify devices. End-to-end encryption is enabled by
 default and cannot be turned off. ─── See dependencies in source code or in
 README.md on Github. For even more explications and examples also read the
-documentation provided in the top portion of the source code and in the
-GithubREADME.md file.
+documentation provided in the top portion of the source code and in the Github
+README.md file.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -488,8 +498,8 @@ optional arguments:
                         arguments.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
                         Send this image. This option can be used multiple
-                        times to send multiple images. First images are send,
-                        then text messages are send. If you want to feed an
+                        times to send multiple images. First images are sent,
+                        then text messages are sent. If you want to feed an
                         image into matrix-commander via a pipe, via stdin,
                         then specify the special character '-'. If '-' is
                         specified as image file name, then the program will
@@ -503,18 +513,31 @@ optional arguments:
                         file name than to pipe the file through stdin.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
                         Send this audio file. This option can be used multiple
-                        time to send multiple audio files. First audios are
-                        send, then text messages are send. If you want to feed
+                        times to send multiple audio files. First audios are
+                        sent, then text messages are sent. If you want to feed
                         an audio into matrix-commander via a pipe, via stdin,
                         then specify the special character '-'. See
                         description of '-i' to see how '-' is handled.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
-                        be used multiple time to send multiple files. First
-                        files are send, then text messages are send. If you
-                        want to feed an file into matrix-commander via a pipe,
+                        be used multiple times to send multiple files. First
+                        files are sent, then text messages are sent. If you
+                        want to feed a file into matrix-commander via a pipe,
                         via stdin, then specify the special character '-'. See
                         description of '-i' to see how '-' is handled.
+  -e EVENT [EVENT ...], --event EVENT [EVENT ...]
+                        Send an event that is formatted as a JSON object as
+                        specified by the Matrix protocol. This allows the
+                        advanced user to send additional types of events such
+                        as reactions, send replies to previous events, or edit
+                        previous messages. Specifications for events can be
+                        found at https://spec.matrix.org/unstable/proposals/.
+                        This option can be used multiple times to send
+                        multiple events. First events are sent, then text
+                        messages are sent. If you want to feed an event into
+                        matrix-commander via a pipe, via stdin, then specify
+                        the special character '-'. See description of '-i' to
+                        see how '-' is handled.
   -w, --html            Send message as format "HTML". If not specified,
                         message will be sent as format "TEXT". E.g. that
                         allows some text to be bold, etc. Only a subset of

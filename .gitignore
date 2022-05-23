@@ -14,5 +14,4 @@ matrix-commander.py.*
 # ignore help file
 help.txt
 
-# ignore test directory
-/test/
+# ignore test directory? /test/

@@ -330,6 +330,15 @@ $ audio-generator | matrix-commander.py -a - -m "Like this song?"
 $ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
 $ # remember, pipe or stdin, i.e. the "-" can be used at most once
 $ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
+$ # sending an event: e.g. reacting with an emoji
+$ JSON_REACT_MSC2677='{ "type": "m.reaction",
+    "content": { "m.relates_to": { "rel_type": "m.annotation",
+    "event_id": "%s", "key": "%s" } } }'
+$ TARGET_EVENT="\$...a.valid.event.id" # event to which to react
+$ REACT_EMOJI="😀" # how to react
+$ printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "$REACT_EMOJI" |
+    matrix-commander.py --event -
+$ # for more examples of "matrix-commander.py --event" see test/test-event.sh
 ```
 
 # Usage
@@ -347,14 +356,15 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--user USER [USER ...]] [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
-                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
-                           [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
-                           [-n] [--encrypted] [-s STORE] [-l [LISTEN]]
-                           [-t [TAIL]] [-y] [--print-event-id]
-                           [-u [DOWNLOAD_MEDIA]] [-o] [-v [VERIFY]]
-                           [-x RENAME_DEVICE] [--display-name DISPLAY_NAME]
-                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
-                           [--no-sso] [--version]
+                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
+                           [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
+                           [-j CONFIG] [--proxy PROXY] [-n] [--encrypted]
+                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
+                           [-v [VERIFY]] [-x RENAME_DEVICE]
+                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -367,8 +377,8 @@ quit, and get the last N messages and quit. Emoji verification is built-in
 which can be used to verify devices. End-to-end encryption is enabled by
 default and cannot be turned off. ─── See dependencies in source code or in
 README.md on Github. For even more explications and examples also read the
-documentation provided in the top portion of the source code and in the
-GithubREADME.md file.
+documentation provided in the top portion of the source code and in the Github
+README.md file.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -495,8 +505,8 @@ optional arguments:
                         arguments.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
                         Send this image. This option can be used multiple
-                        times to send multiple images. First images are send,
-                        then text messages are send. If you want to feed an
+                        times to send multiple images. First images are sent,
+                        then text messages are sent. If you want to feed an
                         image into matrix-commander via a pipe, via stdin,
                         then specify the special character '-'. If '-' is
                         specified as image file name, then the program will
@@ -510,18 +520,31 @@ optional arguments:
                         file name than to pipe the file through stdin.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
                         Send this audio file. This option can be used multiple
-                        time to send multiple audio files. First audios are
-                        send, then text messages are send. If you want to feed
+                        times to send multiple audio files. First audios are
+                        sent, then text messages are sent. If you want to feed
                         an audio into matrix-commander via a pipe, via stdin,
                         then specify the special character '-'. See
                         description of '-i' to see how '-' is handled.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
-                        be used multiple time to send multiple files. First
-                        files are send, then text messages are send. If you
-                        want to feed an file into matrix-commander via a pipe,
+                        be used multiple times to send multiple files. First
+                        files are sent, then text messages are sent. If you
+                        want to feed a file into matrix-commander via a pipe,
                         via stdin, then specify the special character '-'. See
                         description of '-i' to see how '-' is handled.
+  -e EVENT [EVENT ...], --event EVENT [EVENT ...]
+                        Send an event that is formatted as a JSON object as
+                        specified by the Matrix protocol. This allows the
+                        advanced user to send additional types of events such
+                        as reactions, send replies to previous events, or edit
+                        previous messages. Specifications for events can be
+                        found at https://spec.matrix.org/unstable/proposals/.
+                        This option can be used multiple times to send
+                        multiple events. First events are sent, then text
+                        messages are sent. If you want to feed an event into
+                        matrix-commander via a pipe, via stdin, then specify
+                        the special character '-'. See description of '-i' to
+                        see how '-' is handled.
   -w, --html            Send message as format "HTML". If not specified,
                         message will be sent as format "TEXT". E.g. that
                         allows some text to be bold, etc. Only a subset of
@@ -2044,6 +2067,66 @@ async def kick_from_rooms(client, rooms, users):
 
 
 # according to linter: function is too complex, C901
+async def send_event(client, rooms, event):  # noqa: C901
+    """Process event.
+
+    Arguments:
+    ---------
+    client : Client
+    rooms : list
+        list of room_id-s
+    event : str
+        file name of event from --event argument
+
+    """
+    if not rooms:
+        logger.info(
+            "No rooms are given. This should not happen. "
+            "This file is being droppend and NOT sent."
+        )
+        return
+
+    if event == "-":  # - means read as pipe from stdin
+        jsondata = sys.stdin.buffer.read()
+    else:
+        file = open(event, "r").read()
+        jsondata = file.read()
+        file.close()
+    logger.debug(
+        f"{len(jsondata)} bytes of event data read from file {event}."
+    )
+    logger.debug(f"Event {event} contains this JSON data: {jsondata}")
+
+    if not jsondata.strip():
+        logger.debug(
+            "Event is empty. This event is being droppend and NOT sent."
+        )
+        return
+
+    try:
+        content_json = json.loads(jsondata)
+        message_type = content_json["type"]
+        content = content_json["content"]
+    except Exception:
+        logger.info(
+            "Event is not a valid JSON object or not of Matrix JSON format. "
+            "This event is being droppend and NOT sent."
+        )
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        return
+
+    try:
+        for room_id in rooms:
+            await client.room_send(
+                room_id, message_type=message_type, content=content
+            )
+            logger.info(f'This event was sent: "{event}" to room "{room_id}".')
+    except Exception:
+        logger.error(f"Event send of file {event} failed. Sorry.")
+        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+
+
+# according to linter: function is too complex, C901
 async def send_file(client, rooms, file):  # noqa: C901
     """Process file.
 
@@ -2119,7 +2202,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     if not os.path.isfile(file):
         logger.debug(
             f"File {file} is not a file. Doesn't exist or "
-            "is a directory."
+            "is a directory. "
             "This file is being droppend and NOT sent."
         )
         return
@@ -2621,6 +2704,10 @@ async def send_messages_and_files(client, rooms, messages):
     if pargs.file:
         for file in pargs.file:
             await send_file(client, rooms, file)
+
+    if pargs.event:
+        for event in pargs.event:
+            await send_event(client, rooms, event)
 
     for message in messages:
         await send_message(client, rooms, message)
@@ -3617,6 +3704,22 @@ async def main_send() -> None:
             await client.close()
 
 
+def are_arg_files_readable() -> bool:
+    """Check if files from command line are readable."""
+    arg_files = pargs.image if pargs.image else []
+    arg_files += pargs.audio if pargs.audio else []
+    arg_files += pargs.file if pargs.file else []
+    arg_files += pargs.event if pargs.event else []
+    for fn in arg_files:
+        if (fn != "-") and not (isfile(fn) and access(fn, R_OK)):
+            print(
+                f'Error: file "{fn}" specified in command line was not found, '
+                "or is not readable."
+            )
+            return False
+    return True
+
+
 def is_download_media_dir_valid() -> bool:
     """Check if media download directory is correct."""
     if not pargs.download_media:
@@ -3725,12 +3828,13 @@ def initial_check_of_args() -> None:  # noqa: C901
     if pargs.proxy == "":
         pargs.proxy = None
 
-    # how ofter is "-" used to represent stdin
+    # how often is "-" used to represent stdin
     # must be 0 or 1; cannot be used twice or more
     STDIN_MESSAGE = 0
     STDIN_IMAGE = 0
     STDIN_AUDIO = 0
     STDIN_FILE = 0
+    STDIN_EVENT = 0
     STDIN_TOTAL = 0
     if pargs.image:
         for image in pargs.image:
@@ -3747,12 +3851,19 @@ def initial_check_of_args() -> None:  # noqa: C901
             if file == "-":
                 STDIN_FILE += 1
                 gs.stdin_use = "file"
+    if pargs.event:
+        for event in pargs.event:
+            if event == "-":
+                STDIN_EVENT += 1
+                gs.stdin_use = "event"
     if pargs.message:
         for message in pargs.message:
             if message == "-":
                 STDIN_MESSAGE += 1
                 gs.stdin_use = "message"
-    STDIN_TOTAL = STDIN_MESSAGE + STDIN_IMAGE + STDIN_AUDIO + STDIN_FILE
+    STDIN_TOTAL = (
+        STDIN_MESSAGE + STDIN_IMAGE + STDIN_AUDIO + STDIN_FILE + STDIN_EVENT
+    )
 
     # Secondly, the checks
     if pargs.config:
@@ -3782,6 +3893,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.image
         or pargs.audio
         or pargs.file
+        or pargs.event
         or pargs.room
         or room_action
         or pargs.listen != NEVER
@@ -3789,7 +3901,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     ):
         t = (
             "If --verify is specified, only verify can be done. "
-            "No messages, images, or files can be sent."
+            "No messages, images, files or events can be sent."
             "No listening or tailing allowed. No renaming. "
             "No actions on rooms."
         )
@@ -3800,6 +3912,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.image
         or pargs.audio
         or pargs.file
+        or pargs.event
         or pargs.room
         or room_action
         or pargs.listen != NEVER
@@ -3807,7 +3920,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     ):
         t = (
             "If --rename_device is specified, only rename can be done. "
-            "No messages, images, or files can be sent."
+            "No messages, images, files or events can be sent."
             "No listening or tailing allowed. No verification. "
             "No actions on rooms."
         )
@@ -3816,19 +3929,24 @@ def initial_check_of_args() -> None:  # noqa: C901
         or pargs.image
         or pargs.audio
         or pargs.file
+        or pargs.event
         or room_action
     ):
         t = (
             "If --listen is specified, only listening can be done. "
-            "No messages, images, or files can be sent."
+            "No messages, images, files or events can be sent."
             "No room actions allowed."
         )
-    elif (pargs.message or pargs.image or pargs.audio or pargs.file) and (
-        pargs.listen != NEVER or room_action
-    ):
+    elif (
+        pargs.message
+        or pargs.image
+        or pargs.audio
+        or pargs.file
+        or pargs.event
+    ) and (pargs.listen != NEVER or room_action):
         t = (
-            "If sending (-m, -i, -a, -f) is specified, only sending can be "
-            "done. No listening allowed. "
+            "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
+            "be done. No listening allowed. "
             "No room actions allowed."
         )
     elif (pargs.user) and not room_action:
@@ -3935,7 +4053,7 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             "See dependencies in source code or in README.md on Github. "
             "For even more explications and examples also read the "
             "documentation provided in the top portion of the source code  "
-            "and in the GithubREADME.md file."
+            "and in the Github README.md file."
         ),
         epilog="You are running "
         f"version {VERSION}. Enjoy, star on Github and contribute by "
@@ -4181,8 +4299,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         type=str,
         help="Send this image. "
         "This option can be used multiple times to send "
-        "multiple images. First images are send, "
-        "then text messages are send. "
+        "multiple images. First images are sent, "
+        "then text messages are sent. "
         f"If you want to feed an image into {PROG_WITHOUT_EXT} "
         "via a pipe, via stdin, then specify the special "
         "character '-'. If '-' is specified as image file name, "
@@ -4207,9 +4325,9 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         nargs="+",
         type=str,
         help="Send this audio file. "
-        "This option can be used multiple time to send "
-        "multiple audio files. First audios are send, "
-        "then text messages are send. "
+        "This option can be used multiple times to send "
+        "multiple audio files. First audios are sent, "
+        "then text messages are sent. "
         f"If you want to feed an audio into {PROG_WITHOUT_EXT} "
         "via a pipe, via stdin, then specify the special "
         "character '-'. See description of '-i' to see how '-' is handled.",
@@ -4226,10 +4344,30 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         nargs="+",
         type=str,
         help="Send this file (e.g. PDF, DOC, MP4). "
-        "This option can be used multiple time to send "
-        "multiple files. First files are send, "
-        "then text messages are send. "
-        f"If you want to feed an file into {PROG_WITHOUT_EXT} "
+        "This option can be used multiple times to send "
+        "multiple files. First files are sent, "
+        "then text messages are sent. "
+        f"If you want to feed a file into {PROG_WITHOUT_EXT} "
+        "via a pipe, via stdin, then specify the special "
+        "character '-'. See description of '-i' to see how '-' is handled.",
+    )
+    ap.add_argument(
+        "-e",
+        "--event",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Send an event that is formatted as a JSON object as "
+        "specified by the Matrix protocol. This allows the advanced "
+        "user to send additional types of events such as reactions, "
+        "send replies to previous events, or edit previous messages. "
+        "Specifications for events can be found "
+        "at https://spec.matrix.org/unstable/proposals/. "
+        "This option can be used multiple times to send "
+        "multiple events. First events are sent, "
+        "then text messages are sent. "
+        f"If you want to feed an event into {PROG_WITHOUT_EXT} "
         "via a pipe, via stdin, then specify the special "
         "character '-'. See description of '-i' to see how '-' is handled.",
     )
@@ -4606,6 +4744,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
 
     initial_check_of_args()
     if not is_download_media_dir_valid():
+        sys.exit(1)
+    if not are_arg_files_readable():
         sys.exit(1)
     create_pid_file()
 
