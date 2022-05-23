@@ -3712,8 +3712,8 @@ def are_arg_files_readable() -> bool:
     arg_files += pargs.event if pargs.event else []
     for fn in arg_files:
         if (fn != "-") and not (isfile(fn) and access(fn, R_OK)):
-            print(
-                f'Error: file "{fn}" specified in command line was not found, '
+            logger.error(
+                f'File "{fn}" specified in the command line was not found, '
                 "or is not readable."
             )
             return False
@@ -4008,13 +4008,6 @@ def initial_check_of_args() -> None:  # noqa: C901
         t = (
             "Options --no-ssl and --ssl-certificate cannot be used "
             "together. Use one or the other."
-        )
-    elif pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT and not (
-        isfile(pargs.ssl_certificate) and access(pargs.ssl_certificate, R_OK)
-    ):
-        t = (
-            f'Certificate file "{pargs.ssl_certificate}" specified with '
-            "--ssl-certificate is either not a file or is not readable."
         )
     else:
         logger.debug("All arguments are valid. All checks passed.")
@@ -4759,20 +4752,39 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             f'Custom certificate from file "{pargs.ssl_certificate}" will '
             "be used for this connection."
         )
-        # type SSLContext
-        gs.ssl = ssl.create_default_context(cafile=pargs.ssl_certificate)
+        try:
+            # type SSLContext
+            gs.ssl = ssl.create_default_context(cafile=pargs.ssl_certificate)
+        except FileNotFoundError:
+            logger.error(
+                f'SSL certificate file "{pargs.ssl_certificate}" was '
+                "not found."
+            )
+            sys.exit(1)
+        except PermissionError:
+            logger.error(
+                f'SSL certificate file "{pargs.ssl_certificate}" does '
+                "not have read permissions."
+            )
+            sys.exit(1)
+        except ssl.SSLError:
+            logger.error(
+                f'SSL certificate file "{pargs.ssl_certificate}" has '
+                "invalid content. Does not seem to be a certificate."
+            )
+            sys.exit(1)
     elif pargs.no_ssl:
         logger.debug(
             "SSL will be not be used. The SSL certificate validation "
             "will be skipped for this connection."
         )
-        gs.ssl is False
+        gs.ssl = False
     else:
         logger.debug(
             "SSL will be used. Default SSL certificate validation "
             "will be done for this connection."
         )
-        gs.ssl is None
+        gs.ssl = None
 
     try:
         if pargs.verify:
