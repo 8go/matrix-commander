@@ -230,8 +230,12 @@ $ cat image1.jpg | matrix-commander.py -i -
 $ # send 1 audio and 1 text to 2 rooms
 $ matrix-commander.py -a song.mp3 -m "Do you like this song?" \
     -r '!someroom1:example.com' '!someroom2:example.com'
+$ # send 2 audios, 1 via stdin pipe
+$ audio-generator | matrix-commander.py -a intro.mp3 -
 $ # send a .pdf file and a video with a text
 $ matrix-commander.py -f example.pdf video.mp4 -m "Here are the promised files"
+$ # send a .pdf file via stdin pipe
+$ pdf-generator | matrix-commander.py -f -
 $ # listen forever, get msgs in real-time and notify me via OS
 $ matrix-commander.py --listen forever --os-notify
 $ # listen forever, and show me also my own messages
@@ -314,6 +318,8 @@ $ # send 3 images out of which the second will be read from stdin via pipe
 $ cat im2.png | matrix-commander.py -i im1.jpg - im3.jpg # send 3 images
 $ echo "text" | matrix-commander.py -i im1.png # first image, then piped text
 $ echo "text" | matrix-commander.py -i im1.png -m - # same, long version
+$ pdf-generator | matrix-commander.py -f - -m "Here is my PDF file."
+$ audio-generator | matrix-commander.py -a - -m "Like this song?"
 $ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
 $ # remember, pipe or stdin, i.e. the "-" can be used at most once
 $ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
@@ -336,12 +342,12 @@ usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]] [-w]
                            [-z] [-k] [-p SPLIT] [-j CONFIG] [--proxy PROXY]
-                           [-n] [-e] [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
-                           [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
-                           [--display-name DISPLAY_NAME] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--version]
+                           [-n] [--encrypted] [-s STORE] [-l [LISTEN]]
+                           [-t [TAIL]] [-y] [--print-event-id]
+                           [-u [DOWNLOAD_MEDIA]] [-o] [-v [VERIFY]]
+                           [-x RENAME_DEVICE] [--display-name DISPLAY_NAME]
+                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
+                           [--no-sso] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -463,10 +469,23 @@ optional arguments:
                         Send this message. If not specified, and no input
                         piped in from stdin, then message will be read from
                         stdin, i.e. keyboard. This option can be used multiple
-                        time to send multiple messages. If there is data is
+                        times to send multiple messages. If there is data
                         piped into this program, then first data from the pipe
                         is published, then messages from this option are
-                        published.
+                        published. Messages will be sent last, i.e. after
+                        objects like images, audio, files, etc. To force that
+                        no message is sent, use "-m ''". Input piped via stdin
+                        can additionally be specified with the special
+                        character '-'. If you want to feed a text message into
+                        matrix-commander via a pipe, via stdin, then specify
+                        the special character '-'. If '-' is specified as
+                        message, then the program will read the message from
+                        stdin. If your message is literally '-' then use '\-'
+                        as message in the argument. '-' may appear in any
+                        position, i.e. '-m "start" - "end"' will send 3
+                        messages out of which the second one is read from
+                        stdin. '-' may appear only once overall in all
+                        arguments.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
                         Send this image. This option can be used multiple
                         times to send multiple images. First images are send,
@@ -479,15 +498,23 @@ optional arguments:
                         argument. '-' may appear in any position, i.e. '-i
                         image1.jpg - image3.png' will send 3 images out of
                         which the second one is read from stdin. '-' may
-                        appear only once overall in all arguments.
+                        appear only once overall in all arguments. If the file
+                        exists already, it is more efficient to specify the
+                        file name than to pipe the file through stdin.
   -a AUDIO [AUDIO ...], --audio AUDIO [AUDIO ...]
                         Send this audio file. This option can be used multiple
                         time to send multiple audio files. First audios are
-                        send, then text messages are send.
+                        send, then text messages are send. If you want to feed
+                        an audio into matrix-commander via a pipe, via stdin,
+                        then specify the special character '-'. See
+                        description of '-i' to see how '-' is handled.
   -f FILE [FILE ...], --file FILE [FILE ...]
                         Send this file (e.g. PDF, DOC, MP4). This option can
                         be used multiple time to send multiple files. First
-                        files are send, then text messages are send.
+                        files are send, then text messages are send. If you
+                        want to feed an file into matrix-commander via a pipe,
+                        via stdin, then specify the special character '-'. See
+                        description of '-i' to see how '-' is handled.
   -w, --html            Send message as format "HTML". If not specified,
                         message will be sent as format "TEXT". E.g. that
                         allows some text to be bold, etc. Only a subset of
@@ -525,7 +552,7 @@ optional arguments:
                         "socks4" and "socks5" are valid.
   -n, --notice          Send message as notice. If not specified, message will
                         be sent as text.
-  -e, --encrypted       Send message end-to-end encrypted. Encryption is
+  --encrypted           Send message end-to-end encrypted. Encryption is
                         always turned on and will always be used where
                         possible. It cannot be turned off. This flag does
                         nothing as encryption is turned on with or without
@@ -659,7 +686,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-22. Enjoy, star on Github and contribute by
+You are running version 2022-05-23. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
