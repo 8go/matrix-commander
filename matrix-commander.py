@@ -338,7 +338,7 @@ $ TARGET_EVENT="\$...a.valid.event.id" # event to which to react
 $ REACT_EMOJI="😀" # how to react
 $ printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "$REACT_EMOJI" |
     matrix-commander.py --event -
-$ # for more examples of "matrix-commander.py --event" see test/test-event.sh
+$ # for more examples of "matrix-commander.py --event" see tests/test-event.sh
 ```
 
 # Usage
@@ -716,7 +716,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-23. Enjoy, star on Github and contribute by
+You are running version 2022-05-24. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
@@ -811,7 +811,8 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
-    @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti, etc.
+    @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
+    @opk12, etc.
 - Enjoy!
 - Pull requests are welcome  :heart:
 
@@ -914,7 +915,7 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-23"
+VERSION = "2022-05-24"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -2089,9 +2090,8 @@ async def send_event(client, rooms, event):  # noqa: C901
     if event == "-":  # - means read as pipe from stdin
         jsondata = sys.stdin.buffer.read()
     else:
-        file = open(event, "r").read()
-        jsondata = file.read()
-        file.close()
+        with open(event, "r") as file:
+            jsondata = file.read()
     logger.debug(
         f"{len(jsondata)} bytes of event data read from file {event}."
     )
@@ -4739,6 +4739,12 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
     if not is_download_media_dir_valid():
         sys.exit(1)
     if not are_arg_files_readable():
+        logger.debug(
+            f"{PROG_WITHOUT_EXT} forces an early abort. "
+            "To avoid partial execution, no action has been performed at all. "
+            "Nothing has been sent. Fix your arguments and run the command "
+            "again."
+        )
         sys.exit(1)
     create_pid_file()
 

@@ -25,16 +25,28 @@ else
 fi
 TARGET_EVENT="$MC_EVENT"
 
-# These 3 test cases should pass
+# These 4 test cases should pass
 printf "$JSON_EDIT_MSC2676" "Fallback body $(date +%H:%M:%S)" "Non-fallback body $(date +%H:%M:%S)" "$TARGET_EVENT" |
-    ./matrix-commander.py --event - $MC_OPTIONS
+    matrix-commander.py --event - $MC_OPTIONS
 # https://unicode.org/emoji/charts/full-emoji-list.html
 # emoji: thumbs up: "👍"; heart: "♥"; smiley: "😀"
 printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "😀" |
-    ./matrix-commander.py --event - $MC_OPTIONS
+    matrix-commander.py --event - $MC_OPTIONS
 printf "$JSON_REPLY_AS_THREAD_MSC3440" "Thread reply $(date +%H:%M:%S)" "$TARGET_EVENT" |
-    ./matrix-commander.py --event - $MC_OPTIONS
+    matrix-commander.py --event - $MC_OPTIONS
 
+printf "$JSON_EDIT_MSC2676" "Fallback body $(date +%H:%M:%S)" "Non-fallback body $(date +%H:%M:%S)" "$TARGET_EVENT" >event1.json
+printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "👍" >event2.json
+printf "$JSON_REPLY_AS_THREAD_MSC3440" "Thread reply $(date +%H:%M:%S)" "$TARGET_EVENT" >event3.json
+echo "##############################################################"
+echo "##############################################################"
+echo "##############################################################"
+matrix-commander.py --event event1.json event2.json event3.json -m "" $MC_OPTIONS
+rm event1.json event2.json event3.json
+
+echo "##############################################################"
+echo "##############################################################"
+echo "##############################################################"
 #
 
 # These 4 test cases should ***FAIL***. ***INCORRECT*** JSON objects.

@@ -6,6 +6,7 @@ credentials.json.*
 
 # Also do not include the media directory.
 /media/
+/media.*/
 
 # ignore backups
 README.md.*
@@ -13,5 +14,3 @@ matrix-commander.py.*
 
 # ignore help file
 help.txt
-
-# ignore test directory? /test/
