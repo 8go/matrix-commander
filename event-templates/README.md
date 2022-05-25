@@ -10,7 +10,7 @@ have placeholders (usually `%s` for a string, `%d` for an integer, and
 so forth as described in
 [printf](https://www.man7.org/linux/man-pages/man1/printf.1.html)).
 
-Use the templates as follows:
+In your scripts or programs use the templates as follows:
 - read a template
 - replace the placeholders with your desired valid values
 - send the event via `matrix-commander.py --event`

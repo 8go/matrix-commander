@@ -14,3 +14,9 @@ matrix-commander.py.*
 
 # ignore help file
 help.txt
+
+# ignore soft link
+mc
+
+# ignore certain scripts
+/scripts/prepare-commit.sh
