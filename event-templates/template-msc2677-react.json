@@ -1,0 +1,12 @@
+{
+  "__comment__": "event template for MSC2677, annotations and reactions",
+  "__documentation__": "see https://github.com/uhoreg/matrix-doc/blob/aggregations-reactions/proposals/2677-reactions.md and https://github.com/matrix-org/matrix-spec-proposals/pull/2677",
+  "type": "m.reaction",
+  "content": {
+    "m.relates_to": {
+      "rel_type": "m.annotation",
+      "event_id": "%s",
+      "key": "%s"
+    }
+  }
+}

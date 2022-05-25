@@ -716,7 +716,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-24. Enjoy, star on Github and contribute by
+You are running version 2022-05-25. Enjoy, star on Github and contribute by
 submitting a Pull Request.
 ```
 
@@ -915,7 +915,7 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-24"
+VERSION = "2022-05-25"
 # matrix-commander
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
 # matrix-commander.py
@@ -1422,7 +1422,7 @@ def notify(title: str, content: str, image_url: str):
     if not HAVE_NOTIFY:
         logger.warning(
             "notify2 or dbus is not installed. Notifications will not be "
-            "displayed.\n"
+            "displayed. "
             "Make sure that notify2 and dbus are installed or remove the "
             "--os-notify option."
         )
@@ -2088,7 +2088,7 @@ async def send_event(client, rooms, event):  # noqa: C901
         return
 
     if event == "-":  # - means read as pipe from stdin
-        jsondata = sys.stdin.buffer.read()
+        jsondata = sys.stdin.buffer.read().decode()  # binary read
     else:
         with open(event, "r") as file:
             jsondata = file.read()
@@ -2108,7 +2108,7 @@ async def send_event(client, rooms, event):  # noqa: C901
         message_type = content_json["type"]
         content = content_json["content"]
     except Exception:
-        logger.info(
+        logger.warning(
             "Event is not a valid JSON object or not of Matrix JSON format. "
             "This event is being droppend and NOT sent."
         )
@@ -3710,14 +3710,15 @@ def are_arg_files_readable() -> bool:
     arg_files += pargs.audio if pargs.audio else []
     arg_files += pargs.file if pargs.file else []
     arg_files += pargs.event if pargs.event else []
+    r = True
     for fn in arg_files:
         if (fn != "-") and not (isfile(fn) and access(fn, R_OK)):
             logger.error(
-                f'File "{fn}" specified in the command line was not found, '
+                f'File "{fn}" specified in the command line was not found '
                 "or is not readable."
             )
-            return False
-    return True
+            r = False
+    return r
 
 
 def is_download_media_dir_valid() -> bool:

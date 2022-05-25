@@ -1,0 +1,17 @@
+{
+  "__comment__": "event template for MSC2676, message editing",
+  "__documentation__": "see https://github.com/uhoreg/matrix-doc/blob/aggregations-edits/proposals/2676-message-editing.md and https://github.com/matrix-org/matrix-spec-proposals/pull/2676",
+  "type": "m.room.message",
+  "content": {
+    "body": "%s",
+    "msgtype": "m.text",
+    "m.new_content": {
+      "body": "%s",
+      "msgtype": "m.text"
+    },
+    "m.relates_to": {
+      "rel_type": "m.replace",
+      "event_id": "%s"
+    }
+  }
+}

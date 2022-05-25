@@ -1,0 +1,13 @@
+{
+  "__comment__": "event template for MSC3440, threading, reply as thread",
+  "__documentation__": "see https://github.com/matrix-org/matrix-spec-proposals/blob/main/proposals/3440-threading-via-relations.md and https://github.com/matrix-org/matrix-spec-proposals/pull/3440",
+  "type": "m.room.message",
+  "content": {
+    "body": "%s",
+    "msgtype": "m.text",
+    "m.relates_to": {
+      "rel_type": "m.thread",
+      "event_id": "%s"
+    }
+  }
+}
