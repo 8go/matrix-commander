@@ -14,10 +14,11 @@ creating rooms, inviting, verifying, and so much more.
 - It is a simple but convenient app to
     - send Matrix text messages as well as text, image, audio, video or
       other arbitrary files
-    - listen to and receive Matrix messages
+    - listen to and receive Matrix messages, images, audio, video, etc.
+    - download media files like images or audio
     - perform Matrix emoji verification
-    - create rooms
-    - invite to rooms
+    - performs actions of rooms (create rooms, invite to rooms, etc.)
+    - and much more
 - It exclusively offers a command-line interface (CLI).
 - Hence the word-play: matrix-command(lin)er
 - There is no GUI and there are no windows (except for pop-up windows in
@@ -33,14 +34,14 @@ messages from the CLI in various different ways.
 Use cases for this program could be
 - a bot or part of a bot,
 - to send alerts,
-- combine it with cron to publish periodic data,
+- combine it with `cron` to publish periodic data,
 - send yourself daily/weekly reminders via a cron job
 - send yourself a daily song from your music collection
 - a trivial way to fire off some instant messages from the command line
 - to automate sending via programs and scripts
 - a "blogger" who frequently sends messages and images to the same
   room(s) could use it
-- a person could write a diary or run a gratitutde journal by
+- a person could write a diary or run a gratitude journal by
   sending messages to her/his own room
 - as educational material that showcases the use of the `matrix-nio` SDK
 
@@ -100,7 +101,7 @@ Messages to send can be provided
 
 For sending messages the program supports various text formats:
 1) text: default
-2) html:  HTML formated text
+2) html:  HTML formatted text
 3) markdown: MarkDown formatted text
 4) code: used a block of fixed-sized font, ideal for ASCII art or
    tables, bash outputs, etc.
@@ -110,8 +111,11 @@ For sending messages the program supports various text formats:
 Photos and images that can be sent. That includes files like
 .jpg, .gif, .png or .svg.
 
-Arbirtary files like .txt, .pdf, .doc, audio files like .mp3
+Arbitrary files like .txt, .pdf, .doc, audio files like .mp3
 or video files like .mp4 can also be sent.
+
+Matrix events like sending an emoji reaction, replying as a thread,
+message edits can be sent.
 
 # Listening, Receiving
 
@@ -149,8 +153,8 @@ well as ban, unban and kick other users from rooms.
 # Summary, TLDR
 
 This simple Matrix client written in Python allows you to send and
-receive messages and verify other devices. End-to-end encryption is enabled
-by default and cannot be turned off.
+receive messages and files and verify other devices. End-to-end encryption
+is enabled by default and cannot be turned off.
 
 # Dependencies
 
@@ -415,7 +419,7 @@ optional arguments:
                         Create this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
                         provided in the arguments will be created. The user
-                        must be permitted to create rooms.Combine --room-
+                        must be permitted to create rooms. Combine --room-
                         create with --name and --topic to add names and topics
                         to the room(s) to be created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
@@ -544,7 +548,7 @@ optional arguments:
                         HTML tags are accepted by Matrix.
   -z, --markdown        Send message as format "MARKDOWN". If not specified,
                         message will be sent as format "TEXT". E.g. that
-                        allows sending of text formated in MarkDown language.
+                        allows sending of text formatted in MarkDown language.
   -k, --code            Send message as format "CODE". If not specified,
                         message will be sent as format "TEXT". If both --html
                         and --code are specified then --code takes priority.
@@ -722,6 +726,7 @@ submitting a Pull Request.
 - Storage for End-to-end encryption
 - Storage of credentials
 - Supports access token instead of password
+- Supports SSO (Single Sign-On)
 - Sending messages
 - Sending notices
 - Sending formatted messages
@@ -733,6 +738,8 @@ submitting a Pull Request.
 - Sending image files (photos, etc.)
 - Sending of media files (music, videos, etc.)
 - Sending of arbitrary files (PDF, xls, doc, txt, etc.)
+- Sending events such as emoji reactions, or replies as threads
+- Using events to edit sent messages
 - Receiving messages forever
 - Receiving messages once
 - Receiving last messages
@@ -748,6 +755,9 @@ submitting a Pull Request.
 - Unbanning from rooms
 - Kicking from rooms
 - Supports renaming of device
+- Supports renaming of display name
+- Supports skipping SSL verification to use HTTP instead of HTTPS
+- Supports providing local SSL certificate files
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
 - Supports room aliases
@@ -756,6 +766,7 @@ submitting a Pull Request.
 - In-source documentation
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
+- More than 200 stars :stars: on Github
 
 # Autocompletion
 
@@ -765,10 +776,23 @@ Here is a sample snapshot of tab completion in action:
 
 ![tab completion](./screenshots/tab_complete.png)
 
+# Performance and Speed
+
+- `matrix-commander` is written in Python and hence rather on the slow side
+- It is not thread-safe. One cannot just simply run multiple instances
+  at the same time. However, with very careful set-up one can run
+  multiple instances, but that is not the target use case.
+- Where possible bundle several actions together into a single call.
+  For example if one wants to send 8 images, then it is significatly faster
+  to call `matrix-commander` once with `-i` specifying 8 images, than
+  to call `matrix-commander` 8 times with one image each call. One needs
+  to send 5 messages, 10 images, 5 audios, 3 PDF files and 7 events to
+  the same user? Call `matrix-commander` once, not 30 times.
+
 # For Developers
 
 - Don't change tabbing, spacing, or formating as file is automatically
-  sorted, linted and formated.
+  sorted, linted and formatted.
 - `pylama:format=pep8:linters=pep8`
 - first `isort` import sorter
 - then `flake8` linter/formater
@@ -777,7 +801,7 @@ Here is a sample snapshot of tab completion in action:
   - isort matrix-commander.py
   - flake8 matrix-commander.py
   - python3 -m black --line-length 79 matrix-commander.py
-- there is a script called `lintmc.sh` in `scripts` directory for that
+- There is a script called `lintmc.sh` in `scripts` directory for that.
 
 # License
 
