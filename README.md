@@ -25,6 +25,7 @@ creating rooms, inviting, verifying, and so much more.
   OS notification)
 - It uses the [matrix-nio](https://github.com/poljar/matrix-nio/) SDK
 - Both `matrix-nio` and `matrix-commander` are written in Python 3
+- Convenient to install via `pip` or `pip3`.
 
 # Summary
 
@@ -158,7 +159,17 @@ is enabled by default and cannot be turned off.
 
 # Dependencies
 
-- Python 3.8 or higher (3.7 will NOT work) installed
+- If you install via `pip`, then `pip` will take care of most of the
+  dependencies.
+  - See https://pypi.org/project/matrix-commander
+  - Usually `pip install matrix-commander`
+  - Note that even if you install via `pip` you must have a) Python 3.8+
+    and b) `libolm` installed. See `PyPi-Instructions.md`.
+
+If you install vit `git` or via file download then these are the
+dependencies that you must take care of:
+
+- Python 3.8 or higher installed (3.7 will NOT work)
 - libolm-dev must be installed as it is required by matrix-nio
   - libolm-dev on Debian/Ubuntu, libolm-devel on Fedora, libolm on MacOS
 - matrix-nio must be installed, see https://github.com/poljar/matrix-nio
@@ -173,9 +184,12 @@ is enabled by default and cannot be turned off.
   - pip3 install --user --upgrade notify2 # optional
 - python3 package urllib must be installed to support media download
   - pip3 install --user --upgrade urllib
-- the matrix-commander.py file must be installed, and should have
-  execution permissions
-  - chmod 755 matrix-commander.py
+- `matrix_commander/matrix_commander.py` file must be installed, and should
+  have execution permissions
+  - chmod 755 matrix_commander.py
+- `matrix_commander/matrix-commander` file is recommended for the install,
+  and should have execution permissions
+  - chmod 755 matrix-commander
 - for a full list or requirements look at the `requirements.txt` file
   - run `pip install -r requirements.txt` to automatically install
     all required Python packages
@@ -186,8 +200,8 @@ is enabled by default and cannot be turned off.
 # Examples of calling `matrix-commander`
 
 ```
-$ matrix-commander.py # first run; this will configure everything
-$ matrix-commander.py --no-sso # alternative first run without Single Sign-On;
+$ matrix-commander # first run; this will configure everything
+$ matrix-commander --no-sso # alternative first run without Single Sign-On;
 $   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
@@ -199,134 +213,134 @@ $ mv -i store $HOME/.local/share/matrix-commander/
 $ # Now you are ready to run program for a second time
 $ # Let us verify the device/room to where we want to send messages
 $ # The other device will issue a "verify by emoji" request
-$ matrix-commander.py --verify
+$ matrix-commander --verify
 $ # Now program is both configured and verified, let us send the first message
-$ matrix-commander.py -m "First message!"
-$ matrix-commander.py --debug # turn debugging on
-$ matrix-commander.py --help # print help
-$ matrix-commander.py # this will ask user for message to send
-$ matrix-commander.py --message "Hello World!" # sends provided message
-$ echo "Hello World" | matrix-commander.py # pipe input msg into program
-$ matrix-commander.py -m msg1 -m msg2 # sends 2 messages
-$ matrix-commander.py -m msg1 msg2 msg3 # sends 3 messages
-$ df -h | matrix-commander.py --code # formatting for code/tables
-$ matrix-commander.py -m "<b>BOLD</b> and <i>ITALIC</i>" --html
-$ matrix-commander.py -m "- bullet1" --markdown
+$ matrix-commander -m "First message!"
+$ matrix-commander --debug # turn debugging on
+$ matrix-commander --help # print help
+$ matrix-commander # this will ask user for message to send
+$ matrix-commander --message "Hello World!" # sends provided message
+$ echo "Hello World" | matrix-commander # pipe input msg into program
+$ matrix-commander -m msg1 -m msg2 # sends 2 messages
+$ matrix-commander -m msg1 msg2 msg3 # sends 3 messages
+$ df -h | matrix-commander --code # formatting for code/tables
+$ matrix-commander -m "<b>BOLD</b> and <i>ITALIC</i>" --html
+$ matrix-commander -m "- bullet1" --markdown
 $ # take input from an RSS feed and split large RSS entries into multiple
 $ # Matrix messages wherever the pattern "\n\n\n" is found
-$ rssfeed | matrix-commander.py --split "\n\n\n"
-$ matrix-commander.py --credentials usr1room2.json # select credentials file
-$ matrix-commander.py --store /var/storage/ # select store directory
+$ rssfeed | matrix-commander --split "\n\n\n"
+$ matrix-commander --credentials usr1room2.json # select credentials file
+$ matrix-commander --store /var/storage/ # select store directory
 $ # Send to a specific room
-$ matrix-commander.py -m "hi" --room '!YourRoomId:example.org'
+$ matrix-commander -m "hi" --room '!YourRoomId:example.org'
 $ # some shells require the ! of the room id to be escaped with \
-$ matrix-commander.py -m "hi" --room "\!YourRoomId:example.org"
+$ matrix-commander -m "hi" --room "\!YourRoomId:example.org"
 $ # Send to multiple rooms
-$ matrix-commander.py -m "hi" -r '!r1:example.org' '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.org' '!r2:example.org'
 $ # Send to multiple rooms, another way
-$ matrix-commander.py -m "hi" -r '!r1:example.org' -r '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
 $ # send 2 images and 1 text, text will be sent last
-$ matrix-commander.py -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
+$ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
-$ matrix-commander.py -i photo1.jpg -m ""
+$ matrix-commander -i photo1.jpg -m ""
 $ # pipe 1 image and no text
-$ cat image1.jpg | matrix-commander.py -i -
+$ cat image1.jpg | matrix-commander -i -
 $ # send 1 audio and 1 text to 2 rooms
-$ matrix-commander.py -a song.mp3 -m "Do you like this song?" \
+$ matrix-commander -a song.mp3 -m "Do you like this song?" \
     -r '!someroom1:example.com' '!someroom2:example.com'
 $ # send 2 audios, 1 via stdin pipe
-$ audio-generator | matrix-commander.py -a intro.mp3 -
+$ audio-generator | matrix-commander -a intro.mp3 -
 $ # send a .pdf file and a video with a text
-$ matrix-commander.py -f example.pdf video.mp4 -m "Here are the promised files"
+$ matrix-commander -f example.pdf video.mp4 -m "Here are the promised files"
 $ # send a .pdf file via stdin pipe
-$ pdf-generator | matrix-commander.py -f -
+$ pdf-generator | matrix-commander -f -
 $ # listen forever, get msgs in real-time and notify me via OS
-$ matrix-commander.py --listen forever --os-notify
+$ matrix-commander --listen forever --os-notify
 $ # listen forever, and show me also my own messages
-$ matrix-commander.py --listen forever --listen-self
+$ matrix-commander --listen forever --listen-self
 $ # listen once, get any new messages and quit
-$ matrix-commander.py --listen once --listen-self
-$ matrix-commander.py --listen once --listen-self | process-in-other-app
+$ matrix-commander --listen once --listen-self
+$ matrix-commander --listen once --listen-self | process-in-other-app
 $ # listen to tail, get the last N messages and quit
-$ matrix-commander.py --listen tail --tail 10 --listen-self
+$ matrix-commander --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
-$ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ matrix-commander --tail 10 --listen-self | process-in-other-app
 $ # get the very last message
-$ matrix-commander.py --tail 1 --listen-self
+$ matrix-commander --tail 1 --listen-self
 $ # listen to (get) all messages, old and new, and process them in another app
-$ matrix-commander.py --listen all | process-in-other-app
+$ matrix-commander --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
-$ matrix-commander.py --listen all --listen-self
+$ matrix-commander --listen all --listen-self
 $ # rename device-name, sometimes also called device display-name
-$ matrix-commander.py --rename-device "my new name"
+$ matrix-commander --rename-device "my new name"
 $ # set display-name for authenticated user
-$ matrix-commander.py --display-name "Alex"
+$ matrix-commander --display-name "Alex"
 $ # skip SSL certificate verification for a homeserver without SSL
-$ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
+$ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
 $ # use your own SSL certificate for a homeserver with SSL and local certs
-$ matrix-commander.py --ssl-certificate mycert.crt -m "using my own cert"
+$ matrix-commander --ssl-certificate mycert.crt -m "using my own cert"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
-$ matrix-commander.py --listen forever --listen-self --download-media mymedia
+$ matrix-commander --listen forever --listen-self --download-media mymedia
 $ # create rooms without name and topic, just with alias, use a simple alias
-$ matrix-commander.py --room-create roomAlias1
+$ matrix-commander --room-create roomAlias1
 $ # don't use a well formed alias like '#roomAlias1:example.com' as it will
 $ # confuse the server!
-$ # BAD: matrix-commander.py --room-create roomAlias1 '#roomAlias1:example.com'
-$ matrix-commander.py --room-create roomAlias2
+$ # BAD: matrix-commander --room-create roomAlias1 '#roomAlias1:example.com'
+$ matrix-commander --room-create roomAlias2
 $ # create rooms with name and topic
-$ matrix-commander.py --room-create roomAlias3 --name 'Fancy Room' \
+$ matrix-commander --room-create roomAlias3 --name 'Fancy Room' \
     --topic 'All about Matrix'
-$ matrix-commander.py --room-create roomAlias4 roomAlias5 \
+$ matrix-commander --room-create roomAlias4 roomAlias5 \
     --name 'Fancy Room 4' -name 'Cute Room 5' \
     --topic 'All about Matrix 4' 'All about Nio 5'
 $ # join rooms
-$ matrix-commander.py --room-join '!someroomId1:example.com' \
+$ matrix-commander --room-join '!someroomId1:example.com' \
     '!someroomId2:example.com' '#roomAlias1:example.com'
 $ # leave rooms
-$ matrix-commander.py --room-leave '#roomAlias1:example.com' \
+$ matrix-commander --room-leave '#roomAlias1:example.com' \
     '!someroomId2:example.com'
 $ # forget rooms, you have to first leave a room before you forget it
-$ matrix-commander.py --room-forget '#roomAlias1:example.com'
+$ matrix-commander --room-forget '#roomAlias1:example.com'
 $ # invite users to rooms
-$ matrix-commander.py --room-invite '#roomAlias1:example.com' \
+$ matrix-commander --room-invite '#roomAlias1:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # ban users from rooms
-$ matrix-commander.py --room-ban '!someroom1:example.com' \
+$ matrix-commander --room-ban '!someroom1:example.com' \
     '!someroom2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # unban users from rooms, remember after unbanning you have to invite again
-$ matrix-commander.py --room-unban '!someroom1:example.com' \
+$ matrix-commander --room-unban '!someroom1:example.com' \
     '!someroom2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # kick users from rooms
-$ matrix-commander.py --room-kick '!someroom1:example.com' \
+$ matrix-commander --room-kick '!someroom1:example.com' \
     '#roomAlias2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # set log levels, INFO for matrix-commander and ERROR for modules below
-$ matrix-commander.py -m "test" --log-level INFO ERROR
+$ matrix-commander -m "test" --log-level INFO ERROR
 $ # example of how to quote text correctly, e.g. JSON text
-$ matrix-commander.py -m '{title: "hello", message: "here it is"}'
-$ matrix-commander.py -m "{title: \"hello\", message: \"here it is\"}"
-$ matrix-commander.py -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
-$ matrix-commander.py -m "Don't do this"
-$ matrix-commander.py -m 'He said "No" to me.'
+$ matrix-commander -m '{title: "hello", message: "here it is"}'
+$ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
+$ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
+$ matrix-commander -m "Don't do this"
+$ matrix-commander -m 'He said "No" to me.'
 $ # example of how to use stdin, how to pipe data into the program
-$ echo "Some text" | matrix-commander.py # send a text msg via pipe
-$ echo "Some text" | matrix-commander.py -m - # long form to send text via pipe
-$ matrix-commander.py -m "\-" # send the literal minus sign as a text msg
-$ cat image1.png | matrix-commander.py -i - # send an image via pipe
-$ matrix-commander.py -i - < image1.png # send an image via pipe
-$ cat image1.png | matrix-commander.py -i - -m "text" # send image and text
+$ echo "Some text" | matrix-commander # send a text msg via pipe
+$ echo "Some text" | matrix-commander -m - # long form to send text via pipe
+$ matrix-commander -m "\-" # send the literal minus sign as a text msg
+$ cat image1.png | matrix-commander -i - # send an image via pipe
+$ matrix-commander -i - < image1.png # send an image via pipe
+$ cat image1.png | matrix-commander -i - -m "text" # send image and text
 $ # send 3 images out of which the second will be read from stdin via pipe
-$ cat im2.png | matrix-commander.py -i im1.jpg - im3.jpg # send 3 images
-$ echo "text" | matrix-commander.py -i im1.png # first image, then piped text
-$ echo "text" | matrix-commander.py -i im1.png -m - # same, long version
-$ pdf-generator | matrix-commander.py -f - -m "Here is my PDF file."
-$ audio-generator | matrix-commander.py -a - -m "Like this song?"
-$ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
+$ cat im2.png | matrix-commander -i im1.jpg - im3.jpg # send 3 images
+$ echo "text" | matrix-commander -i im1.png # first image, then piped text
+$ echo "text" | matrix-commander -i im1.png -m - # same, long version
+$ pdf-generator | matrix-commander -f - -m "Here is my PDF file."
+$ audio-generator | matrix-commander -a - -m "Like this song?"
+$ echo "junk" | matrix-commander -i - -m - # this will fail, not allowed
 $ # remember, pipe or stdin, i.e. the "-" can be used at most once
-$ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
+$ cat im.png | matrix-commander -i im1.png - im3.png - im5.png # will fail
 $ # sending an event: e.g. reacting with an emoji
 $ JSON_REACT_MSC2677='{ "type": "m.reaction",
     "content": { "m.relates_to": { "rel_type": "m.annotation",
@@ -334,13 +348,13 @@ $ JSON_REACT_MSC2677='{ "type": "m.reaction",
 $ TARGET_EVENT="\$...a.valid.event.id" # event to which to react
 $ REACT_EMOJI="😀" # how to react
 $ printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "$REACT_EMOJI" |
-    matrix-commander.py --event -
-$ # for more examples of "matrix-commander.py --event" see tests/test-event.sh
+    matrix-commander --event -
+$ # for more examples of "matrix-commander --event" see tests/test-event.sh
 ```
 
 # Usage
 ```
-usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
+usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
@@ -713,8 +727,8 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-25. Enjoy, star on Github and contribute by
-submitting a Pull Request.
+You are running version 2.15.0 2022-05-26. Enjoy, star on Github and
+contribute by submitting a Pull Request.
 ```
 
 # Features
@@ -767,6 +781,7 @@ submitting a Pull Request.
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 - More than 200 stars :stars: on Github
+- Available through `pip`, i.e. available in PyPi store
 
 # Autocompletion
 
@@ -798,9 +813,9 @@ Here is a sample snapshot of tab completion in action:
 - then `flake8` linter/formater
 - then `black` linter/formater
 - linelength: 79
-  - isort matrix-commander.py
-  - flake8 matrix-commander.py
-  - python3 -m black --line-length 79 matrix-commander.py
+  - isort matrix_commander.py
+  - flake8 matrix_commander.py
+  - python3 -m black --line-length 79 matrix_commander.py
 - There is a script called `lintmc.sh` in `scripts` directory for that.
 
 # License

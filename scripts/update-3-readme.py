@@ -7,15 +7,15 @@ from datetime import datetime
 from os import R_OK, access
 from os.path import isfile
 
-# extract the README portion within the matrix-commander.py file
+# extract the README portion within the matrix_commander.py file
 # into a separate stand-alone README.md file
 
 # datetime object containing current date and time
 now = datetime.now()
-date_string = now.strftime("%d%m%Y-%H%M%S")
+date_string = now.strftime("%Y%m%d-%H%M%S")
 
 readmemd = "README.md"
-filename = "matrix-commander.py"
+filename = "matrix_commander/matrix_commander.py"
 
 if isfile(filename) and access(filename, R_OK):
     # so that subprocess can execute it without PATH

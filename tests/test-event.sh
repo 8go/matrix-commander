@@ -34,9 +34,9 @@ printf "$MSC2677_REACT" "$TARGET_EVENT" "❤" >event2.json
 printf "$MSC3440_THREAD" "Thread reply $(date +%H:%M:%S)" \
     "$TARGET_EVENT" >event3.json
 
-matrix-commander.py --event event1.json event2.json -m "" $MC_OPTIONS
+matrix-commander --event event1.json event2.json -m "" $MC_OPTIONS
 # also test the stdin pipe logic
-cat event3.json | matrix-commander.py --event - $MC_OPTIONS
+cat event3.json | matrix-commander --event - $MC_OPTIONS
 
 echo -e "\n\n\nThe next 4 test cases should ***FAIL*** due to " \
     "***INCORRECT*** JSON objects.\n\n\n"
@@ -57,5 +57,5 @@ printf "$BAD_MSC3440_THREAD" "Thread reply $(date +%H:%M:%S)" \
 # this will fail due to not being valid JSON
 printf "$BAD_MSC2677_REACT_2" "$TARGET_EVENT" "❤" >event4.json
 # These 4 test cases should ***FAIL***
-cat event2.json | matrix-commander.py --event event1.json - event3.json event4.json -m "" $MC_OPTIONS
+cat event2.json | matrix-commander --event event1.json - event3.json event4.json -m "" $MC_OPTIONS
 rm event1.json event2.json event3.json event4.json # clean up

@@ -11,15 +11,15 @@ from os.path import isfile
 # ```
 # usage: ...
 # ```
-# in the matrix-commander.py file with the output of
-# matrix-commander.py --help
+# in the matrix_commander.py file with the output of
+# matrix_commander.py --help
 
 # datetime object containing current date and time
 now = datetime.now()
-date_string = now.strftime("%d%m%Y-%H%M%S")
+date_string = now.strftime("%Y%m%d-%H%M%S")
 
 helpfile = "help.txt"
-filename = "matrix-commander.py"
+filename = "matrix_commander/matrix_commander.py"
 
 if isfile(filename) and access(filename, R_OK):
     # so that subprocess can execute it without PATH

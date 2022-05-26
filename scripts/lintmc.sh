@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# tiny script to lint matrix-commander.py
+# tiny script to lint matrix_commander.py
 
-FN="matrix-commander.py"
+FN="matrix_commander.py"
 
 if ! [ -f "$FN" ]; then
-    FN="../$FN"
+    FN="matrix_commander/$FN"
     if ! [ -f "$FN" ]; then
         echo -n "ERROR: $(basename -- "$FN") not found. "
-        echo "Neither in local nor in parent directory."
+        echo "Neither in local nor in child directory."
         exit 1
     fi
 fi

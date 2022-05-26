@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-r"""matrix-commander.py.
+r"""matrix_commander.py.
 
 0123456789012345678901234567890123456789012345678901234567890123456789012345678
 0000000000111111111122222222223333333333444444444455555555556666666666777777777
@@ -32,6 +32,7 @@ creating rooms, inviting, verifying, and so much more.
   OS notification)
 - It uses the [matrix-nio](https://github.com/poljar/matrix-nio/) SDK
 - Both `matrix-nio` and `matrix-commander` are written in Python 3
+- Convenient to install via `pip` or `pip3`.
 
 # Summary
 
@@ -165,7 +166,17 @@ is enabled by default and cannot be turned off.
 
 # Dependencies
 
-- Python 3.8 or higher (3.7 will NOT work) installed
+- If you install via `pip`, then `pip` will take care of most of the
+  dependencies.
+  - See https://pypi.org/project/matrix-commander
+  - Usually `pip install matrix-commander`
+  - Note that even if you install via `pip` you must have a) Python 3.8+
+    and b) `libolm` installed. See `PyPi-Instructions.md`.
+
+If you install vit `git` or via file download then these are the
+dependencies that you must take care of:
+
+- Python 3.8 or higher installed (3.7 will NOT work)
 - libolm-dev must be installed as it is required by matrix-nio
   - libolm-dev on Debian/Ubuntu, libolm-devel on Fedora, libolm on MacOS
 - matrix-nio must be installed, see https://github.com/poljar/matrix-nio
@@ -180,9 +191,12 @@ is enabled by default and cannot be turned off.
   - pip3 install --user --upgrade notify2 # optional
 - python3 package urllib must be installed to support media download
   - pip3 install --user --upgrade urllib
-- the matrix-commander.py file must be installed, and should have
-  execution permissions
-  - chmod 755 matrix-commander.py
+- `matrix_commander/matrix_commander.py` file must be installed, and should
+  have execution permissions
+  - chmod 755 matrix_commander.py
+- `matrix_commander/matrix-commander` file is recommended for the install,
+  and should have execution permissions
+  - chmod 755 matrix-commander
 - for a full list or requirements look at the `requirements.txt` file
   - run `pip install -r requirements.txt` to automatically install
     all required Python packages
@@ -193,8 +207,8 @@ is enabled by default and cannot be turned off.
 # Examples of calling `matrix-commander`
 
 ```
-$ matrix-commander.py # first run; this will configure everything
-$ matrix-commander.py --no-sso # alternative first run without Single Sign-On;
+$ matrix-commander # first run; this will configure everything
+$ matrix-commander --no-sso # alternative first run without Single Sign-On;
 $   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
@@ -206,134 +220,134 @@ $ mv -i store $HOME/.local/share/matrix-commander/
 $ # Now you are ready to run program for a second time
 $ # Let us verify the device/room to where we want to send messages
 $ # The other device will issue a "verify by emoji" request
-$ matrix-commander.py --verify
+$ matrix-commander --verify
 $ # Now program is both configured and verified, let us send the first message
-$ matrix-commander.py -m "First message!"
-$ matrix-commander.py --debug # turn debugging on
-$ matrix-commander.py --help # print help
-$ matrix-commander.py # this will ask user for message to send
-$ matrix-commander.py --message "Hello World!" # sends provided message
-$ echo "Hello World" | matrix-commander.py # pipe input msg into program
-$ matrix-commander.py -m msg1 -m msg2 # sends 2 messages
-$ matrix-commander.py -m msg1 msg2 msg3 # sends 3 messages
-$ df -h | matrix-commander.py --code # formatting for code/tables
-$ matrix-commander.py -m "<b>BOLD</b> and <i>ITALIC</i>" --html
-$ matrix-commander.py -m "- bullet1" --markdown
+$ matrix-commander -m "First message!"
+$ matrix-commander --debug # turn debugging on
+$ matrix-commander --help # print help
+$ matrix-commander # this will ask user for message to send
+$ matrix-commander --message "Hello World!" # sends provided message
+$ echo "Hello World" | matrix-commander # pipe input msg into program
+$ matrix-commander -m msg1 -m msg2 # sends 2 messages
+$ matrix-commander -m msg1 msg2 msg3 # sends 3 messages
+$ df -h | matrix-commander --code # formatting for code/tables
+$ matrix-commander -m "<b>BOLD</b> and <i>ITALIC</i>" --html
+$ matrix-commander -m "- bullet1" --markdown
 $ # take input from an RSS feed and split large RSS entries into multiple
 $ # Matrix messages wherever the pattern "\n\n\n" is found
-$ rssfeed | matrix-commander.py --split "\n\n\n"
-$ matrix-commander.py --credentials usr1room2.json # select credentials file
-$ matrix-commander.py --store /var/storage/ # select store directory
+$ rssfeed | matrix-commander --split "\n\n\n"
+$ matrix-commander --credentials usr1room2.json # select credentials file
+$ matrix-commander --store /var/storage/ # select store directory
 $ # Send to a specific room
-$ matrix-commander.py -m "hi" --room '!YourRoomId:example.org'
+$ matrix-commander -m "hi" --room '!YourRoomId:example.org'
 $ # some shells require the ! of the room id to be escaped with \
-$ matrix-commander.py -m "hi" --room "\!YourRoomId:example.org"
+$ matrix-commander -m "hi" --room "\!YourRoomId:example.org"
 $ # Send to multiple rooms
-$ matrix-commander.py -m "hi" -r '!r1:example.org' '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.org' '!r2:example.org'
 $ # Send to multiple rooms, another way
-$ matrix-commander.py -m "hi" -r '!r1:example.org' -r '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
 $ # send 2 images and 1 text, text will be sent last
-$ matrix-commander.py -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
+$ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
-$ matrix-commander.py -i photo1.jpg -m ""
+$ matrix-commander -i photo1.jpg -m ""
 $ # pipe 1 image and no text
-$ cat image1.jpg | matrix-commander.py -i -
+$ cat image1.jpg | matrix-commander -i -
 $ # send 1 audio and 1 text to 2 rooms
-$ matrix-commander.py -a song.mp3 -m "Do you like this song?" \
+$ matrix-commander -a song.mp3 -m "Do you like this song?" \
     -r '!someroom1:example.com' '!someroom2:example.com'
 $ # send 2 audios, 1 via stdin pipe
-$ audio-generator | matrix-commander.py -a intro.mp3 -
+$ audio-generator | matrix-commander -a intro.mp3 -
 $ # send a .pdf file and a video with a text
-$ matrix-commander.py -f example.pdf video.mp4 -m "Here are the promised files"
+$ matrix-commander -f example.pdf video.mp4 -m "Here are the promised files"
 $ # send a .pdf file via stdin pipe
-$ pdf-generator | matrix-commander.py -f -
+$ pdf-generator | matrix-commander -f -
 $ # listen forever, get msgs in real-time and notify me via OS
-$ matrix-commander.py --listen forever --os-notify
+$ matrix-commander --listen forever --os-notify
 $ # listen forever, and show me also my own messages
-$ matrix-commander.py --listen forever --listen-self
+$ matrix-commander --listen forever --listen-self
 $ # listen once, get any new messages and quit
-$ matrix-commander.py --listen once --listen-self
-$ matrix-commander.py --listen once --listen-self | process-in-other-app
+$ matrix-commander --listen once --listen-self
+$ matrix-commander --listen once --listen-self | process-in-other-app
 $ # listen to tail, get the last N messages and quit
-$ matrix-commander.py --listen tail --tail 10 --listen-self
+$ matrix-commander --listen tail --tail 10 --listen-self
 $ # listen to tail, another way of specifying it
-$ matrix-commander.py --tail 10 --listen-self | process-in-other-app
+$ matrix-commander --tail 10 --listen-self | process-in-other-app
 $ # get the very last message
-$ matrix-commander.py --tail 1 --listen-self
+$ matrix-commander --tail 1 --listen-self
 $ # listen to (get) all messages, old and new, and process them in another app
-$ matrix-commander.py --listen all | process-in-other-app
+$ matrix-commander --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
-$ matrix-commander.py --listen all --listen-self
+$ matrix-commander --listen all --listen-self
 $ # rename device-name, sometimes also called device display-name
-$ matrix-commander.py --rename-device "my new name"
+$ matrix-commander --rename-device "my new name"
 $ # set display-name for authenticated user
-$ matrix-commander.py --display-name "Alex"
+$ matrix-commander --display-name "Alex"
 $ # skip SSL certificate verification for a homeserver without SSL
-$ matrix-commander.py --no-ssl -m "also working without Let's Encrypt SSL"
+$ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
 $ # use your own SSL certificate for a homeserver with SSL and local certs
-$ matrix-commander.py --ssl-certificate mycert.crt -m "using my own cert"
+$ matrix-commander --ssl-certificate mycert.crt -m "using my own cert"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
-$ matrix-commander.py --listen forever --listen-self --download-media mymedia
+$ matrix-commander --listen forever --listen-self --download-media mymedia
 $ # create rooms without name and topic, just with alias, use a simple alias
-$ matrix-commander.py --room-create roomAlias1
+$ matrix-commander --room-create roomAlias1
 $ # don't use a well formed alias like '#roomAlias1:example.com' as it will
 $ # confuse the server!
-$ # BAD: matrix-commander.py --room-create roomAlias1 '#roomAlias1:example.com'
-$ matrix-commander.py --room-create roomAlias2
+$ # BAD: matrix-commander --room-create roomAlias1 '#roomAlias1:example.com'
+$ matrix-commander --room-create roomAlias2
 $ # create rooms with name and topic
-$ matrix-commander.py --room-create roomAlias3 --name 'Fancy Room' \
+$ matrix-commander --room-create roomAlias3 --name 'Fancy Room' \
     --topic 'All about Matrix'
-$ matrix-commander.py --room-create roomAlias4 roomAlias5 \
+$ matrix-commander --room-create roomAlias4 roomAlias5 \
     --name 'Fancy Room 4' -name 'Cute Room 5' \
     --topic 'All about Matrix 4' 'All about Nio 5'
 $ # join rooms
-$ matrix-commander.py --room-join '!someroomId1:example.com' \
+$ matrix-commander --room-join '!someroomId1:example.com' \
     '!someroomId2:example.com' '#roomAlias1:example.com'
 $ # leave rooms
-$ matrix-commander.py --room-leave '#roomAlias1:example.com' \
+$ matrix-commander --room-leave '#roomAlias1:example.com' \
     '!someroomId2:example.com'
 $ # forget rooms, you have to first leave a room before you forget it
-$ matrix-commander.py --room-forget '#roomAlias1:example.com'
+$ matrix-commander --room-forget '#roomAlias1:example.com'
 $ # invite users to rooms
-$ matrix-commander.py --room-invite '#roomAlias1:example.com' \
+$ matrix-commander --room-invite '#roomAlias1:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # ban users from rooms
-$ matrix-commander.py --room-ban '!someroom1:example.com' \
+$ matrix-commander --room-ban '!someroom1:example.com' \
     '!someroom2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # unban users from rooms, remember after unbanning you have to invite again
-$ matrix-commander.py --room-unban '!someroom1:example.com' \
+$ matrix-commander --room-unban '!someroom1:example.com' \
     '!someroom2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # kick users from rooms
-$ matrix-commander.py --room-kick '!someroom1:example.com' \
+$ matrix-commander --room-kick '!someroom1:example.com' \
     '#roomAlias2:example.com' \
     --user '@user1:example.com' '@user2:example.com'
 $ # set log levels, INFO for matrix-commander and ERROR for modules below
-$ matrix-commander.py -m "test" --log-level INFO ERROR
+$ matrix-commander -m "test" --log-level INFO ERROR
 $ # example of how to quote text correctly, e.g. JSON text
-$ matrix-commander.py -m '{title: "hello", message: "here it is"}'
-$ matrix-commander.py -m "{title: \"hello\", message: \"here it is\"}"
-$ matrix-commander.py -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
-$ matrix-commander.py -m "Don't do this"
-$ matrix-commander.py -m 'He said "No" to me.'
+$ matrix-commander -m '{title: "hello", message: "here it is"}'
+$ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
+$ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
+$ matrix-commander -m "Don't do this"
+$ matrix-commander -m 'He said "No" to me.'
 $ # example of how to use stdin, how to pipe data into the program
-$ echo "Some text" | matrix-commander.py # send a text msg via pipe
-$ echo "Some text" | matrix-commander.py -m - # long form to send text via pipe
-$ matrix-commander.py -m "\-" # send the literal minus sign as a text msg
-$ cat image1.png | matrix-commander.py -i - # send an image via pipe
-$ matrix-commander.py -i - < image1.png # send an image via pipe
-$ cat image1.png | matrix-commander.py -i - -m "text" # send image and text
+$ echo "Some text" | matrix-commander # send a text msg via pipe
+$ echo "Some text" | matrix-commander -m - # long form to send text via pipe
+$ matrix-commander -m "\-" # send the literal minus sign as a text msg
+$ cat image1.png | matrix-commander -i - # send an image via pipe
+$ matrix-commander -i - < image1.png # send an image via pipe
+$ cat image1.png | matrix-commander -i - -m "text" # send image and text
 $ # send 3 images out of which the second will be read from stdin via pipe
-$ cat im2.png | matrix-commander.py -i im1.jpg - im3.jpg # send 3 images
-$ echo "text" | matrix-commander.py -i im1.png # first image, then piped text
-$ echo "text" | matrix-commander.py -i im1.png -m - # same, long version
-$ pdf-generator | matrix-commander.py -f - -m "Here is my PDF file."
-$ audio-generator | matrix-commander.py -a - -m "Like this song?"
-$ echo "junk" | matrix-commander.py -i - -m - # this will fail, not allowed
+$ cat im2.png | matrix-commander -i im1.jpg - im3.jpg # send 3 images
+$ echo "text" | matrix-commander -i im1.png # first image, then piped text
+$ echo "text" | matrix-commander -i im1.png -m - # same, long version
+$ pdf-generator | matrix-commander -f - -m "Here is my PDF file."
+$ audio-generator | matrix-commander -a - -m "Like this song?"
+$ echo "junk" | matrix-commander -i - -m - # this will fail, not allowed
 $ # remember, pipe or stdin, i.e. the "-" can be used at most once
-$ cat im.png | matrix-commander.py -i im1.png - im3.png - im5.png # will fail
+$ cat im.png | matrix-commander -i im1.png - im3.png - im5.png # will fail
 $ # sending an event: e.g. reacting with an emoji
 $ JSON_REACT_MSC2677='{ "type": "m.reaction",
     "content": { "m.relates_to": { "rel_type": "m.annotation",
@@ -341,13 +355,13 @@ $ JSON_REACT_MSC2677='{ "type": "m.reaction",
 $ TARGET_EVENT="\$...a.valid.event.id" # event to which to react
 $ REACT_EMOJI="😀" # how to react
 $ printf "$JSON_REACT_MSC2677" "$TARGET_EVENT" "$REACT_EMOJI" |
-    matrix-commander.py --event -
-$ # for more examples of "matrix-commander.py --event" see tests/test-event.sh
+    matrix-commander --event -
+$ # for more examples of "matrix-commander --event" see tests/test-event.sh
 ```
 
 # Usage
 ```
-usage: matrix-commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
+usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-c CREDENTIALS] [-r ROOM [ROOM ...]]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
@@ -720,8 +734,8 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2022-05-25. Enjoy, star on Github and contribute by
-submitting a Pull Request.
+You are running version 2.15.0 2022-05-26. Enjoy, star on Github and
+contribute by submitting a Pull Request.
 ```
 
 # Features
@@ -774,6 +788,7 @@ submitting a Pull Request.
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 - More than 200 stars :stars: on Github
+- Available through `pip`, i.e. available in PyPi store
 
 # Autocompletion
 
@@ -805,9 +820,9 @@ Here is a sample snapshot of tab completion in action:
 - then `flake8` linter/formater
 - then `black` linter/formater
 - linelength: 79
-  - isort matrix-commander.py
-  - flake8 matrix-commander.py
-  - python3 -m black --line-length 79 matrix-commander.py
+  - isort matrix_commander.py
+  - flake8 matrix_commander.py
+  - python3 -m black --line-length 79 matrix_commander.py
 - There is a script called `lintmc.sh` in `scripts` directory for that.
 
 # License
@@ -939,18 +954,20 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-25"
-# matrix-commander
-PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0]
-# matrix-commander.py
-PROG_WITH_EXT = os.path.basename(__file__)
+VERSION = "2022-05-26"
+VERSIONNR = "2.15.0"
+# matrix-commander; for backwards compitability replace _ with -
+PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
+    "_", "-"
+)
+# matrix-commander.py; for backwards compitability replace _ with -
+PROG_WITH_EXT = os.path.basename(__file__).replace("_", "-")
 # file to store credentials in case you want to run program multiple times
 CREDENTIALS_FILE_DEFAULT = "credentials.json"  # login credentials JSON file
 # e.g. ~/.config/matrix-commander/
-CREDENTIALS_DIR_LASTRESORT = (
-    os.path.expanduser("~/.config/")
-    + os.path.splitext(os.path.basename(__file__))[0]
-)
+CREDENTIALS_DIR_LASTRESORT = os.path.expanduser(
+    "~/.config/"
+) + os.path.splitext(os.path.basename(__file__))[0].replace("_", "-")
 # directory to be used by end-to-end encrypted protocol for persistent storage
 STORE_DIR_DEFAULT = "./store/"
 # e.g. ~/.local/share/matrix-commander/
@@ -960,7 +977,7 @@ STORE_DIR_DEFAULT = "./store/"
 STORE_PATH_LASTRESORT = os.path.normpath(
     (
         os.path.expanduser("~/.local/share/")
-        + os.path.splitext(os.path.basename(__file__))[0]
+        + os.path.splitext(os.path.basename(__file__))[0].replace("_", "-")
     )
 )
 # e.g. ~/.local/share/matrix-commander/store/
@@ -1004,6 +1021,8 @@ class GlobalState:
 
     def __init__(self):
         """Store global state."""
+        self.log: logging.Logger = None  # logger object
+        self.pa: argparse.Namespace = None  # parsed arguments
         # to which logic (message, image, audio, file, event) is
         # stdin pipe assigned?
         self.stdin_use: str = "none"
@@ -1059,42 +1078,42 @@ class Callbacks(object):
         Includes events like RoomMessageText, RoomMessageImage, etc.
         """
         try:
-            logger.debug(
+            gs.log.debug(
                 f"message_callback(): for room {room} received this "
                 f"event: type: {type(event)}, event_id: {event.event_id}, "
                 f"event: {event}"
             )
-            if not pargs.listen_self:
+            if not gs.pa.listen_self:
                 if event.sender == self.client.user:
                     try:
-                        logger.debug(
+                        gs.log.debug(
                             f"Skipping message sent by myself: {event.body}"
                         )
                     except AttributeError:  # does not have .body
-                        logger.debug(
+                        gs.log.debug(
                             f"Skipping message sent by myself: {event}"
                         )
                     return
 
             # millisec since 1970
-            logger.debug(f"event.server_timestamp = {event.server_timestamp}")
+            gs.log.debug(f"event.server_timestamp = {event.server_timestamp}")
             timestamp = datetime.datetime.fromtimestamp(
                 int(event.server_timestamp / 1000)
             )  # sec since 1970
             event_datetime = timestamp.strftime("%Y-%m-%d %H:%M:%S")
             # e.g. 2020-08-06 17:30:18
-            logger.debug(f"event_datetime = {event_datetime}")
+            gs.log.debug(f"event_datetime = {event_datetime}")
 
             if isinstance(event, RoomMessageMedia):  # for all media events
                 media_mxc = event.url
                 media_url = await self.client.mxc_to_http(media_mxc)
-                logger.debug(f"HTTP URL of media is : {media_url}")
+                gs.log.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if pargs.download_media != "":
+                if gs.pa.download_media != "":
                     # download unencrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
-                        os.path.join(pargs.download_media, event.body)
+                        os.path.join(gs.pa.download_media, event.body)
                     )
                     async with aiofiles.open(filename, "wb") as f:
                         await f.write(media_data)
@@ -1108,13 +1127,13 @@ class Callbacks(object):
             if isinstance(event, RoomEncryptedMedia):  # for all e2e media
                 media_mxc = event.url
                 media_url = await self.client.mxc_to_http(media_mxc)
-                logger.debug(f"HTTP URL of media is : {media_url}")
+                gs.log.debug(f"HTTP URL of media is : {media_url}")
                 msg_url = " [" + media_url + "]"
-                if pargs.download_media != "":
+                if gs.pa.download_media != "":
                     # download encrypted media file
                     media_data = await download_mxc(self.client, media_mxc)
                     filename = choose_available_filename(
-                        os.path.join(pargs.download_media, event.body)
+                        os.path.join(gs.pa.download_media, event.body)
                     )
                     async with aiofiles.open(filename, "wb") as f:
                         await f.write(
@@ -1226,14 +1245,14 @@ class Callbacks(object):
             #        content = download_url
             # else:
             #    content = "\n{{ " + event['type'] + " event }}\n"
-            logger.debug(f"type(msg) = {type(msg)}. msg is a string")
+            gs.log.debug(f"type(msg) = {type(msg)}. msg is a string")
             sender_nick = room.user_name(event.sender)
             if not sender_nick:  # convert @foo:mat.io into foo
                 sender_nick = event.sender.split(":")[0][1:]
             room_nick = room.display_name
             if not room_nick or room_nick == "Empty Room" or room_nick == "":
                 room_nick = "Undetermined"
-            if pargs.print_event_id:
+            if gs.pa.print_event_id:
                 event_id_detail = f" | {event.event_id}"
             else:
                 event_id_detail = ""
@@ -1247,9 +1266,9 @@ class Callbacks(object):
                 f"[{event.sender}] | {event_datetime}"
                 f"{event_id_detail} | {fixed_msg}"
             )
-            logger.debug(complete_msg)
+            gs.log.debug(complete_msg)
             print(complete_msg, flush=True)
-            if pargs.os_notify:
+            if gs.pa.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
                 notify(
                     f"From {room.user_name(event.sender)}",
@@ -1258,7 +1277,7 @@ class Callbacks(object):
                 )
 
         except BaseException:
-            logger.debug(traceback.format_exc())
+            gs.log.debug(traceback.format_exc())
 
     # according to linter: function is too complex, C901
     async def to_device_callback(self, event):  # noqa: C901
@@ -1444,7 +1463,7 @@ def notify(title: str, content: str, image_url: str):
     operating system notifications, ignore it.
     """
     if not HAVE_NOTIFY:
-        logger.warning(
+        gs.log.warning(
             "notify2 or dbus is not installed. Notifications will not be "
             "displayed. "
             "Make sure that notify2 and dbus are installed or remove the "
@@ -1462,9 +1481,9 @@ def notify(title: str, content: str, image_url: str):
             avatar_file = "notification-message-IM"
         notify2.init(PROG_WITHOUT_EXT)
         notify2.Notification(title, content, avatar_file).show()
-        logger.debug(f"Showed notification for {title}.")
+        gs.log.debug(f"Showed notification for {title}.")
     except Exception:
-        logger.debug(f"Showing notification for {title} failed.")
+        gs.log.debug(f"Showing notification for {title} failed.")
         print(traceback.format_exc())
         pass
 
@@ -1489,14 +1508,14 @@ async def get_avatar_url(client: AsyncClient, user_id: str) -> str:
     avatar_url = None  # default
     resp = await client.get_avatar(user_id)
     if isinstance(resp, ProfileGetAvatarResponse):
-        logger.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
+        gs.log.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
         avatar_mxc = resp.avatar_url
-        logger.debug(f"avatar_mxc is {avatar_mxc}")
+        gs.log.debug(f"avatar_mxc is {avatar_mxc}")
         if avatar_mxc:  # could be None if no avatar
             avatar_url = await client.mxc_to_http(avatar_mxc)
     else:
-        logger.info(f"Failed getting avatar from server. {resp}")
-    logger.debug(f"avatar_url is {avatar_url}")
+        gs.log.info(f"Failed getting avatar from server. {resp}")
+    gs.log.debug(f"avatar_url is {avatar_url}")
     return avatar_url
 
 
@@ -1515,18 +1534,18 @@ def create_pid_file() -> None:
     try:
         if not os.path.exists(PID_DIR_DEFAULT):
             os.mkdir(PID_DIR_DEFAULT)
-            logger.debug(f"Create directory {PID_DIR_DEFAULT} for PID file.")
+            gs.log.debug(f"Create directory {PID_DIR_DEFAULT} for PID file.")
         pid = os.getpid()
-        logger.debug(f"Trying to create a PID file to store process id {pid}.")
+        gs.log.debug(f"Trying to create a PID file to store process id {pid}.")
         with open(PID_FILE_DEFAULT, "w") as f:  # overwrite
             f.write(str(pid))
             f.close()
-        logger.debug(
+        gs.log.debug(
             f'Successfully created PID file "{PID_FILE_DEFAULT}" '
             f"to store process id {pid}."
         )
     except Exception:
-        logger.debug(
+        gs.log.debug(
             f'Failed to create PID file "{PID_FILE_DEFAULT}" '
             f"to store process id {os.getpid()}."
         )
@@ -1541,12 +1560,12 @@ def delete_pid_file() -> None:
     try:
         os.remove(PID_FILE_DEFAULT)
     except Exception:
-        logger.debug(f'Failed to remove PID file "{PID_FILE_DEFAULT}".')
+        gs.log.debug(f'Failed to remove PID file "{PID_FILE_DEFAULT}".')
 
 
 def cleanup() -> None:
     """Cleanup before quiting program."""
-    logger.debug("Cleanup: cleaning up.")
+    gs.log.debug("Cleanup: cleaning up.")
     delete_pid_file()
 
 
@@ -1642,42 +1661,42 @@ def determine_credentials_file() -> str:
        directory $HOME/.config/matrix-commander/
 
     """
-    credentials_file = pargs.credentials  # default location
-    if (not os.path.isfile(pargs.credentials)) and (
-        pargs.credentials == os.path.basename(pargs.credentials)
+    credentials_file = gs.pa.credentials  # default location
+    if (not os.path.isfile(gs.pa.credentials)) and (
+        gs.pa.credentials == os.path.basename(gs.pa.credentials)
     ):
-        logger.debug(
+        gs.log.debug(
             "Credentials file does not exist locally. "
             "File name has no path."
         )
-        credentials_file = CREDENTIALS_DIR_LASTRESORT + "/" + pargs.credentials
-        logger.debug(
+        credentials_file = CREDENTIALS_DIR_LASTRESORT + "/" + gs.pa.credentials
+        gs.log.debug(
             f'Trying path "{credentials_file}" as last resort. '
             "Suggesting to look for it there."
         )
         if os.path.isfile(credentials_file):
-            logger.debug(
+            gs.log.debug(
                 "We found the file. It exists in the last resort "
                 f'directory "{credentials_file}". '
                 "Suggesting to use this one."
             )
         else:
-            logger.debug(
+            gs.log.debug(
                 "File does not exists either in the last resort "
                 "directory or the local directory. "
                 "File not found anywhere. One will have to be "
                 "created. So we suggest the local directory."
             )
-            credentials_file = pargs.credentials
+            credentials_file = gs.pa.credentials
     else:
-        if os.path.isfile(pargs.credentials):
-            logger.debug(
+        if os.path.isfile(gs.pa.credentials):
+            gs.log.debug(
                 "Credentials file existed. "
                 "So this is the one we suggest to use. "
                 f"file: {credentials_file}"
             )
         else:
-            logger.debug(
+            gs.log.debug(
                 "Credentials file was specified with full path. "
                 "So we suggest that one. "
                 f"file: {credentials_file}"
@@ -1699,7 +1718,7 @@ def determine_store_dir() -> str:
     If --encrypted (encrypted) is NOT turned on, return None.
 
     The store path will be looked for the following way:
-    pargs.store provides either default value or user specified value
+    gs.pa.store provides either default value or user specified value
     a) First looked at default/specified value. If dir exists,
        use it, end of search.
     b) if last-resort store dir exists, use it, end of search.
@@ -1715,21 +1734,21 @@ def determine_store_dir() -> str:
     If not found anywhere, it will return default/specified value.
 
     """
-    if not pargs.store:
+    if not gs.pa.store:
         return None
-    if not pargs.encrypted:
+    if not gs.pa.encrypted:
         return None
-    pargs_store_norm = os.path.normpath(pargs.store)  # normailzed for humans
-    if os.path.isdir(pargs.store):
-        logger.debug(
+    pargs_store_norm = os.path.normpath(gs.pa.store)  # normailzed for humans
+    if os.path.isdir(gs.pa.store):
+        gs.log.debug(
             "Found an existing store in directory "
             f'"{pargs_store_norm}" (local or arguments). '
             "It will be used."
         )
         return pargs_store_norm
     text0 = "Could not find an existing store directory anywhere. "
-    if pargs.store != STORE_DIR_DEFAULT and pargs.store != os.path.basename(
-        pargs.store
+    if gs.pa.store != STORE_DIR_DEFAULT and gs.pa.store != os.path.basename(
+        gs.pa.store
     ):
         text0 = (
             f'Store directory "{pargs_store_norm}" was specified by '
@@ -1738,10 +1757,10 @@ def determine_store_dir() -> str:
         )
         # fall through towards ending of function to print and return value
         # create in the specified, directory with path
-    if pargs.store == STORE_DIR_DEFAULT and os.path.isdir(
+    if gs.pa.store == STORE_DIR_DEFAULT and os.path.isdir(
         STORE_DIR_LASTRESORT
     ):
-        logger.debug(
+        gs.log.debug(
             "Store was not found in default local directory. "
             "But found an existing store directory in "
             f'"{STORE_DIR_LASTRESORT}" directory. '
@@ -1749,17 +1768,17 @@ def determine_store_dir() -> str:
         )
         return STORE_DIR_LASTRESORT
 
-    if pargs.store == os.path.basename(pargs.store):
-        logger.debug(
+    if gs.pa.store == os.path.basename(gs.pa.store):
+        gs.log.debug(
             f'Store directory "{pargs_store_norm}" is just a name '
             "without a path. Already looked locally, but not found "
             "locally. So now looking for it in last-resort path."
         )
         last_resort = os.path.normpath(
-            STORE_PATH_LASTRESORT + "/" + pargs.store
+            STORE_PATH_LASTRESORT + "/" + gs.pa.store
         )
         if os.path.isdir(last_resort):
-            logger.debug(
+            gs.log.debug(
                 "Found an existing store directory in "
                 f'"{last_resort}" directory. It will be used.'
             )
@@ -1783,7 +1802,7 @@ def determine_store_dir() -> str:
         "In this second case abort, change you directory if needed or set the "
         f"store option correctly. Then start {PROG_WITHOUT_EXT} again."
     )
-    logger.debug(text0 + "\n" + text1 + "\n" + text2 + "\n" + text3)
+    gs.log.debug(text0 + "\n" + text1 + "\n" + text2 + "\n" + text3)
     print(
         textwrap.fill(
             text0,
@@ -1828,8 +1847,8 @@ def determine_rooms(room_id) -> list:
     Return list of rooms to send to. Returned list is never empty.
 
     """
-    if not pargs.room:
-        logger.debug(
+    if not gs.pa.room:
+        gs.log.debug(
             "Room id was provided via credentials file. "
             "No rooms given in commands line.  "
             f'Setting rooms to "{room_id}".'
@@ -1837,10 +1856,10 @@ def determine_rooms(room_id) -> list:
         return [room_id]  # list of 1
     else:
         rooms = []
-        for room in pargs.room:
+        for room in gs.pa.room:
             room_id = room.replace(r"\!", "!")  # remove possible escape
             rooms.append(room_id)
-        logger.debug(
+        gs.log.debug(
             "Room(s) were provided via command line. "
             "Overwriting room id from credentials file "
             f'with rooms "{rooms}" '
@@ -1870,13 +1889,13 @@ async def map_roomalias_to_roomid(client, alias) -> str:
     if is_room_alias(alias):
         resp = await client.room_resolve_alias(alias)
         if isinstance(resp, RoomResolveAliasError):
-            logger.error(
+            gs.log.error(
                 f"room_resolve_alias for alias {alias} failed with {resp}. "
                 f"Trying operation with input {alias} anyway. Might fail."
             )
         else:
             ret = resp.room_id
-            logger.debug(
+            gs.log.debug(
                 f'Mapped room alias "{alias}" to room id "{ret}". '
                 f"({resp.room_alias}, {resp.room_id})."
             )
@@ -1901,7 +1920,7 @@ async def create_rooms(client, room_aliases, names, topics):
     """
     try:
         index = 0
-        logger.debug(
+        gs.log.debug(
             f'Trying to create rooms with room aliases "{room_aliases}", '
             f'names "{names}", and topics "{topics}".'
         )
@@ -1917,7 +1936,7 @@ async def create_rooms(client, room_aliases, names, topics):
                 topic = topics[index]
             except (IndexError, TypeError):
                 topic = ""
-            logger.debug(
+            gs.log.debug(
                 f'Creating room with room alias "{alias}", '
                 f'name "{name}", and topic "{topic}".'
             )
@@ -1928,13 +1947,13 @@ async def create_rooms(client, room_aliases, names, topics):
                 initial_state=[EnableEncryptionBuilder().as_dict()],
             )
             if isinstance(resp, RoomCreateError):
-                logger.error(f"Room_create failed with {resp}")
+                gs.log.error(f"Room_create failed with {resp}")
             else:
-                logger.info(f'Created room "{alias}".')
+                gs.log.info(f'Created room "{alias}".')
             index = index + 1
     except Exception:
-        logger.error("Room creation failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("Room creation failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def join_rooms(client, rooms):
@@ -1943,16 +1962,16 @@ async def join_rooms(client, rooms):
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            logger.debug(f'Joining room with room alias "{room_id}".')
+            gs.log.debug(f'Joining room with room alias "{room_id}".')
             room_id = await map_roomalias_to_roomid(client, room_id)
             resp = await client.join(room_id)
             if isinstance(resp, JoinError):
-                logger.error(f"join failed with {resp}")
+                gs.log.error(f"join failed with {resp}")
             else:
-                logger.info(f'Joined room "{room_id}" successfully.')
+                gs.log.info(f'Joined room "{room_id}" successfully.')
     except Exception:
-        logger.error("Joining rooms failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("Joining rooms failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def leave_rooms(client, rooms):
@@ -1961,16 +1980,16 @@ async def leave_rooms(client, rooms):
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            logger.debug(f'Leaving room with room alias "{room_id}".')
+            gs.log.debug(f'Leaving room with room alias "{room_id}".')
             room_id = await map_roomalias_to_roomid(client, room_id)
             resp = await client.room_leave(room_id)
             if isinstance(resp, RoomLeaveError):
-                logger.error(f"Leave failed with {resp}")
+                gs.log.error(f"Leave failed with {resp}")
             else:
-                logger.info(f'Left room "{room_id}".')
+                gs.log.info(f'Left room "{room_id}".')
     except Exception:
-        logger.error("Room leave failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("Room leave failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def forget_rooms(client, rooms):
@@ -1979,16 +1998,16 @@ async def forget_rooms(client, rooms):
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            logger.debug(f'Forgetting room with room alias "{room_id}".')
+            gs.log.debug(f'Forgetting room with room alias "{room_id}".')
             room_id = await map_roomalias_to_roomid(client, room_id)
             resp = await client.room_forget(room_id)
             if isinstance(resp, RoomForgetError):
-                logger.error(f"Forget failed with {resp}")
+                gs.log.error(f"Forget failed with {resp}")
             else:
-                logger.info(f'Forgot room "{room_id}".')
+                gs.log.info(f'Forgot room "{room_id}".')
     except Exception:
-        logger.error("Room forget failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("Room forget failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def invite_to_rooms(client, rooms, users):
@@ -1999,21 +2018,21 @@ async def invite_to_rooms(client, rooms, users):
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
             room_id = await map_roomalias_to_roomid(client, room_id)
             for user in users:
-                logger.debug(
+                gs.log.debug(
                     f'Inviting user "{user}" to room with '
                     f'room alias "{room_id}".'
                 )
                 resp = await client.room_invite(room_id, user)
                 if isinstance(resp, RoomInviteError):
-                    logger.error(f"room_invite failed with {resp}")
+                    gs.log.error(f"room_invite failed with {resp}")
                 else:
-                    logger.info(
+                    gs.log.info(
                         f'User "{user}" was successfully invited '
                         f'to room "{room_id}".'
                     )
     except Exception:
-        logger.error("User invite failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("User invite failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def ban_from_rooms(client, rooms, users):
@@ -2024,21 +2043,21 @@ async def ban_from_rooms(client, rooms, users):
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
             room_id = await map_roomalias_to_roomid(client, room_id)
             for user in users:
-                logger.debug(
+                gs.log.debug(
                     f'Banning user "{user}" from room with '
                     f'room alias "{room_id}".'
                 )
                 resp = await client.room_ban(room_id, user)
                 if isinstance(resp, RoomBanError):
-                    logger.error(f"room_ban failed with {resp}")
+                    gs.log.error(f"room_ban failed with {resp}")
                 else:
-                    logger.info(
+                    gs.log.info(
                         f'User "{user}" was successfully banned '
                         f'from room "{room_id}".'
                     )
     except Exception:
-        logger.error("User ban failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("User ban failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def unban_from_rooms(client, rooms, users):
@@ -2049,21 +2068,21 @@ async def unban_from_rooms(client, rooms, users):
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
             room_id = await map_roomalias_to_roomid(client, room_id)
             for user in users:
-                logger.debug(
+                gs.log.debug(
                     f'Unbanning user "{user}" from room with '
                     f'room alias "{room_id}".'
                 )
                 resp = await client.room_unban(room_id, user)
                 if isinstance(resp, RoomUnbanError):
-                    logger.error(f"room_unban failed with {resp}")
+                    gs.log.error(f"room_unban failed with {resp}")
                 else:
-                    logger.info(
+                    gs.log.info(
                         f'User "{user}" was successfully unbanned '
                         f'from room "{room_id}".'
                     )
     except Exception:
-        logger.error("User unban failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("User unban failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 async def kick_from_rooms(client, rooms, users):
@@ -2074,21 +2093,21 @@ async def kick_from_rooms(client, rooms, users):
             room_id = room_id.replace(r"\!", "!")  # remove possible escape
             room_id = await map_roomalias_to_roomid(client, room_id)
             for user in users:
-                logger.debug(
+                gs.log.debug(
                     f'Kicking user "{user}" from room with '
                     f'room alias "{room_id}".'
                 )
                 resp = await client.room_kick(room_id, user)
                 if isinstance(resp, RoomKickError):
-                    logger.error(f"room_kick failed with {resp}")
+                    gs.log.error(f"room_kick failed with {resp}")
                 else:
-                    logger.info(
+                    gs.log.info(
                         f'User "{user}" was successfully kicked '
                         f'from room "{room_id}".'
                     )
     except Exception:
-        logger.error("User kick failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("User kick failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 # according to linter: function is too complex, C901
@@ -2105,7 +2124,7 @@ async def send_event(client, rooms, event):  # noqa: C901
 
     """
     if not rooms:
-        logger.info(
+        gs.log.info(
             "No rooms are given. This should not happen. "
             "This file is being droppend and NOT sent."
         )
@@ -2116,13 +2135,13 @@ async def send_event(client, rooms, event):  # noqa: C901
     else:
         with open(event, "r") as file:
             jsondata = file.read()
-    logger.debug(
+    gs.log.debug(
         f"{len(jsondata)} bytes of event data read from file {event}."
     )
-    logger.debug(f"Event {event} contains this JSON data: {jsondata}")
+    gs.log.debug(f"Event {event} contains this JSON data: {jsondata}")
 
     if not jsondata.strip():
-        logger.debug(
+        gs.log.debug(
             "Event is empty. This event is being droppend and NOT sent."
         )
         return
@@ -2132,11 +2151,11 @@ async def send_event(client, rooms, event):  # noqa: C901
         message_type = content_json["type"]
         content = content_json["content"]
     except Exception:
-        logger.warning(
+        gs.log.warning(
             "Event is not a valid JSON object or not of Matrix JSON format. "
             "This event is being droppend and NOT sent."
         )
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
 
     try:
@@ -2144,10 +2163,10 @@ async def send_event(client, rooms, event):  # noqa: C901
             await client.room_send(
                 room_id, message_type=message_type, content=content
             )
-            logger.info(f'This event was sent: "{event}" to room "{room_id}".')
+            gs.log.info(f'This event was sent: "{event}" to room "{room_id}".')
     except Exception:
-        logger.error(f"Event send of file {event} failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error(f"Event send of file {event} failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 # according to linter: function is too complex, C901
@@ -2199,7 +2218,7 @@ async def send_file(client, rooms, file):  # noqa: C901
 
     """
     if not rooms:
-        logger.info(
+        gs.log.info(
             "No rooms are given. This should not happen. "
             "This file is being droppend and NOT sent."
         )
@@ -2213,7 +2232,7 @@ async def send_file(client, rooms, file):  # noqa: C901
         fin_buf = sys.stdin.buffer.read()
         len_fin_buf = len(fin_buf)
         file = "mc-" + str(uuid.uuid4()) + ".tmp"
-        logger.debug(
+        gs.log.debug(
             f"{len_fin_buf} bytes of file data read from stdin. "
             f'Temporary file "{file}" was created for file.'
         )
@@ -2224,7 +2243,7 @@ async def send_file(client, rooms, file):  # noqa: C901
         isPipe = False
 
     if not os.path.isfile(file):
-        logger.debug(
+        gs.log.debug(
             f"File {file} is not a file. Doesn't exist or "
             "is a directory. "
             "This file is being droppend and NOT sent."
@@ -2234,7 +2253,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     # # restrict to "txt", "pdf", "mp3", "ogg", "wav", ...
     # if not re.match("^.pdf$|^.txt$|^.doc$|^.xls$|^.mobi$|^.mp3$",
     #                os.path.splitext(file)[1].lower()):
-    #    logger.debug(f"File {file} is not a permitted file type. Should be "
+    #    gs.log.debug(f"File {file} is not a permitted file type. Should be "
     #                 ".pdf, .txt, .doc, .xls, .mobi or .mp3 ... "
     #                 f"[{os.path.splitext(file)[1].lower()}]"
     #                 "This file is being droppend and NOT sent.")
@@ -2245,7 +2264,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     # if ((not mime_type.startswith("application/")) and
     #        (not mime_type.startswith("plain/")) and
     #        (not mime_type.startswith("audio/"))):
-    #    logger.debug(f"File {file} does not have an accepted mime type. "
+    #    gs.log.debug(f"File {file} does not have an accepted mime type. "
     #                 "Should be something like application/pdf. "
     #                 f"Found mime type {mime_type}. "
     #                 "This file is being droppend and NOT sent.")
@@ -2265,17 +2284,17 @@ async def send_file(client, rooms, file):  # noqa: C901
             encrypt=True,
         )
     if isinstance(resp, UploadResponse):
-        logger.debug(
+        gs.log.debug(
             f"File was uploaded successfully to server. Response is: {resp}"
         )
     else:
-        logger.info(
+        gs.log.info(
             f"The program {PROG_WITH_EXT} failed to upload. "
             "Please retry. This could be temporary issue on "
             "your server. "
             "Sorry."
         )
-        logger.info(
+        gs.log.info(
             f'file="{file}"; mime_type="{mime_type}"; '
             f'filessize="{file_stat.st_size}"'
             f"Failed to upload: {resp}"
@@ -2311,10 +2330,10 @@ async def send_file(client, rooms, file):  # noqa: C901
             await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            logger.info(f'This file was sent: "{file}" to room "{room_id}".')
+            gs.log.info(f'This file was sent: "{file}" to room "{room_id}".')
     except Exception:
-        logger.error(f"File send of file {file} failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error(f"File send of file {file} failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 # according to linter: function is too complex, C901
@@ -2364,7 +2383,7 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     """
     if not rooms:
-        logger.info(
+        gs.log.info(
             "No rooms are given. This should not happen. "
             "This image is being droppend and NOT sent."
         )
@@ -2386,7 +2405,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         fin_buf = sys.stdin.buffer.read()
         len_fin_buf = len(fin_buf)
         image = "mc-" + str(uuid.uuid4()) + ".tmp"
-        logger.debug(
+        gs.log.debug(
             f"{len_fin_buf} bytes of image data read from stdin. "
             f'Temporary file "{image}" was created for image.'
         )
@@ -2397,7 +2416,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         isPipe = False
 
     if not os.path.isfile(image):
-        logger.debug(
+        gs.log.debug(
             f"Image file {image} is not a file. Doesn't exist or "
             "is a directory. "
             "This image is being dropped and NOT sent."
@@ -2411,7 +2430,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         "^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
         os.path.splitext(image)[1].lower(),
     ):
-        logger.debug(
+        gs.log.debug(
             f"Image file {image} is not an image file. Should be "
             ".jpg, .jpeg, .gif, or .png. "
             f"[{os.path.splitext(image)[1].lower()}] "
@@ -2422,7 +2441,7 @@ async def send_image(client, rooms, image):  # noqa: C901
     # 'application/pdf' "image/jpeg"
     mime_type = magic.from_file(image, mime=True)
     if not mime_type.startswith("image/"):
-        logger.debug(
+        gs.log.debug(
             f"Image file {image} does not have an image mime type. "
             "Should be something like image/jpeg. "
             f"Found mime type {mime_type}. "
@@ -2450,18 +2469,18 @@ async def send_image(client, rooms, image):  # noqa: C901
             encrypt=True,
         )
     if isinstance(resp, UploadResponse):
-        logger.debug(
+        gs.log.debug(
             "Image was uploaded successfully to server. "
             f"Response is: {resp}"
         )
     else:
-        logger.info(
+        gs.log.info(
             f"The program {PROG_WITH_EXT} failed to upload. "
             "Please retry. This could be temporary issue on "
             "your server. "
             "Sorry."
         )
-        logger.info(
+        gs.log.info(
             f'file="{image}"; mime_type="{mime_type}"; '
             f'filessize="{file_stat.st_size}"'
             f"Failed to upload: {resp}"
@@ -2500,12 +2519,12 @@ async def send_image(client, rooms, image):  # noqa: C901
             await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            logger.debug(
+            gs.log.debug(
                 f'This image file was sent: "{image}" to room "{room_id}".'
             )
     except Exception:
-        logger.error(f"Image send of file {image} failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error(f"Image send of file {image} failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 # according to linter: function is too complex, C901
@@ -2526,7 +2545,7 @@ async def send_message(client, rooms, message):  # noqa: C901
 
     """
     if not rooms:
-        logger.info(
+        gs.log.info(
             "No rooms are given. This should not happen. "
             "This text message is being droppend and NOT sent."
         )
@@ -2535,26 +2554,26 @@ async def send_message(client, rooms, message):  # noqa: C901
     message = message.strip("\n")
 
     if message == "" or message.strip() == "":
-        logger.debug(
+        gs.log.debug(
             "The message is empty. "
             "This message is being droppend and NOT sent."
         )
         return
 
-    if pargs.notice:
+    if gs.pa.notice:
         content = {"msgtype": "m.notice"}
     else:
         content = {"msgtype": "m.text"}
 
-    if pargs.code:
-        logger.debug('Sending message in format "code".')
+    if gs.pa.code:
+        gs.log.debug('Sending message in format "code".')
         formatted_message = "<pre><code>" + message + "\n</code></pre>\n"
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
         # next line: work-around for Element Android
         message = "```\n" + message + "\n```"  # to format it as code
-    elif pargs.markdown:
-        logger.debug(
+    elif gs.pa.markdown:
+        gs.log.debug(
             "Converting message from MarkDown into HTML. "
             'Sending message in format "markdown".'
         )
@@ -2562,13 +2581,13 @@ async def send_message(client, rooms, message):  # noqa: C901
         formatted_message = markdown(message)
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
-    elif pargs.html:
-        logger.debug('Sending message in format "html".')
+    elif gs.pa.html:
+        gs.log.debug('Sending message in format "html".')
         formatted_message = message  # the same for the time being
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     else:
-        logger.debug('Sending message in format "text".')
+        gs.log.debug('Sending message in format "text".')
     content["body"] = message
 
     try:
@@ -2578,7 +2597,7 @@ async def send_message(client, rooms, message):  # noqa: C901
                 if isinstance(resp, RoomResolveAliasError):
                     print(f"room_resolve_alias failed with {resp}")
                 room_id = resp.room_id
-                logger.debug(
+                gs.log.debug(
                     f'Mapping room alias "{resp.room_alias}" to '
                     f'room id "{resp.room_id}".'
                 )
@@ -2588,12 +2607,12 @@ async def send_message(client, rooms, message):  # noqa: C901
                 content=content,
                 ignore_unverified_devices=True,
             )
-            logger.info(
+            gs.log.info(
                 f'This message was sent: "{message}" to room "{room_id}".'
             )
     except Exception:
-        logger.error("Message send failed. Sorry.")
-        logger.debug("Here is the traceback.\n" + traceback.format_exc())
+        gs.log.error("Message send failed. Sorry.")
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 def get_messages_from_pipe() -> list:
@@ -2609,20 +2628,20 @@ def get_messages_from_pipe() -> list:
         0
     ]  # noqa
     if not stdin_ready:
-        logger.debug(
+        gs.log.debug(
             "stdin is not ready. "
             "A pipe could be used, but pipe could be empty, "
             "stdin could also be a keyboard."
         )
     else:
-        logger.debug(
+        gs.log.debug(
             "stdin is ready. Something "
             "is definitely piped into program from stdin."
             "Reading message from stdin pipe."
         )
     if ((not stdin_ready) and (not sys.stdin.isatty())) or stdin_ready:
         if not sys.stdin.isatty():
-            logger.debug(
+            gs.log.debug(
                 "Pipe was definitely used, but pipe might be empty. "
                 "Trying to read from pipe in any case."
             )
@@ -2630,16 +2649,16 @@ def get_messages_from_pipe() -> list:
         try:
             for line in sys.stdin:
                 message += line
-            logger.debug("Using data from stdin pipe as message.")
+            gs.log.debug("Using data from stdin pipe as message.")
             messages.append(message)
         except EOFError:  # EOF when reading a line
-            logger.debug(
+            gs.log.debug(
                 "Reading from stdin resulted in EOF. This can happen "
                 "when a pipe was used, but the pipe is empty. "
                 "No message will be generated."
             )
         except UnicodeDecodeError:
-            logger.info(
+            gs.log.info(
                 "Reading from stdin resulted in UnicodeDecodeError. This "
                 "can happen if you try to pipe binary data for a text "
                 "message. For a text message only pipe text via stdin, "
@@ -2664,8 +2683,8 @@ def get_messages_from_keyboard() -> list:
     Currently there is at most 1 msg in the returned list.
     """
     messages = []
-    if pargs.message:
-        logger.debug(
+    if gs.pa.message:
+        gs.log.debug(
             "Don't read from keyboard because there are "
             "messages provided in arguments with -m."
         )
@@ -2674,29 +2693,29 @@ def get_messages_from_keyboard() -> list:
         0
     ]  # noqa
     if not stdin_ready:
-        logger.debug(
+        gs.log.debug(
             "stdin is not ready. "
             "A pipe could be used, but pipe could be empty, "
             "stdin could also be a keyboard."
         )
     else:
-        logger.debug(
+        gs.log.debug(
             "stdin is ready. Something "
             "is definitely piped into program from stdin."
             "Reading message from stdin pipe."
         )
     if (not stdin_ready) and (sys.stdin.isatty()):
         # because sys.stdin.isatty() is true
-        logger.debug(
+        gs.log.debug(
             "No pipe was used, so read input from keyboard. "
             "Reading message from keyboard"
         )
         try:
             message = input("Enter message to send: ")
-            logger.debug("Using data from stdin keyboard as message.")
+            gs.log.debug("Using data from stdin keyboard as message.")
             messages.append(message)
         except EOFError:  # EOF when reading a line
-            logger.debug(
+            gs.log.debug(
                 "Reading from stdin resulted in EOF. "
                 "Reading from keyboard failed. "
                 "No message will be generated."
@@ -2716,21 +2735,21 @@ async def send_messages_and_files(client, rooms, messages):
     messages : list of messages to send
 
     """
-    if pargs.image:
-        for image in pargs.image:
+    if gs.pa.image:
+        for image in gs.pa.image:
             await send_image(client, rooms, image)
 
-    if pargs.audio:
-        for audio in pargs.audio:
+    if gs.pa.audio:
+        for audio in gs.pa.audio:
             # audio file can be sent like other files
             await send_file(client, rooms, audio)
 
-    if pargs.file:
-        for file in pargs.file:
+    if gs.pa.file:
+        for file in gs.pa.file:
             await send_file(client, rooms, file)
 
-    if pargs.event:
-        for event in pargs.event:
+    if gs.pa.event:
+        for event in gs.pa.event:
             await send_event(client, rooms, event)
 
     for message in messages:
@@ -2753,11 +2772,11 @@ async def process_arguments_and_input(client, rooms):
     if gs.stdin_use == "none":  # STDIN is unused
         messages_from_pipe = get_messages_from_pipe()
     messages_from_keyboard = get_messages_from_keyboard()
-    if not pargs.message:
+    if not gs.pa.message:
         messages_from_commandline = []
     else:
         messages_from_commandline = []
-        for m in pargs.message:
+        for m in gs.pa.message:
             if m == "\\-":  # escaped -
                 messages_from_commandline += ["-"]
             elif m == "-":  # stdin pipe
@@ -2765,23 +2784,23 @@ async def process_arguments_and_input(client, rooms):
             else:
                 messages_from_commandline += [m]
 
-    logger.debug(f"Messages from pipe:         {messages_from_pipe}")
-    logger.debug(f"Messages from keyboard:     {messages_from_keyboard}")
-    logger.debug(f"Messages from command-line: {messages_from_commandline}")
+    gs.log.debug(f"Messages from pipe:         {messages_from_pipe}")
+    gs.log.debug(f"Messages from keyboard:     {messages_from_keyboard}")
+    gs.log.debug(f"Messages from command-line: {messages_from_commandline}")
 
     messages_all = (
         messages_from_commandline + messages_from_pipe + messages_from_keyboard
     )  # keyboard at end
 
     # loop thru all msgs and split them
-    if pargs.split:
-        # pargs.split can have escape characters, it has to be de-escaped
-        decoded_string = bytes(pargs.split, "utf-8").decode("unicode_escape")
-        logger.debug(f'String used for splitting is: "{decoded_string}"')
+    if gs.pa.split:
+        # gs.pa.split can have escape characters, it has to be de-escaped
+        decoded_string = bytes(gs.pa.split, "utf-8").decode("unicode_escape")
+        gs.log.debug(f'String used for splitting is: "{decoded_string}"')
         messages_all_split = []
         for m in messages_all:
             messages_all_split += m.split(decoded_string)
-    else:  # not pargs.split
+    else:  # not gs.pa.split
         messages_all_split = messages_all
 
     await send_messages_and_files(client, rooms, messages_all_split)
@@ -2800,7 +2819,7 @@ async def create_credentials_file(  # noqa: C901
 
     """
     text0 = f"""
-            Credentials file \"{pargs.credentials}\" was not found.
+            Credentials file \"{gs.pa.credentials}\" was not found.
             There are 2 possibilities for this."""
     text1 = f"""
             1) This is your first time use? Setting up new credentials?
@@ -2838,7 +2857,7 @@ async def create_credentials_file(  # noqa: C901
     )
     if confirm.lower() != "yes" and confirm.lower() != "y":
         print("")  # add newline to stdout to separate any log info
-        logger.info("Aborting.")
+        gs.log.info("Aborting.")
         cleanup()
         sys.exit(1)
     homeserver = "https://matrix.example.org"
@@ -2850,8 +2869,8 @@ async def create_credentials_file(  # noqa: C901
     ):
         homeserver = "https://" + homeserver
 
-    if pargs.proxy:
-        logger.info(f"Proxy {pargs.proxy} will be used.")
+    if gs.pa.proxy:
+        gs.log.info(f"Proxy {gs.pa.proxy} will be used.")
 
     # check for password/SSO
     connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
@@ -2859,12 +2878,12 @@ async def create_credentials_file(  # noqa: C901
         async with session.get(
             f"{homeserver}/_matrix/client/r0/login",
             raise_for_status=True,
-            proxy=pargs.proxy,
+            proxy=gs.pa.proxy,
         ) as response:
             flow_types = {
                 x["type"] for x in (await response.json()).get("flows", [])
             }
-            logger.debug("Supported login flows: %r", flow_types)
+            gs.log.debug("Supported login flows: %r", flow_types)
 
             password = "m.login.password" in flow_types
             sso = "m.login.sso" in flow_types and "m.login.token" in flow_types
@@ -2872,12 +2891,12 @@ async def create_credentials_file(  # noqa: C901
     # SSO: Single Sign-On:
     # see https://matrix.org/docs/guides/sso-for-client-developers
     if sso:
-        logger.debug("Server supports SSO for login.")
-        if pargs.no_sso:
-            logger.debug('Due to "--no-sso" argument, SSO will be avoided.')
+        gs.log.debug("Server supports SSO for login.")
+        if gs.pa.no_sso:
+            gs.log.debug('Due to "--no-sso" argument, SSO will be avoided.')
             sso = False  # override sso due to --no-sso flag set
     else:
-        logger.debug(
+        gs.log.debug(
             "Server does not support SSO for login. "
             "Hence, attempting to login with password."
         )
@@ -2920,9 +2939,9 @@ async def create_credentials_file(  # noqa: C901
 
         try:
             print("Launching browser to complete SSO login.")
-            if pargs.proxy:
-                logger.warning(
-                    f"Specified proxy {pargs.proxy} cannot "
+            if gs.pa.proxy:
+                gs.log.warning(
+                    f"Specified proxy {gs.pa.proxy} cannot "
                     "be configured for browser."
                 )
 
@@ -2940,7 +2959,7 @@ async def create_credentials_file(  # noqa: C901
             try:
                 subprocess.check_output(cmd)
             except Exception:
-                logger.info(
+                gs.log.info(
                     "Browser could not be launched. "
                     "Hence SSO (Single Sign-On) login could not be "
                     "completed. Sorry. If you think the browser and "
@@ -2955,7 +2974,7 @@ async def create_credentials_file(  # noqa: C901
             try:
                 await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
             except asyncio.TimeoutError:
-                logger.info(
+                gs.log.info(
                     f"The program {PROG_WITH_EXT} failed. "
                     "No response was received from SSO provider. "
                     "Sorry."
@@ -2966,7 +2985,7 @@ async def create_credentials_file(  # noqa: C901
             await runner.cleanup()
 
     elif not password:
-        logger.info(
+        gs.log.info(
             "No supported login method found for homeserver. "
             "Neither SSO nor password are accepted login "
             "methods of the server."
@@ -2983,7 +3002,7 @@ async def create_credentials_file(  # noqa: C901
 
     if not os.path.exists(store_dir):
         os.makedirs(store_dir)
-        logger.info(
+        gs.log.info(
             f"The persistent storage directory {store_dir} "
             "was created for you."
         )
@@ -2995,7 +3014,7 @@ async def create_credentials_file(  # noqa: C901
         store_path=store_dir,
         config=client_config,
         ssl=gs.ssl,
-        proxy=pargs.proxy,
+        proxy=gs.pa.proxy,
     )
     try:
 
@@ -3019,23 +3038,23 @@ async def create_credentials_file(  # noqa: C901
                 resp.device_id,
                 resp.access_token,
                 room_id,
-                pargs.credentials,
+                gs.pa.credentials,
             )
             text = f"""
                 Log in using {method} was successful.
-                Credentials were stored in file \"{pargs.credentials}\".
+                Credentials were stored in file \"{gs.pa.credentials}\".
                 Run program \"{PROG_WITH_EXT}\" again to
                 login with credentials and to send a message.
                 If you plan on having many credential files, consider
                 moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
             print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
         else:
-            logger.info(
+            gs.log.info(
                 f"The program {PROG_WITH_EXT} failed. "
                 "Most likely wrong credentials were entered. "
                 "Sorry."
             )
-            logger.info(
+            gs.log.info(
                 f'homeserver="{homeserver}"; user="{user_id}"; '
                 f'room_id="{room_id}"; '
                 f"failed to log in: {resp}"
@@ -3079,7 +3098,7 @@ def login_using_credentials_file(
         store_path=store_dir,
         config=client_config,
         ssl=gs.ssl,
-        proxy=pargs.proxy,
+        proxy=gs.pa.proxy,
     )
 
     client.restore_login(
@@ -3088,13 +3107,13 @@ def login_using_credentials_file(
         access_token=credentials["access_token"],
     )
     # room_id = credentials['room_id']
-    logger.debug(
+    gs.log.debug(
         "Logged in using stored credentials from "
         f'credentials file "{credentials_file}".'
     )
-    if pargs.proxy:
-        logger.debug(f"Proxy {pargs.proxy} will be used for connectivity.")
-    logger.debug(f"Logged_in() = {client.logged_in}")
+    if gs.pa.proxy:
+        gs.log.debug(f"Proxy {gs.pa.proxy} will be used for connectivity.")
+    gs.log.debug(f"Logged_in() = {client.logged_in}")
     return (client, credentials)
 
 
@@ -3135,9 +3154,9 @@ async def listen_once(client: AsyncClient) -> None:
     # sync_forever().
     resp = await client.sync(timeout=10000, full_state=False)
     if isinstance(resp, SyncResponse):
-        logger.debug(f"Sync successful. Response is: {resp}")
+        gs.log.debug(f"Sync successful. Response is: {resp}")
     else:
-        logger.info(f"Sync failed. Error is: {resp}")
+        gs.log.info(f"Sync failed. Error is: {resp}")
     # sync() forces the message_callback() to fire
     # for each new message presented in the sync().
 
@@ -3223,9 +3242,9 @@ async def listen_once_alternative(client: AsyncClient) -> None:
     """
     resp_s = await client.sync(timeout=10000, full_state=False)
     # this prints a summary of all new messages currently waiting in the queue
-    logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
-    logger.debug(f"sync next_batch = (str) {resp_s.next_batch}")
-    logger.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
+    gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
+    gs.log.debug(f"sync next_batch = (str) {resp_s.next_batch}")
+    gs.log.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
     # Set up event callbacks
     callbacks = Callbacks(client)
     # Note: we are NOT registering a callback funtion!
@@ -3233,7 +3252,7 @@ async def listen_once_alternative(client: AsyncClient) -> None:
     for room_id, room_info in resp_s.rooms.join.items():
         event_list = room_info.timeline.events
         for event in event_list:
-            logger.debug(f"sending event to callback = {event}.")
+            gs.log.debug(f"sending event to callback = {event}.")
             # because of full_state=False in sync() the
             # rooms object is not fully populated and missing the
             # room names.
@@ -3247,7 +3266,7 @@ async def listen_once_alternative(client: AsyncClient) -> None:
                 read_event=last_event.event_id,
             )
             if isinstance(resp, RoomReadMarkersError):
-                logger.debug(
+                gs.log.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
 
@@ -3278,24 +3297,24 @@ async def listen_tail(  # noqa: C901
     try:
         resp_s = await client.sync(timeout=10000, full_state=True)
     except ClientConnectorError:
-        logger.info("sync() failed. Do you have connectivity to internet?")
-        logger.debug(traceback.format_exc())
+        gs.log.info("sync() failed. Do you have connectivity to internet?")
+        gs.log.debug(traceback.format_exc())
         return
     except Exception:
-        logger.info("sync() failed.")
-        logger.debug(traceback.format_exc())
+        gs.log.info("sync() failed.")
+        gs.log.debug(traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
-        logger.debug(f"sync failed with resp = {resp_s}")
+        gs.log.debug(f"sync failed with resp = {resp_s}")
         return
     # this prints a summary of all new messages currently waiting in the queue
-    logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
-    logger.debug(f"client.next_batch after = (str) {client.next_batch}")
-    logger.debug(f"sync next_batch = (str) {resp_s.next_batch}")
-    logger.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
-    logger.debug(f"client.rooms = {client.rooms}")
+    gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
+    gs.log.debug(f"client.next_batch after = (str) {client.next_batch}")
+    gs.log.debug(f"sync next_batch = (str) {resp_s.next_batch}")
+    gs.log.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
+    gs.log.debug(f"client.rooms = {client.rooms}")
     if not resp_s.rooms.join:  # no Rooms!
-        logger.debug(f"sync returned no rooms = {resp_s.rooms.join}")
+        gs.log.debug(f"sync returned no rooms = {resp_s.rooms.join}")
         return
 
     # Set up event callbacks
@@ -3308,9 +3327,9 @@ async def listen_tail(  # noqa: C901
 
     # get rooms as specified by the user thru args or credential file
     rooms = determine_rooms(credentials["room_id"])
-    logger.debug(f"Rooms are: {rooms}")
+    gs.log.debug(f"Rooms are: {rooms}")
 
-    limit = pargs.tail
+    limit = gs.pa.tail
     # To loop over all rooms, one can loop through the join dictionary. i.e.
     # for room_id, room_info in resp_s.rooms.join.items():  # loop all rooms
     for room_id in rooms:  # loop only over user specified rooms
@@ -3318,18 +3337,18 @@ async def listen_tail(  # noqa: C901
             room_id, start=resp_s.next_batch, limit=limit
         )
         if isinstance(resp, RoomMessagesError):
-            logger.debug("room_messages failed with resp = {resp}")
+            gs.log.debug("room_messages failed with resp = {resp}")
             continue  # skip this room
-        logger.debug(f"room_messages response = {type(resp)} :: {resp}.")
-        logger.debug(f"room_messages room_id = {resp.room_id}.")
-        logger.debug(f"room_messages start = (str) {resp.start}.")
-        logger.debug(f"room_messages end = (str) :: {resp.end}.")
-        logger.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
+        gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
+        gs.log.debug(f"room_messages room_id = {resp.room_id}.")
+        gs.log.debug(f"room_messages start = (str) {resp.start}.")
+        gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
+        gs.log.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
         # chunk is just a list of RoomMessage events like this example:
         # chunk=[RoomMessageText(...)]
 
         for event in resp.chunk:
-            logger.debug(f"sending event to callback = {event}.")
+            gs.log.debug(f"sending event to callback = {event}.")
             if client.rooms and client.rooms[room_id]:
                 room = client.rooms[room_id]
             else:
@@ -3344,7 +3363,7 @@ async def listen_tail(  # noqa: C901
                 read_event=first_event.event_id,
             )
             if isinstance(resp, RoomReadMarkersError):
-                logger.debug(
+                gs.log.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
 
@@ -3384,14 +3403,14 @@ async def read_all_events_in_direction(
             room_id, current_start_token, limit=500, direction=direction
         )
         if isinstance(resp, RoomMessagesError):
-            logger.debug("room_messages failed with resp = {resp}")
+            gs.log.debug("room_messages failed with resp = {resp}")
             break  # skip to end of function
-        logger.debug(f"Received {len(resp.chunk)} events.")
-        logger.debug(f"room_messages response = {type(resp)} :: {resp}.")
-        logger.debug(f"room_messages room_id = {resp.room_id}.")
-        logger.debug(f"room_messages start = (str) {resp.start}.")
-        logger.debug(f"room_messages end = (str) :: {resp.end}.")
-        logger.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
+        gs.log.debug(f"Received {len(resp.chunk)} events.")
+        gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
+        gs.log.debug(f"room_messages room_id = {resp.room_id}.")
+        gs.log.debug(f"room_messages start = (str) {resp.start}.")
+        gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
+        gs.log.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
         # resp.chunk is just a list of RoomMessage events like this example:
         # chunk=[RoomMessageText(...)]
         current_start_token = resp.end
@@ -3424,24 +3443,24 @@ async def listen_all(  # noqa: C901
     try:
         resp_s = await client.sync(timeout=10000, full_state=True)
     except ClientConnectorError:
-        logger.info("sync() failed. Do you have connectivity to internet?")
-        logger.debug(traceback.format_exc())
+        gs.log.info("sync() failed. Do you have connectivity to internet?")
+        gs.log.debug(traceback.format_exc())
         return
     except Exception:
-        logger.info("sync() failed.")
-        logger.debug(traceback.format_exc())
+        gs.log.info("sync() failed.")
+        gs.log.debug(traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
-        logger.debug(f"sync failed with resp = {resp_s}")
+        gs.log.debug(f"sync failed with resp = {resp_s}")
         return
     # this prints a summary of all new messages currently waiting in the queue
-    logger.debug(f"sync response = {type(resp_s)} :: {resp_s}")
-    logger.debug(f"client.next_batch after = (str) {client.next_batch}")
-    logger.debug(f"sync next_batch = (str) {resp_s.next_batch}")
-    logger.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
-    logger.debug(f"client.rooms = {client.rooms}")
+    gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
+    gs.log.debug(f"client.next_batch after = (str) {client.next_batch}")
+    gs.log.debug(f"sync next_batch = (str) {resp_s.next_batch}")
+    gs.log.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
+    gs.log.debug(f"client.rooms = {client.rooms}")
     if not resp_s.rooms.join:  # no Rooms!
-        logger.debug(f"sync returned no rooms = {resp_s.rooms.join}")
+        gs.log.debug(f"sync returned no rooms = {resp_s.rooms.join}")
         return
 
     # Set up event callbacks
@@ -3454,7 +3473,7 @@ async def listen_all(  # noqa: C901
 
     # get rooms as specified by the user thru args or credential file
     rooms = determine_rooms(credentials["room_id"])
-    logger.debug(f"Rooms are: {rooms}")
+    gs.log.debug(f"Rooms are: {rooms}")
 
     # To loop over all rooms, one can loop through the join dictionary. i.e.
     # for room_id, room_info in resp_s.rooms.join.items():  # loop all rooms
@@ -3472,7 +3491,7 @@ async def listen_all(  # noqa: C901
         all_events = back_events[::-1] + front_events
 
         for event in all_events:
-            logger.debug(f"sending event to callback = {event}.")
+            gs.log.debug(f"sending event to callback = {event}.")
             if client.rooms and client.rooms[room_id]:
                 room = client.rooms[room_id]
             else:
@@ -3486,7 +3505,7 @@ async def listen_all(  # noqa: C901
                 read_event=last_event.event_id,
             )
             if isinstance(resp, RoomReadMarkersError):
-                logger.debug(
+                gs.log.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
 
@@ -3496,7 +3515,7 @@ async def main_listen() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.info(
+        gs.log.info(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
@@ -3506,7 +3525,7 @@ async def main_listen() -> None:
         )
         cleanup()
         sys.exit(1)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
@@ -3515,20 +3534,20 @@ async def main_listen() -> None:
         # Required for participating in encrypted rooms
         if client.should_upload_keys:
             await client.keys_upload()
-        logger.debug(f"Listening type: {pargs.listen}")
-        if pargs.listen == FOREVER:
+        gs.log.debug(f"Listening type: {gs.pa.listen}")
+        if gs.pa.listen == FOREVER:
             await listen_forever(client)
-        elif pargs.listen == ONCE:
+        elif gs.pa.listen == ONCE:
             await listen_once(client)
             # could use 'await listen_once_alternative(client)'
             # as an alternative implementation
-        elif pargs.listen == TAIL:
+        elif gs.pa.listen == TAIL:
             await listen_tail(client, credentials)
-        elif pargs.listen == ALL:
+        elif gs.pa.listen == ALL:
             await listen_all(client, credentials)
         else:
-            logger.error(
-                f'Unrecognized listening type "{pargs.listen}". '
+            gs.log.error(
+                f'Unrecognized listening type "{gs.pa.listen}". '
                 "Closing client."
             )
     finally:
@@ -3541,7 +3560,7 @@ async def main_rename_device() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.info(
+        gs.log.info(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
@@ -3551,17 +3570,17 @@ async def main_rename_device() -> None:
         )
         cleanup()
         sys.exit(1)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
-        content = {"display_name": pargs.rename_device}
+        content = {"display_name": gs.pa.rename_device}
         resp = await client.update_device(credentials["device_id"], content)
         if isinstance(resp, UpdateDeviceError):
-            logger.error(f"update_device failed with {resp}")
+            gs.log.error(f"update_device failed with {resp}")
         else:
-            logger.debug(f"update_device successful with {resp}")
+            gs.log.debug(f"update_device successful with {resp}")
     finally:
         if client:
             await client.close()
@@ -3572,7 +3591,7 @@ async def main_rename_user() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.info(
+        gs.log.info(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
@@ -3582,16 +3601,16 @@ async def main_rename_user() -> None:
         )
         cleanup()
         sys.exit(1)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
-        resp = await client.set_displayname(pargs.display_name)
+        resp = await client.set_displayname(gs.pa.display_name)
         if isinstance(resp, ProfileSetDisplayNameError):
-            logger.error(f"set_displayname failed with {resp}")
+            gs.log.error(f"set_displayname failed with {resp}")
         else:
-            logger.debug(f"set_displayname successful with {resp}")
+            gs.log.debug(f"set_displayname successful with {resp}")
     finally:
         if client:
             await client.close()
@@ -3603,7 +3622,7 @@ async def main_room_actions() -> None:  # noqa: C901
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.info(
+        gs.log.info(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
@@ -3613,40 +3632,40 @@ async def main_room_actions() -> None:  # noqa: C901
         )
         cleanup()
         sys.exit(1)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
-        if pargs.room_create:
+        if gs.pa.room_create:
             await create_rooms(
-                client, pargs.room_create, pargs.name, pargs.topic
+                client, gs.pa.room_create, gs.pa.name, gs.pa.topic
             )
-        if pargs.room_join:
-            await join_rooms(client, pargs.room_join)
-        if pargs.room_leave:
-            await leave_rooms(client, pargs.room_leave)
-        if pargs.room_forget:
-            await forget_rooms(client, pargs.room_forget)
-        if pargs.room_invite and pargs.user:
-            await invite_to_rooms(client, pargs.room_invite, pargs.user)
-        if pargs.room_ban and pargs.user:
-            await ban_from_rooms(client, pargs.room_ban, pargs.user)
-        if pargs.room_unban and pargs.user:
-            await unban_from_rooms(client, pargs.room_unban, pargs.user)
-        if pargs.room_kick and pargs.user:
-            await kick_from_rooms(client, pargs.room_kick, pargs.user)
+        if gs.pa.room_join:
+            await join_rooms(client, gs.pa.room_join)
+        if gs.pa.room_leave:
+            await leave_rooms(client, gs.pa.room_leave)
+        if gs.pa.room_forget:
+            await forget_rooms(client, gs.pa.room_forget)
+        if gs.pa.room_invite and gs.pa.user:
+            await invite_to_rooms(client, gs.pa.room_invite, gs.pa.user)
+        if gs.pa.room_ban and gs.pa.user:
+            await ban_from_rooms(client, gs.pa.room_ban, gs.pa.user)
+        if gs.pa.room_unban and gs.pa.user:
+            await unban_from_rooms(client, gs.pa.room_unban, gs.pa.user)
+        if gs.pa.room_kick and gs.pa.user:
+            await kick_from_rooms(client, gs.pa.room_kick, gs.pa.user)
         if (
-            pargs.room_invite
-            or pargs.room_ban
-            or pargs.room_unban
-            or pargs.room_kick
-        ) and not pargs.user:
-            logger.warning(
+            gs.pa.room_invite
+            or gs.pa.room_ban
+            or gs.pa.room_unban
+            or gs.pa.room_kick
+        ) and not gs.pa.user:
+            gs.log.warning(
                 "No room action(s) were performed because no users "
                 "were specified. Use --user option to specify users."
             )
-        logger.debug(
+        gs.log.debug(
             "Room action(s) were performed or attempted. "
             "We close the client and quit"
         )
@@ -3660,7 +3679,7 @@ async def main_verify() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.info(
+        gs.log.info(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
@@ -3670,7 +3689,7 @@ async def main_verify() -> None:
         )
         cleanup()
         sys.exit(1)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
@@ -3702,16 +3721,16 @@ async def main_send() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        logger.debug("Credentials file does not exist.")
+        gs.log.debug("Credentials file does not exist.")
         await create_credentials_file(credentials_file, store_dir)
-    logger.debug("Credentials file does exist.")
+    gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
         # a few more steps to prepare for sending messages
         rooms = determine_rooms(credentials["room_id"])
-        logger.debug(f"Rooms are: {rooms}")
+        gs.log.debug(f"Rooms are: {rooms}")
         # Sync encryption keys with the server
         # Required for participating in encrypted rooms
         if client.should_upload_keys:
@@ -3722,7 +3741,7 @@ async def main_send() -> None:
         await client.sync(timeout=30000, full_state=True)
         # Now we can send messages as the user
         await process_arguments_and_input(client, rooms)
-        logger.debug("Messages were sent. We close the client and quit")
+        gs.log.debug("Messages were sent. We close the client and quit")
     finally:
         if client:
             await client.close()
@@ -3730,14 +3749,14 @@ async def main_send() -> None:
 
 def are_arg_files_readable() -> bool:
     """Check if files from command line are readable."""
-    arg_files = pargs.image if pargs.image else []
-    arg_files += pargs.audio if pargs.audio else []
-    arg_files += pargs.file if pargs.file else []
-    arg_files += pargs.event if pargs.event else []
+    arg_files = gs.pa.image if gs.pa.image else []
+    arg_files += gs.pa.audio if gs.pa.audio else []
+    arg_files += gs.pa.file if gs.pa.file else []
+    arg_files += gs.pa.event if gs.pa.event else []
     r = True
     for fn in arg_files:
         if (fn != "-") and not (isfile(fn) and access(fn, R_OK)):
-            logger.error(
+            gs.log.error(
                 f'File "{fn}" specified in the command line was not found '
                 "or is not readable."
             )
@@ -3747,13 +3766,13 @@ def are_arg_files_readable() -> bool:
 
 def is_download_media_dir_valid() -> bool:
     """Check if media download directory is correct."""
-    if not pargs.download_media:
+    if not gs.pa.download_media:
         return True  # "": that means no download of media, valid value
     # normailzed for humans
-    dl = os.path.normpath(pargs.download_media)
-    pargs.download_media = dl
+    dl = os.path.normpath(gs.pa.download_media)
+    gs.pa.download_media = dl
     if os.path.isfile(dl):
-        logger.error(
+        gs.log.error(
             f'"{dl}" cannot be used as media directory, because '
             f'"{dl}" is a file. Specify a different directory for downloading '
             "media."
@@ -3763,7 +3782,7 @@ def is_download_media_dir_valid() -> bool:
         if os.access(dl, os.W_OK):  # Check for write access
             return True
         else:
-            logger.error(
+            gs.log.error(
                 "Found an existing media download directory "
                 f'"{dl}". But this directory is lacking write '
                 "permissions. Add write permissions to it."
@@ -3775,12 +3794,12 @@ def is_download_media_dir_valid() -> bool:
         try:
             os.mkdir(dl, mode)
         except OSError as exc:
-            logger.error(
+            gs.log.error(
                 "Could not create media download directory "
                 f"{dl} for you. ({exc})"
             )
             return False
-        logger.debug(f'Created media download directory "{dl}" for you.')
+        gs.log.debug(f'Created media download directory "{dl}" for you.')
         return True
 
 
@@ -3791,22 +3810,22 @@ def version() -> None:
         f"  _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}\n"
         "  _|_|  _|_|    _|            _|     a Matrix CLI client\n"
         "  _|  _|  _|    _|              _|   \n"
-        f"  _|      _|    _|            _|     version {VERSION}\n"
+        f"  _|      _|    _|            _|     version {VERSIONNR} {VERSION}\n"
         "  _|      _|      _|_|_|    _|       enjoy and submit PRs\n"
         "\n"
     )
     print(version_info)
-    logger.debug(version_info)
+    gs.log.debug(version_info)
 
 
 def initial_check_of_log_args() -> str:
     """Check logging related arguments."""
-    if not pargs.log_level:
+    if not gs.pa.log_level:
         return
     t = ""
-    for i in range(len(pargs.log_level)):
-        up = pargs.log_level[i].upper()
-        pargs.log_level[i] = up
+    for i in range(len(gs.pa.log_level)):
+        up = gs.pa.log_level[i].upper()
+        gs.pa.log_level[i] = up
         if up not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
             t = (
                 '--log-level only allows values "DEBUG", "INFO", "WARNING", '
@@ -3816,7 +3835,7 @@ def initial_check_of_log_args() -> str:
     if t == "":
         return
     else:
-        logger.error(t)
+        gs.log.error(t)
         sys.exit(1)
 
 
@@ -3824,34 +3843,34 @@ def initial_check_of_log_args() -> str:
 def initial_check_of_args() -> None:  # noqa: C901
     """Check arguments."""
     # First, the adjustments
-    if not pargs.encrypted:
-        pargs.encrypted = True  # force it on
-        logger.debug("Encryption is always enabled. It cannot be turned off.")
-    if not pargs.encrypted:  # just in case we ever go back disabling e2e
-        pargs.store = None
-    if pargs.listen:
-        pargs.listen = pargs.listen.lower()
-    if pargs.listen == NEVER and pargs.tail != 0:
-        pargs.listen = TAIL  # --tail turns on --listen TAIL
-        logger.debug('--listen set to "tail" because "--tail" is used.')
+    if not gs.pa.encrypted:
+        gs.pa.encrypted = True  # force it on
+        gs.log.debug("Encryption is always enabled. It cannot be turned off.")
+    if not gs.pa.encrypted:  # just in case we ever go back disabling e2e
+        gs.pa.store = None
+    if gs.pa.listen:
+        gs.pa.listen = gs.pa.listen.lower()
+    if gs.pa.listen == NEVER and gs.pa.tail != 0:
+        gs.pa.listen = TAIL  # --tail turns on --listen TAIL
+        gs.log.debug('--listen set to "tail" because "--tail" is used.')
     if (
-        pargs.room_create
-        or pargs.room_join
-        or pargs.room_leave
-        or pargs.room_forget
-        or pargs.room_invite
-        or pargs.room_ban
-        or pargs.room_unban
-        or pargs.room_kick
+        gs.pa.room_create
+        or gs.pa.room_join
+        or gs.pa.room_leave
+        or gs.pa.room_forget
+        or gs.pa.room_invite
+        or gs.pa.room_ban
+        or gs.pa.room_unban
+        or gs.pa.room_kick
     ):
         room_action = True
     else:
         room_action = False
     # only 2 SSL states allowed: None (SSL default on), False (SSL off)
-    if pargs.no_ssl is not True:
-        pargs.no_ssl = None
-    if pargs.proxy == "":
-        pargs.proxy = None
+    if gs.pa.no_ssl is not True:
+        gs.pa.no_ssl = None
+    if gs.pa.proxy == "":
+        gs.pa.proxy = None
 
     # how often is "-" used to represent stdin
     # must be 0 or 1; cannot be used twice or more
@@ -3861,28 +3880,28 @@ def initial_check_of_args() -> None:  # noqa: C901
     STDIN_FILE = 0
     STDIN_EVENT = 0
     STDIN_TOTAL = 0
-    if pargs.image:
-        for image in pargs.image:
+    if gs.pa.image:
+        for image in gs.pa.image:
             if image == "-":
                 STDIN_IMAGE += 1
                 gs.stdin_use = "image"
-    if pargs.audio:
-        for audio in pargs.audio:
+    if gs.pa.audio:
+        for audio in gs.pa.audio:
             if audio == "-":
                 STDIN_AUDIO += 1
                 gs.stdin_use = "audio"
-    if pargs.file:
-        for file in pargs.file:
+    if gs.pa.file:
+        for file in gs.pa.file:
             if file == "-":
                 STDIN_FILE += 1
                 gs.stdin_use = "file"
-    if pargs.event:
-        for event in pargs.event:
+    if gs.pa.event:
+        for event in gs.pa.event:
             if event == "-":
                 STDIN_EVENT += 1
                 gs.stdin_use = "event"
-    if pargs.message:
-        for message in pargs.message:
+    if gs.pa.message:
+        for message in gs.pa.message:
             if message == "-":
                 STDIN_MESSAGE += 1
                 gs.stdin_use = "message"
@@ -3891,7 +3910,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     )
 
     # Secondly, the checks
-    if pargs.config:
+    if gs.pa.config:
         t = (
             "This feature is not implemented yet. "
             "Please help me implement it. If you feel motivated "
@@ -3899,30 +3918,30 @@ def initial_check_of_args() -> None:  # noqa: C901
             "Your contribution is appreciated. Thnx!"
         )
     elif (
-        pargs.listen == FOREVER or pargs.listen == ONCE or pargs.listen == ALL
-    ) and pargs.tail != 0:
+        gs.pa.listen == FOREVER or gs.pa.listen == ONCE or gs.pa.listen == ALL
+    ) and gs.pa.tail != 0:
         t = (
             "Don't use --listen forever, --listen once or --listen all "
             "together with --tail. It's one or the other."
         )
     # this is set by default anyway, just defensive programming
-    elif pargs.encrypted and ((not pargs.store) or (pargs.store == "")):
+    elif gs.pa.encrypted and ((not gs.pa.store) or (gs.pa.store == "")):
         t = (
             "If --encrypted is used --store must be set too. "
             "Specify --store and run program again."
         )
-    elif pargs.verify and (pargs.verify.lower() != EMOJI):
+    elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
         t = f'For --verify currently only "{EMOJI}" is allowed ' "as keyword."
-    elif pargs.verify and (
-        pargs.message
-        or pargs.image
-        or pargs.audio
-        or pargs.file
-        or pargs.event
-        or pargs.room
+    elif gs.pa.verify and (
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+        or gs.pa.room
         or room_action
-        or pargs.listen != NEVER
-        or pargs.rename_device
+        or gs.pa.listen != NEVER
+        or gs.pa.rename_device
     ):
         t = (
             "If --verify is specified, only verify can be done. "
@@ -3930,18 +3949,18 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No listening or tailing allowed. No renaming. "
             "No actions on rooms."
         )
-    elif pargs.rename_device and (pargs.rename_device == ""):
+    elif gs.pa.rename_device and (gs.pa.rename_device == ""):
         t = "Don't use an empty name for --rename_device."
-    elif pargs.rename_device and (
-        pargs.message
-        or pargs.image
-        or pargs.audio
-        or pargs.file
-        or pargs.event
-        or pargs.room
+    elif gs.pa.rename_device and (
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+        or gs.pa.room
         or room_action
-        or pargs.listen != NEVER
-        or pargs.verify
+        or gs.pa.listen != NEVER
+        or gs.pa.verify
     ):
         t = (
             "If --rename_device is specified, only rename can be done. "
@@ -3949,12 +3968,12 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No listening or tailing allowed. No verification. "
             "No actions on rooms."
         )
-    elif pargs.listen != NEVER and (
-        pargs.message
-        or pargs.image
-        or pargs.audio
-        or pargs.file
-        or pargs.event
+    elif gs.pa.listen != NEVER and (
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
         or room_action
     ):
         t = (
@@ -3963,64 +3982,64 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No room actions allowed."
         )
     elif (
-        pargs.message
-        or pargs.image
-        or pargs.audio
-        or pargs.file
-        or pargs.event
-    ) and (pargs.listen != NEVER or room_action):
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+    ) and (gs.pa.listen != NEVER or room_action):
         t = (
             "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
             "be done. No listening allowed. "
             "No room actions allowed."
         )
-    elif (pargs.user) and not room_action:
+    elif (gs.pa.user) and not room_action:
         t = (
             "If --user is specified, only room action can be "
             "done. "
             "Specify a room option like --room-create or remove --user."
         )
-    elif (pargs.listen == ONCE or pargs.listen == FOREVER) and pargs.room:
+    elif (gs.pa.listen == ONCE or gs.pa.listen == FOREVER) and gs.pa.room:
         t = (
             "If --listen once or --listen forever are specified, "
             "--room must not be specified because "
             "these options listen in ALL rooms."
         )
     elif (
-        pargs.listen != NEVER
-        and pargs.listen != FOREVER
-        and pargs.listen != ONCE
-        and pargs.listen != TAIL
-        and pargs.listen != ALL
+        gs.pa.listen != NEVER
+        and gs.pa.listen != FOREVER
+        and gs.pa.listen != ONCE
+        and gs.pa.listen != TAIL
+        and gs.pa.listen != ALL
     ):
         t = (
             "If --listen is specified, only these choices are "
             f"possible: {ONCE}, {NEVER}, {FOREVER}, {TAIL} or {ALL}. "
-            f'Found "{pargs.listen}".'
+            f'Found "{gs.pa.listen}".'
         )
-    elif pargs.listen == NEVER and pargs.listen_self:
+    elif gs.pa.listen == NEVER and gs.pa.listen_self:
         t = (
             "If neither --listen nor --tail are used, "
             "then --listen-self must not be used "
             "either. Specify --listen or --tail "
             "and run program again."
         )
-    elif pargs.listen == NEVER and (pargs.download_media != ""):
+    elif gs.pa.listen == NEVER and (gs.pa.download_media != ""):
         t = (
             "If neither --listen nor --tail are used, "
             "then --download-media must not be used "
             "either. Specify --listen or --tail "
-            f"and run program again. ({pargs.download_media})"
+            f"and run program again. ({gs.pa.download_media})"
         )
-    elif pargs.proxy and not (
-        pargs.proxy.startswith("http://")
-        or pargs.proxy.startswith("socks4://")
-        or pargs.proxy.startswith("socks5://")
+    elif gs.pa.proxy and not (
+        gs.pa.proxy.startswith("http://")
+        or gs.pa.proxy.startswith("socks4://")
+        or gs.pa.proxy.startswith("socks5://")
     ):
         t = (
             "Proxy is not correct. Proxy should start with "
             '"http://", "socks4://" or "socks5://". '
-            f' Your proxy is set to "{pargs.proxy}".'
+            f' Your proxy is set to "{gs.pa.proxy}".'
         )
     elif STDIN_TOTAL > 1:
         t = (
@@ -4029,29 +4048,20 @@ def initial_check_of_args() -> None:  # noqa: C901
             f'into "{PROG_WITHOUT_EXT}". Stdin pipe can '
             "be used at most once."
         )
-    elif pargs.no_ssl and pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
+    elif gs.pa.no_ssl and gs.pa.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
         t = (
             "Options --no-ssl and --ssl-certificate cannot be used "
             "together. Use one or the other."
         )
     else:
-        logger.debug("All arguments are valid. All checks passed.")
+        gs.log.debug("All arguments are valid. All checks passed.")
         return
-    logger.error(t)
+    gs.log.error(t)
     sys.exit(1)
 
 
 # according to linter: function is too complex, C901
-if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
-    logging.basicConfig(  # initialize root logger, a must
-        format="{asctime}: {levelname:>8}: {name:>16}: {message}", style="{"
-    )
-    # set log level on root
-    if "DEBUG" in os.environ:
-        logging.getLogger().setLevel(logging.DEBUG)
-    else:
-        logging.getLogger().setLevel(logging.INFO)
-
+def main():  # noqa: C901 # ignore mccabe if-too-complex
     # Construct the argument parser
     ap = argparse.ArgumentParser(
         description=(
@@ -4074,8 +4084,8 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
             "and in the Github README.md file."
         ),
         epilog="You are running "
-        f"version {VERSION}. Enjoy, star on Github and contribute by "
-        "submitting a Pull Request. ",
+        f"version {VERSIONNR} {VERSION}. Enjoy, star on Github and "
+        "contribute by submitting a Pull Request. ",
     )
     # Add the arguments to the parser
     ap.add_argument(
@@ -4727,44 +4737,54 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         "program will continue to run. This is useful for having version "
         "number in the log files.",
     )
-
-    pargs = ap.parse_args()
+    global gs
     gs = GlobalState()
+    gs.pa = ap.parse_args()
 
-    logger = logging.getLogger(PROG_WITHOUT_EXT)
-    if pargs.log_level:
+    logging.basicConfig(  # initialize root logger, a must
+        format="{asctime}: {levelname:>8}: {name:>16}: {message}", style="{"
+    )
+    # set log level on root
+    if "DEBUG" in os.environ:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
+
+    gs.log = logging.getLogger(PROG_WITHOUT_EXT)
+
+    if gs.pa.log_level:
         initial_check_of_log_args()
-        if len(pargs.log_level) > 0:
-            if len(pargs.log_level) > 1:
+        if len(gs.pa.log_level) > 0:
+            if len(gs.pa.log_level) > 1:
                 # set log level for EVERYTHING
-                logging.getLogger().setLevel(pargs.log_level[1])
+                logging.getLogger().setLevel(gs.pa.log_level[1])
             # set log level for matrix-commander
-            logger.setLevel(pargs.log_level[0])
-            logger.debug(
+            gs.log.setLevel(gs.pa.log_level[0])
+            gs.log.debug(
                 f"Log level is set for module {PROG_WITHOUT_EXT}. "
-                f"log_level={pargs.log_level[0]}"
+                f"log_level={gs.pa.log_level[0]}"
             )
-            if len(pargs.log_level) > 1:
+            if len(gs.pa.log_level) > 1:
                 # only now that local log level is set, we can log prev. info
-                logger.debug(
+                gs.log.debug(
                     f"Log level is set for modules below {PROG_WITHOUT_EXT}. "
-                    f"log_level={pargs.log_level[1]}"
+                    f"log_level={gs.pa.log_level[1]}"
                 )
-    if pargs.debug > 0:
-        if pargs.debug > 1:
+    if gs.pa.debug > 0:
+        if gs.pa.debug > 1:
             # turn on debug logging for EVERYTHING
             logging.getLogger().setLevel(logging.DEBUG)
         # turn on debug logging for matrix-commander
-        logger.setLevel(logging.DEBUG)
-        logger.debug(f"Debug is turned on. debug count={pargs.debug}")
-        if pargs.log_level and len(pargs.log_level) > 0:
-            logger.warning("Debug option -d overwrote option --log-level.")
+        gs.log.setLevel(logging.DEBUG)
+        gs.log.debug(f"Debug is turned on. debug count={gs.pa.debug}")
+        if gs.pa.log_level and len(gs.pa.log_level) > 0:
+            gs.log.warning("Debug option -d overwrote option --log-level.")
 
     initial_check_of_args()
     if not is_download_media_dir_valid():
         sys.exit(1)
     if not are_arg_files_readable():
-        logger.debug(
+        gs.log.debug(
             f"{PROG_WITHOUT_EXT} forces an early abort. "
             "To avoid partial execution, no action has been performed at all. "
             "Nothing has been sent. Fix your arguments and run the command "
@@ -4773,98 +4793,101 @@ if __name__ == "__main__":  # noqa: C901 # ignore mccabe if-too-complex
         sys.exit(1)
     create_pid_file()
 
-    if pargs.version:
+    if gs.pa.version:
         version()  # continue execution
 
-    logger.debug(f'Stdin pipe is assigned to "{gs.stdin_use}".')
-    if pargs.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
-        logger.debug(
+    gs.log.debug(f'Stdin pipe is assigned to "{gs.stdin_use}".')
+    if gs.pa.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
+        gs.log.debug(
             "SSL will be used. A custom SSL certificate was provided. "
-            f'Custom certificate from file "{pargs.ssl_certificate}" will '
+            f'Custom certificate from file "{gs.pa.ssl_certificate}" will '
             "be used for this connection."
         )
         try:
             # type SSLContext
-            gs.ssl = ssl.create_default_context(cafile=pargs.ssl_certificate)
+            gs.ssl = ssl.create_default_context(cafile=gs.pa.ssl_certificate)
         except FileNotFoundError:
-            logger.error(
-                f'SSL certificate file "{pargs.ssl_certificate}" was '
+            gs.log.error(
+                f'SSL certificate file "{gs.pa.ssl_certificate}" was '
                 "not found."
             )
             sys.exit(1)
         except PermissionError:
-            logger.error(
-                f'SSL certificate file "{pargs.ssl_certificate}" does '
+            gs.log.error(
+                f'SSL certificate file "{gs.pa.ssl_certificate}" does '
                 "not have read permissions."
             )
             sys.exit(1)
         except ssl.SSLError:
-            logger.error(
-                f'SSL certificate file "{pargs.ssl_certificate}" has '
+            gs.log.error(
+                f'SSL certificate file "{gs.pa.ssl_certificate}" has '
                 "invalid content. Does not seem to be a certificate."
             )
             sys.exit(1)
-    elif pargs.no_ssl:
-        logger.debug(
+    elif gs.pa.no_ssl:
+        gs.log.debug(
             "SSL will be not be used. The SSL certificate validation "
             "will be skipped for this connection."
         )
         gs.ssl = False
     else:
-        logger.debug(
+        gs.log.debug(
             "SSL will be used. Default SSL certificate validation "
             "will be done for this connection."
         )
         gs.ssl = None
 
     try:
-        if pargs.verify:
+        if gs.pa.verify:
             asyncio.run(main_verify())
-        elif pargs.display_name:
+        elif gs.pa.display_name:
             asyncio.run(main_rename_user())
-        elif pargs.rename_device:
+        elif gs.pa.rename_device:
             asyncio.run(main_rename_device())
         elif (
-            pargs.listen == FOREVER
-            or pargs.listen == ONCE
-            or pargs.listen == TAIL
-            or pargs.listen == ALL
+            gs.pa.listen == FOREVER
+            or gs.pa.listen == ONCE
+            or gs.pa.listen == TAIL
+            or gs.pa.listen == ALL
         ):
             asyncio.run(main_listen())
         elif (
-            pargs.room_create
-            or pargs.room_join
-            or pargs.room_leave
-            or pargs.room_forget
-            or pargs.room_invite
-            or pargs.room_ban
-            or pargs.room_unban
-            or pargs.room_kick
+            gs.pa.room_create
+            or gs.pa.room_join
+            or gs.pa.room_leave
+            or gs.pa.room_forget
+            or gs.pa.room_invite
+            or gs.pa.room_ban
+            or gs.pa.room_unban
+            or gs.pa.room_kick
         ):
             asyncio.run(main_room_actions())
         else:
             asyncio.run(main_send())
         # the next can be reached on success or failure
-        logger.debug(f"The program {PROG_WITH_EXT} left the event loop.")
+        gs.log.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError:
-        logger.info(
+        gs.log.info(
             f"The program {PROG_WITH_EXT} ran into a timeout. "
             "Most likely connectivity to internet was lost. "
             "If this happens frequently consider running this "
             "program as a service so it will restart automatically. "
             "Sorry. Here is the traceback."
         )
-        logger.info(traceback.format_exc())
+        gs.log.info(traceback.format_exc())
     except Exception:
-        logger.error(
+        gs.log.error(
             f"The program {PROG_WITH_EXT} failed. "
             "Sorry. Here is the traceback."
         )
-        logger.error(traceback.format_exc())
+        gs.log.error(traceback.format_exc())
         # traceback.print_exc(file=sys.stdout)
     except KeyboardInterrupt:
-        logger.debug("Keyboard interrupt received.")
+        gs.log.debug("Keyboard interrupt received.")
     cleanup()
     sys.exit(0)
 
+
+if __name__ == "__main__":
+    main()
 # EOF

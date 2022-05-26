@@ -11,12 +11,25 @@ credentials.json.*
 # ignore backups
 README.md.*
 matrix-commander.py.*
+/matrix_commander/matrix-commander.py.*
+/matrix_commander/matrix_commander.py.*
+setup.cfg.*
 
 # ignore help file
 help.txt
+help.txt.*
 
 # ignore soft link
 mc
 
 # ignore certain scripts
 /scripts/prepare-commit.sh
+/scripts/create-help.sh
+
+# ignore cache
+/matrix_commander/__pycache__/
+
+# PyPi build files
+versionnumber.txt
+/dist/
+/matrix_commander.egg-info/
