@@ -38,14 +38,13 @@ else:
 backupfile = filename + "." + date_string
 shutil.copy2(filename, backupfile)
 
-f = open(helpfile, "w")
-# tty size defaults to 80 columns
-bashCmd = [filename, "--help"]
-process = subprocess.Popen(bashCmd, stdout=f)
-_, error = process.communicate()
-if error:
-    print(error)
-f.close()
+with open(helpfile, "w") as f:
+    # tty size defaults to 80 columns
+    bashCmd = [filename, "--help"]
+    process = subprocess.Popen(bashCmd, stdout=f)
+    _, error = process.communicate()
+    if error:
+        print(error)
 
 bashCmd = ["wc", "-L", helpfile]  # max line length
 process = subprocess.Popen(bashCmd, stdout=subprocess.PIPE)
@@ -59,7 +58,6 @@ else:
 with open(helpfile, "r+") as f:
     helptext = f.read()
     print(f"Length of new {helpfile} file is: {len(helptext)}")
-    f.close()
 
 with open(filename, "r+") as f:
     text = f.read()
@@ -82,7 +80,6 @@ with open(filename, "r+") as f:
     f.seek(0)
     f.write(text)
     f.truncate()
-    f.close()
 
 bashCmd = ["diff", filename, backupfile]
 process = subprocess.Popen(bashCmd, stdout=subprocess.PIPE)

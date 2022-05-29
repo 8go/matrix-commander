@@ -9,7 +9,20 @@ r"""matrix_commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](logos/matrix-commander-logo.svg)
+![logo](https://github.com/8go/matrix-commander/logos/matrix-commander-logo.svg)
+
+# :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
+
+- `matrix-commander` new available on
+  [PyPi](https://pypi.org/project/matrix-commander/)
+  and hence easy to install via `pip install matrix-commander`
+- Slight incompatibility: From now on instead of using `matrix-commander.py`
+  please call `matrix-commander`. `matrix-commander` is from now on the
+  preferred way to execute the program.
+- `matrix-commander` is now callable from a Python program as well.
+  See [tests/test-send.py](
+  https://github.com/8go/matrix-commander/tests/test-send.py)
+  for an example on how to do that.
 
 # matrix-commander
 
@@ -164,12 +177,12 @@ This simple Matrix client written in Python allows you to send and
 receive messages and files and verify other devices. End-to-end encryption
 is enabled by default and cannot be turned off.
 
-# Dependencies
+# Dependencies and Installation
 
 - If you install via `pip`, then `pip` will take care of most of the
   dependencies.
   - See https://pypi.org/project/matrix-commander
-  - Usually `pip install matrix-commander`
+  - Usually `pip install matrix-commander` will do the trick.
   - Note that even if you install via `pip` you must have a) Python 3.8+
     and b) `libolm` installed. See `PyPi-Instructions.md`.
 
@@ -205,6 +218,17 @@ dependencies that you must take care of:
     the `requirements.txt` file
 
 # Examples of calling `matrix-commander`
+
+- Alternative 1: Usually `matrix-commander` is called from a terminal
+  inside a shell like `bash`, `sh`, `zsh`, your Windows CMD terminal
+  or similar. You will find plenty of examples how to use it within
+  a terminal just a few lines down.
+- Alternative 2: Sometimes, however, it might be more convenient to call
+  `matrix-commander` from within a Python program. This is also possible.
+  Import the Python module `matrix_commander` and use the provided
+  entry point `main`. An example of how this can be done can be found
+  in [tests/test-send.py](
+  https://github.com/8go/matrix-commander/tests/test-send.py).
 
 ```
 $ matrix-commander # first run; this will configure everything
@@ -398,7 +422,7 @@ README.md on Github. For even more explications and examples also read the
 documentation provided in the top portion of the source code and in the Github
 README.md file.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -d, --debug           Print debug information. If used once, only the log
                         level of matrix-commander is set to DEBUG. If used
@@ -734,7 +758,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.15.0 2022-05-26. Enjoy, star on Github and
+You are running version 2.16.0 2022-05-29. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -789,6 +813,8 @@ contribute by submitting a Pull Request.
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 - More than 200 stars :stars: on Github
 - Available through `pip`, i.e. available in PyPi store
+- Callable from the terminal, from shells like `bash`, etc.
+- Callable from Python programs via the entry point (function) `main`.
 
 # Autocompletion
 
@@ -954,8 +980,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-26"
-VERSIONNR = "2.15.0"
+VERSION = "2022-05-29"
+VERSIONNR = "2.16.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2383,7 +2409,7 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     """
     if not rooms:
-        gs.log.info(
+        gs.log.warning(
             "No rooms are given. This should not happen. "
             "This image is being droppend and NOT sent."
         )
@@ -2416,7 +2442,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         isPipe = False
 
     if not os.path.isfile(image):
-        gs.log.debug(
+        gs.log.warning(
             f"Image file {image} is not a file. Doesn't exist or "
             "is a directory. "
             "This image is being dropped and NOT sent."
@@ -2430,7 +2456,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         "^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
         os.path.splitext(image)[1].lower(),
     ):
-        gs.log.debug(
+        gs.log.warning(
             f"Image file {image} is not an image file. Should be "
             ".jpg, .jpeg, .gif, or .png. "
             f"[{os.path.splitext(image)[1].lower()}] "
@@ -2441,7 +2467,7 @@ async def send_image(client, rooms, image):  # noqa: C901
     # 'application/pdf' "image/jpeg"
     mime_type = magic.from_file(image, mime=True)
     if not mime_type.startswith("image/"):
-        gs.log.debug(
+        gs.log.warning(
             f"Image file {image} does not have an image mime type. "
             "Should be something like image/jpeg. "
             f"Found mime type {mime_type}. "
@@ -2519,7 +2545,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            gs.log.debug(
+            gs.log.info(
                 f'This image file was sent: "{image}" to room "{room_id}".'
             )
     except Exception:
@@ -4062,6 +4088,11 @@ def initial_check_of_args() -> None:  # noqa: C901
 
 # according to linter: function is too complex, C901
 def main():  # noqa: C901 # ignore mccabe if-too-complex
+    """Run the program.
+
+    main() is an entry point so that other Python programs can
+    easily call matrix-commander.
+    """
     # Construct the argument parser
     ap = argparse.ArgumentParser(
         description=(

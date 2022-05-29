@@ -2,7 +2,20 @@
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](logos/matrix-commander-logo.svg)
+![logo](https://github.com/8go/matrix-commander/logos/matrix-commander-logo.svg)
+
+# :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
+
+- `matrix-commander` new available on
+  [PyPi](https://pypi.org/project/matrix-commander/)
+  and hence easy to install via `pip install matrix-commander`
+- Slight incompatibility: From now on instead of using `matrix-commander.py`
+  please call `matrix-commander`. `matrix-commander` is from now on the
+  preferred way to execute the program.
+- `matrix-commander` is now callable from a Python program as well.
+  See [tests/test-send.py](
+  https://github.com/8go/matrix-commander/tests/test-send.py)
+  for an example on how to do that.
 
 # matrix-commander
 
@@ -157,12 +170,12 @@ This simple Matrix client written in Python allows you to send and
 receive messages and files and verify other devices. End-to-end encryption
 is enabled by default and cannot be turned off.
 
-# Dependencies
+# Dependencies and Installation
 
 - If you install via `pip`, then `pip` will take care of most of the
   dependencies.
   - See https://pypi.org/project/matrix-commander
-  - Usually `pip install matrix-commander`
+  - Usually `pip install matrix-commander` will do the trick.
   - Note that even if you install via `pip` you must have a) Python 3.8+
     and b) `libolm` installed. See `PyPi-Instructions.md`.
 
@@ -198,6 +211,17 @@ dependencies that you must take care of:
     the `requirements.txt` file
 
 # Examples of calling `matrix-commander`
+
+- Alternative 1: Usually `matrix-commander` is called from a terminal
+  inside a shell like `bash`, `sh`, `zsh`, your Windows CMD terminal
+  or similar. You will find plenty of examples how to use it within
+  a terminal just a few lines down.
+- Alternative 2: Sometimes, however, it might be more convenient to call
+  `matrix-commander` from within a Python program. This is also possible.
+  Import the Python module `matrix_commander` and use the provided
+  entry point `main`. An example of how this can be done can be found
+  in [tests/test-send.py](
+  https://github.com/8go/matrix-commander/tests/test-send.py).
 
 ```
 $ matrix-commander # first run; this will configure everything
@@ -391,7 +415,7 @@ README.md on Github. For even more explications and examples also read the
 documentation provided in the top portion of the source code and in the Github
 README.md file.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -d, --debug           Print debug information. If used once, only the log
                         level of matrix-commander is set to DEBUG. If used
@@ -727,7 +751,7 @@ optional arguments:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.15.0 2022-05-26. Enjoy, star on Github and
+You are running version 2.16.0 2022-05-29. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -782,6 +806,8 @@ contribute by submitting a Pull Request.
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 - More than 200 stars :stars: on Github
 - Available through `pip`, i.e. available in PyPi store
+- Callable from the terminal, from shells like `bash`, etc.
+- Callable from Python programs via the entry point (function) `main`.
 
 # Autocompletion
 
