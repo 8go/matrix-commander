@@ -10,30 +10,41 @@ can be called from a Python program.
 
 # isort: skip_file
 # isort: off
-from os.path import isfile
-from os import R_OK, access
 from datetime import datetime
-import subprocess
-import shutil
-import re
 import sys
 
 # importing matrix_commander module
 try:
     # if installed via pip
     import matrix_commander  # nopep8 # isort: skip
-    from matrix_commander import main  # nopep8 # isort: skip
+    from matrix_commander import (
+        main,
+        MatrixCommanderError,
+    )  # nopep8 # isort: skip
 except:
-    # not installed via pip. installed via 'git clone' or file download
+    # if not installed via pip. if installed via 'git clone' or file download
     # appending a local path to sys.path
     sys.path.append("matrix_commander")
     sys.path.append("../matrix_commander")
     import matrix_commander  # nopep8 # isort: skip
-    from matrix_commander import main  # nopep8 # isort: skip
+    from matrix_commander import (
+        main,
+        MatrixCommanderError,
+    )  # nopep8 # isort: skip
+
+now = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 # set up some test arguments
+print(f"Running test program: {sys.argv[0]}")
+print(f"Arguments that are passed on to matrix-commander are: {sys.argv[1:]}")
+sys.argv[0] = "matrix-commander"
 sys.argv.extend(["--version"])
-sys.argv.extend(["--message", "Hello World!"])
+sys.argv.extend(["--message", f"Hello World @ {now}!"])
 sys.argv.extend(["--image", "tests/test.s.png"])
 print(f"Testing with these arguments: {sys.argv}")
-matrix_commander.main()
+try:
+    matrix_commander.main()
+except MatrixCommanderError as e:
+    print(e)
+except Exception as e:
+    print(e)

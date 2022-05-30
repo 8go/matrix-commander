@@ -38,7 +38,7 @@ matrix-commander --event event1.json event2.json -m "" $MC_OPTIONS
 # also test the stdin pipe logic
 cat event3.json | matrix-commander --event - $MC_OPTIONS
 
-echo -e "\n\n\nThe next 4 test cases should ***FAIL*** due to " \
+echo -e "\n\n\nThe next 4 test cases should ***FAIL*** due to" \
     "***INCORRECT*** JSON objects.\n\n\n"
 # This is how NOT to do events and event templates.
 BAD_MSC2676_EDIT='{ "type": "m.room.message", "fail-content": { "body": "%s", "msgtype": "m.text", "m.new_content": { "body": "%s", "msgtype": "m.text" }, "m.relates_to": { "rel_type": "m.replace", "event_id": "%s" } } }'

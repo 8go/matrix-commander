@@ -21,6 +21,8 @@ help.txt.*
 
 # ignore soft link
 mc
+m-c
+m_c
 
 # ignore certain scripts
 /scripts/prepare-commit.sh

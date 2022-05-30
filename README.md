@@ -2,7 +2,7 @@
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](https://github.com/8go/matrix-commander/logos/matrix-commander-logo.svg)
+![logo](https://github.com/8go/matrix-commander/blob/master/logos/matrix-commander-logo.svg)
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
@@ -14,7 +14,7 @@ https://github.com/poljar/matrix-nio)
   preferred way to execute the program.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
-  https://github.com/8go/matrix-commander/tests/test-send.py)
+  https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
 
 # matrix-commander
@@ -221,7 +221,7 @@ dependencies that you must take care of:
   Import the Python module `matrix_commander` and use the provided
   entry point `main`. An example of how this can be done can be found
   in [tests/test-send.py](
-  https://github.com/8go/matrix-commander/tests/test-send.py).
+  https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
 
 ```
 $ matrix-commander # first run; this will configure everything
@@ -751,7 +751,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.16.0 2022-05-29. Enjoy, star on Github and
+You are running version 2.17.0 2022-05-30. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -815,7 +815,8 @@ Tab completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
 Here is a sample snapshot of tab completion in action:
 
-![tab completion](./screenshots/tab_complete.png)
+![tab completion](
+https://github.com/8go/matrix-commander/blob/master/screenshots/tab_complete.png)
 
 # Performance and Speed
 

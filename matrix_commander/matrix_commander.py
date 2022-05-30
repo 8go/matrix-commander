@@ -9,7 +9,7 @@ r"""matrix_commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](https://github.com/8go/matrix-commander/logos/matrix-commander-logo.svg)
+![logo](https://github.com/8go/matrix-commander/blob/master/logos/matrix-commander-logo.svg)
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
@@ -21,7 +21,7 @@ https://github.com/poljar/matrix-nio)
   preferred way to execute the program.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
-  https://github.com/8go/matrix-commander/tests/test-send.py)
+  https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
 
 # matrix-commander
@@ -228,7 +228,7 @@ dependencies that you must take care of:
   Import the Python module `matrix_commander` and use the provided
   entry point `main`. An example of how this can be done can be found
   in [tests/test-send.py](
-  https://github.com/8go/matrix-commander/tests/test-send.py).
+  https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
 
 ```
 $ matrix-commander # first run; this will configure everything
@@ -758,7 +758,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.16.0 2022-05-29. Enjoy, star on Github and
+You are running version 2.17.0 2022-05-30. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -822,7 +822,8 @@ Tab completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
 Here is a sample snapshot of tab completion in action:
 
-![tab completion](./screenshots/tab_complete.png)
+![tab completion](
+https://github.com/8go/matrix-commander/blob/master/screenshots/tab_complete.png)
 
 # Performance and Speed
 
@@ -888,6 +889,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 import argparse
 import asyncio
 import datetime
+import errno
 import getpass
 import json
 import logging
@@ -980,8 +982,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-29"
-VERSIONNR = "2.16.0"
+VERSION = "2022-05-30"
+VERSIONNR = "2.17.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1037,6 +1039,21 @@ DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name is not given
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
 NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
+
+
+class MatrixCommanderError(RuntimeError):
+    def __init__(
+        self,
+        errmsg: str,
+        traceback: bool = False,  # is traceback printing desired?
+        level: str = "error",
+    ):
+        self.errmsg = errmsg
+        self.traceback = traceback
+        self.level = level  # debug, info, warning, error
+
+    def __str__(self):
+        return self.errmsg
 
 
 class GlobalState:
@@ -2883,9 +2900,11 @@ async def create_credentials_file(  # noqa: C901
     )
     if confirm.lower() != "yes" and confirm.lower() != "y":
         print("")  # add newline to stdout to separate any log info
-        gs.log.info("Aborting.")
-        cleanup()
-        sys.exit(1)
+        raise MatrixCommanderError(
+            "Aborting due to user request.",
+            traceback=False,
+            level="info",
+        )
     homeserver = "https://matrix.example.org"
     homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
     if not homeserver:
@@ -2985,38 +3004,41 @@ async def create_credentials_file(  # noqa: C901
             try:
                 subprocess.check_output(cmd)
             except Exception:
-                gs.log.info(
+                raise MatrixCommanderError(
                     "Browser could not be launched. "
                     "Hence SSO (Single Sign-On) login could not be "
                     "completed. Sorry. If you think the browser and "
                     "SSO should work then try again. If you do not have "
                     "a browser or don't want SSO or want to login with a "
                     "password instead, then use the '--no-sso' option in "
-                    "the command line."
+                    "the command line.",
+                    traceback=False,
+                    level="error",
                 )
-                sys.exit(1)
 
             # wait and shutdown server
             try:
                 await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
             except asyncio.TimeoutError:
-                gs.log.info(
+                raise MatrixCommanderError(
                     f"The program {PROG_WITH_EXT} failed. "
                     "No response was received from SSO provider. "
-                    "Sorry."
+                    "Sorry.",
+                    traceback=False,
+                    level="error",
                 )
-                sys.exit(1)
 
         finally:
             await runner.cleanup()
 
     elif not password:
-        gs.log.info(
+        raise MatrixCommanderError(
             "No supported login method found for homeserver. "
             "Neither SSO nor password are accepted login "
-            "methods of the server."
+            "methods of the server.",
+            traceback=False,
+            level="error",
         )
-        sys.exit(1)
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
@@ -3044,6 +3066,8 @@ async def create_credentials_file(  # noqa: C901
     )
     try:
 
+        txt = ""
+        level = ""
         if sso:
             resp = await client.login(
                 token=login_token, device_name=device_name
@@ -3066,29 +3090,29 @@ async def create_credentials_file(  # noqa: C901
                 room_id,
                 gs.pa.credentials,
             )
-            text = f"""
+            txt = f"""
                 Log in using {method} was successful.
                 Credentials were stored in file \"{gs.pa.credentials}\".
                 Run program \"{PROG_WITH_EXT}\" again to
                 login with credentials and to send a message.
                 If you plan on having many credential files, consider
                 moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
-            print(textwrap.fill(textwrap.dedent(text).strip(), width=79))
+            txt = textwrap.fill(textwrap.dedent(txt).strip(), width=79)
+            level = "info"
         else:
-            gs.log.info(
-                f"The program {PROG_WITH_EXT} failed. "
-                "Most likely wrong credentials were entered. "
-                "Sorry."
-            )
-            gs.log.info(
-                f'homeserver="{homeserver}"; user="{user_id}"; '
-                f'room_id="{room_id}"; '
-                f"failed to log in: {resp}"
-            )
+            txt = f"The program {PROG_WITH_EXT} failed. "
+            "Most likely wrong credentials were entered. "
+            "Sorry. \n"
+            f'homeserver="{homeserver}"; user="{user_id}"; '
+            f'room_id="{room_id}"; '
+            f"failed to log in: {resp}"
+            level = "error"
     finally:
         await client.close()
-    cleanup()
-    sys.exit(1)
+    if level == "error":
+        raise MatrixCommanderError(txt, traceback=True, level=level)
+    elif level == "info":
+        raise MatrixCommanderError(txt, traceback=False, level=level)
 
 
 def login_using_credentials_file(
@@ -3541,16 +3565,15 @@ async def main_listen() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        gs.log.info(
+        raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            listen.
-            Aborting due to missing or not-found credentials file."""
+            Credentials file must be created first before one can listen.
+            Aborting due to missing or not-found credentials file.""",
+            traceback=False,
+            level="error",
         )
-        cleanup()
-        sys.exit(1)
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -3586,16 +3609,16 @@ async def main_rename_device() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        gs.log.info(
+        raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can
             rename device.
-            Aborting due to missing or not-found credentials file."""
+            Aborting due to missing or not-found credentials file.""",
+            traceback=False,
+            level="error",
         )
-        cleanup()
-        sys.exit(1)
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -3617,16 +3640,16 @@ async def main_rename_user() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        gs.log.info(
+        raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can
             rename user.
-            Aborting due to missing or not-found credentials file."""
+            Aborting due to missing or not-found credentials file.""",
+            traceback=False,
+            level="error",
         )
-        cleanup()
-        sys.exit(1)
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -3648,16 +3671,16 @@ async def main_room_actions() -> None:  # noqa: C901
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        gs.log.info(
+        raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can
             perform room actions.
-            Aborting due to missing or not-found credentials file."""
+            Aborting due to missing or not-found credentials file.""",
+            traceback=False,
+            level="error",
         )
-        cleanup()
-        sys.exit(1)
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -3705,16 +3728,15 @@ async def main_verify() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
-        gs.log.info(
+        raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            verify.
-            Aborting due to missing or not-found credentials file."""
+            Credentials file must be created first before one can verify.
+            Aborting due to missing or not-found credentials file.""",
+            traceback=False,
+            level="error",
         )
-        cleanup()
-        sys.exit(1)
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -3773,60 +3795,67 @@ async def main_send() -> None:
             await client.close()
 
 
-def are_arg_files_readable() -> bool:
+def check_arg_files_readable() -> None:
     """Check if files from command line are readable."""
     arg_files = gs.pa.image if gs.pa.image else []
     arg_files += gs.pa.audio if gs.pa.audio else []
     arg_files += gs.pa.file if gs.pa.file else []
     arg_files += gs.pa.event if gs.pa.event else []
     r = True
+    errtxt = (
+        "These file specified in the command line were not found "
+        "or are not readable: "
+    )
     for fn in arg_files:
         if (fn != "-") and not (isfile(fn) and access(fn, R_OK)):
-            gs.log.error(
-                f'File "{fn}" specified in the command line was not found '
-                "or is not readable."
-            )
+            if not r:
+                errtxt += ", "
+            errtxt += f'"{fn}"'
             r = False
-    return r
+            errfile = fn
+    if not r:
+        raise FileNotFoundError(errno.ENOENT, errtxt, errfile)
 
 
-def is_download_media_dir_valid() -> bool:
+def check_download_media_dir() -> None:
     """Check if media download directory is correct."""
     if not gs.pa.download_media:
-        return True  # "": that means no download of media, valid value
+        return  # "": that means no download of media, valid value
     # normailzed for humans
     dl = os.path.normpath(gs.pa.download_media)
     gs.pa.download_media = dl
     if os.path.isfile(dl):
-        gs.log.error(
+        raise NotADirectoryError(
+            errno.ENOTDIR,
             f'"{dl}" cannot be used as media directory, because '
             f'"{dl}" is a file. Specify a different directory for downloading '
-            "media."
+            "media.",
+            dl,
         )
-        return False
     if os.path.isdir(dl):
         if os.access(dl, os.W_OK):  # Check for write access
-            return True
+            return  # all OK
         else:
-            gs.log.error(
+            raise PermissionError(
+                errno.EPERM,
                 "Found an existing media download directory "
                 f'"{dl}". But this directory is lacking write '
-                "permissions. Add write permissions to it."
+                "permissions. Add write permissions to it.",
+                dl,
             )
-            return False
     else:
         # not a file, not a directory, create directory
         mode = 0o777
         try:
             os.mkdir(dl, mode)
-        except OSError as exc:
-            gs.log.error(
+        except OSError as e:
+            raise OSError(
+                e.errno,
                 "Could not create media download directory "
-                f"{dl} for you. ({exc})"
+                f"{dl} for you. ({e})",
+                dl,
             )
-            return False
         gs.log.debug(f'Created media download directory "{dl}" for you.')
-        return True
 
 
 def version() -> None:
@@ -3844,10 +3873,19 @@ def version() -> None:
     gs.log.debug(version_info)
 
 
-def initial_check_of_log_args() -> str:
-    """Check logging related arguments."""
+def initial_check_of_log_args() -> None:
+    """Check logging related arguments.
+
+    Arguments:
+    ---------
+    None
+
+    Returns: None
+
+    Raises exception on error.
+    """
     if not gs.pa.log_level:
-        return
+        return  # all OK
     t = ""
     for i in range(len(gs.pa.log_level)):
         up = gs.pa.log_level[i].upper()
@@ -3859,10 +3897,9 @@ def initial_check_of_log_args() -> str:
                 f"({up})"
             )
     if t == "":
-        return
+        return  # all OK
     else:
-        gs.log.error(t)
-        sys.exit(1)
+        raise MatrixCommanderError(t)
 
 
 # according to pylama: function too complex: C901 # noqa: C901
@@ -3990,7 +4027,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     ):
         t = (
             "If --rename_device is specified, only rename can be done. "
-            "No messages, images, files or events can be sent."
+            "No messages, images, files or events can be sent. "
             "No listening or tailing allowed. No verification. "
             "No actions on rooms."
         )
@@ -4004,7 +4041,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     ):
         t = (
             "If --listen is specified, only listening can be done. "
-            "No messages, images, files or events can be sent."
+            "No messages, images, files or events can be sent. "
             "No room actions allowed."
         )
     elif (
@@ -4081,18 +4118,44 @@ def initial_check_of_args() -> None:  # noqa: C901
         )
     else:
         gs.log.debug("All arguments are valid. All checks passed.")
-        return
-    gs.log.error(t)
-    sys.exit(1)
+        return  # all OK
+    raise MatrixCommanderError(t, traceback=False)
 
 
 # according to linter: function is too complex, C901
-def main():  # noqa: C901 # ignore mccabe if-too-complex
+def main(
+    argv: Union[None, list] = None
+) -> None:  # noqa: C901 # ignore mccabe if-too-complex
     """Run the program.
 
-    main() is an entry point so that other Python programs can
+    main() is an entry point allowing other Python programs to
     easily call matrix-commander.
+
+    Arguments:
+    ---------
+    argv : list of arguments as in sys.argv; first element is the
+        program name, further elements are the arguments; every
+        element must be of type "str".
+        argv is optional and can be None.
+        If argv is set then these arguments will be used as arguments for
+        matrix-commander. If argv is not set (None or empty list), then
+        sys.argv will be used as arguments for matrix-commander.
+
+    Example input argv: ["matrix-commander"]
+        ["matrix-commander" "--version"]
+        ["matrix-commander" "--message" "Hello" --image "pic.jpg"]
+
+    Returns nothing.
+
+    Raises exception if an error is detected. Many exceptions are
+        possible. One of them is: MatrixCommanderError.
+
     """
+    if argv:
+        sys.argv = argv
+    # prepare the global state
+    global gs
+    gs = GlobalState()
     # Construct the argument parser
     ap = argparse.ArgumentParser(
         description=(
@@ -4768,8 +4831,6 @@ def main():  # noqa: C901 # ignore mccabe if-too-complex
         "program will continue to run. This is useful for having version "
         "number in the log files.",
     )
-    global gs
-    gs = GlobalState()
     gs.pa = ap.parse_args()
 
     logging.basicConfig(  # initialize root logger, a must
@@ -4812,16 +4873,17 @@ def main():  # noqa: C901 # ignore mccabe if-too-complex
             gs.log.warning("Debug option -d overwrote option --log-level.")
 
     initial_check_of_args()
-    if not is_download_media_dir_valid():
-        sys.exit(1)
-    if not are_arg_files_readable():
-        gs.log.debug(
+    check_download_media_dir()
+    try:
+        check_arg_files_readable()
+    except Exception as e:
+        gs.log.error(e)
+        raise MatrixCommanderError(
             f"{PROG_WITHOUT_EXT} forces an early abort. "
             "To avoid partial execution, no action has been performed at all. "
             "Nothing has been sent. Fix your arguments and run the command "
             "again."
         )
-        sys.exit(1)
     create_pid_file()
 
     if gs.pa.version:
@@ -4838,23 +4900,23 @@ def main():  # noqa: C901 # ignore mccabe if-too-complex
             # type SSLContext
             gs.ssl = ssl.create_default_context(cafile=gs.pa.ssl_certificate)
         except FileNotFoundError:
-            gs.log.error(
+            raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" was '
-                "not found."
+                "not found.",
+                traceback=False,
             )
-            sys.exit(1)
         except PermissionError:
-            gs.log.error(
+            raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" does '
-                "not have read permissions."
+                "not have read permissions.",
+                traceback=False,
             )
-            sys.exit(1)
         except ssl.SSLError:
-            gs.log.error(
+            raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" has '
-                "invalid content. Does not seem to be a certificate."
+                "invalid content. Does not seem to be a certificate.",
+                traceback=False,
             )
-            sys.exit(1)
     elif gs.pa.no_ssl:
         gs.log.debug(
             "SSL will be not be used. The SSL certificate validation "
@@ -4898,27 +4960,47 @@ def main():  # noqa: C901 # ignore mccabe if-too-complex
         # the next can be reached on success or failure
         gs.log.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError:
-        gs.log.info(
+        cleanup()
+        raise MatrixCommanderError(
             f"The program {PROG_WITH_EXT} ran into a timeout. "
             "Most likely connectivity to internet was lost. "
             "If this happens frequently consider running this "
-            "program as a service so it will restart automatically. "
-            "Sorry. Here is the traceback."
+            "program as a service so it will restart automatically. Sorry.",
+            True,
         )
-        gs.log.info(traceback.format_exc())
-    except Exception:
-        gs.log.error(
-            f"The program {PROG_WITH_EXT} failed. "
-            "Sorry. Here is the traceback."
+    except MatrixCommanderError as e:
+        cleanup()
+        raise MatrixCommanderError(
+            f"{e}", traceback=e.traceback, level=e.level
         )
-        gs.log.error(traceback.format_exc())
-        # traceback.print_exc(file=sys.stdout)
+    except Exception as e:
+        cleanup()
+        raise MatrixCommanderError(
+            f"The program {PROG_WITH_EXT} failed. Sorry.\n{e}",
+            traceback=True,
+        )
     except KeyboardInterrupt:
         gs.log.debug("Keyboard interrupt received.")
     cleanup()
-    sys.exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except MatrixCommanderError as e:
+        tb = ""
+        if e.traceback:
+            tb = f"\nHere is the traceback.\n{traceback.format_exc()}"
+        if e.level == "info":
+            gs.log.info(f"{e}{tb}")
+        else:
+            gs.log.error(f"{e}{tb}")
+        sys.exit(1)
+    except Exception as e:
+        tb = ""
+        if gs.pa.debug > 0:
+            tb = f"\nHere is the traceback.\n{traceback.format_exc()}"
+        gs.log.error(f"{e}{tb}")
+        sys.exit(1)
+    sys.exit(0)
 # EOF
