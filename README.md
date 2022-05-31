@@ -299,6 +299,13 @@ $ # rename device-name, sometimes also called device display-name
 $ matrix-commander --rename-device "my new name"
 $ # set display-name for authenticated user
 $ matrix-commander --display-name "Alex"
+$ # list all the rooms that I am a member of, all joined rooms
+$ matrix-commander --joined-rooms
+$ # list all the members of 2 specific rooms
+$ matrix-commander --joined-members '!someroomId1:example.com' \
+    '!someroomId2:example.com'
+$ # list all the members of all rooms  that I am member of
+$ matrix-commander --joined-members '*'
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
 $ # use your own SSL certificate for a homeserver with SSL and local certs
@@ -399,6 +406,8 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--joined-rooms]
+                           [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
@@ -750,11 +759,18 @@ options:
                         on the first run that initializes matrix-commander.
                         Once credentials are established this option is
                         irrelevant and it will simply be ignored.
+  --joined-rooms        Print the list of joined rooms. All rooms that you are
+                        a member of will be printed, one room per line.
+  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
+                        Print the list of joined members for one or multiple
+                        rooms. If you want to print the joined members of all
+                        rooms that you are member of, then use the special
+                        character '*'.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.18.0 2022-05-31. Enjoy, star on Github and
+You are running version 2.19.0 2022-05-31. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
