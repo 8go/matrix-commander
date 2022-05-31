@@ -3,7 +3,7 @@
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
 For other systems, this options has no influence and can be ignored or removed.
 
-The provided `Dockerfile` is for Fedora, specifically Fedora 33. If you want to use `Debian`, `Ubuntu` or otherwise, you *must* adjust the `Dockerfile` (e.g. change `dnf` to `apt` and so forth).
+The provided `Dockerfile` is for Fedora, specifically Fedora 35. If you want to use `Debian`, `Ubuntu` or otherwise, you *must* adjust the `Dockerfile` (e.g. change `dnf` to `apt` and so forth).
 
 == Building the image
 
@@ -38,7 +38,7 @@ Given an initialized data folder, run this command to send a message to a room:
 docker run --rm -v /my/chosen/folder:/data:z matrix-commander -r "<room id>" -m "<some message>"
 ```
 
-=== Verify the session 
+=== Verify the session
 
 Given an initialized data folder, run this command to start the verification of the matrix-commander session from another existing matrix session:
 ```
@@ -52,7 +52,7 @@ https://github.com/8go/matrix-commander/issues/27
 
 This has nothing to do with matrix-commander, but nontheless here are some examples.
 
-In a nutshell: 
+In a nutshell:
 ```
 df -h | docker run --rm -v ./data:/data matrix-commander --code
 ```
@@ -77,7 +77,7 @@ The libraries
 ```
 libffi-devel libjpeg-devel zlib-devel
 ```
-were added to the 
+were added to the
 ```
 dnf install
 ```
@@ -85,7 +85,7 @@ command.
 
 The command
 ```
-pip3 install wheel && 
+pip3 install wheel &&
 ```
 was added to the
 ```

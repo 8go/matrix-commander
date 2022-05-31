@@ -117,7 +117,7 @@ to the preconfigured room.
 
 Messages to send can be provided
 1) in the command line (-m or --message)
-2) as input from the keyboard
+2) as input from the keyboard (if there is no other input or command)
 3) through a pipe from stdin (|), i.e. piped in from another program.
 
 For sending messages the program supports various text formats:
@@ -273,7 +273,7 @@ $ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
 $ # send 2 images and 1 text, text will be sent last
 $ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
-$ matrix-commander -i photo1.jpg -m ""
+$ matrix-commander -i photo1.jpg
 $ # pipe 1 image and no text
 $ cat image1.jpg | matrix-commander -i -
 $ # send 1 audio and 1 text to 2 rooms
@@ -525,25 +525,28 @@ options:
                         This option --topic specifies the topics to be used
                         with the command --room-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
-                        Send this message. If not specified, and no input
-                        piped in from stdin, then message will be read from
-                        stdin, i.e. keyboard. This option can be used multiple
-                        times to send multiple messages. If there is data
-                        piped into this program, then first data from the pipe
-                        is published, then messages from this option are
-                        published. Messages will be sent last, i.e. after
-                        objects like images, audio, files, etc. To force that
-                        no message is sent, use "-m ''". Input piped via stdin
-                        can additionally be specified with the special
-                        character '-'. If you want to feed a text message into
-                        matrix-commander via a pipe, via stdin, then specify
-                        the special character '-'. If '-' is specified as
-                        message, then the program will read the message from
-                        stdin. If your message is literally '-' then use '\-'
-                        as message in the argument. '-' may appear in any
-                        position, i.e. '-m "start" - "end"' will send 3
-                        messages out of which the second one is read from
-                        stdin. '-' may appear only once overall in all
+                        Send this message. Message data must not be binary
+                        data, it must be text. If no '-m' is used and no other
+                        conflictingarguments are provided, and information is
+                        piped into the program, then the piped data will be
+                        used as message. Finally, if there are no operations
+                        at all in the arguemnts, then a message will be read
+                        from stdin, i.e. from the keyboard. This option can be
+                        used multiple times to send multiple messages. If
+                        there is data piped into this program, then first data
+                        from the pipe is published, then messages from this
+                        option are published. Messages will be sent last, i.e.
+                        after objects like images, audio, files, events, etc.
+                        Input piped via stdin can additionally be specified
+                        with the special character '-'. If you want to feed a
+                        text message into matrix-commander via a pipe, via
+                        stdin, then specify the special character '-'. If '-'
+                        is specified as message, then the program will read
+                        the message from stdin. If your message is literally
+                        '-' then use '\-' as message in the argument. '-' may
+                        appear in any position, i.e. '-m "start" - "end"' will
+                        send 3 messages out of which the second one is read
+                        from stdin. '-' may appear only once overall in all
                         arguments.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
                         Send this image. This option can be used multiple
@@ -758,7 +761,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.17.0 2022-05-30. Enjoy, star on Github and
+You are running version 2.18.0 2022-05-31. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -982,8 +985,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-30"
-VERSIONNR = "2.17.0"
+VERSION = "2022-05-31"
+VERSIONNR = "2.18.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2715,10 +2718,13 @@ def get_messages_from_keyboard() -> list:
 
     If there is a message provided via --message argument, no message
     will be read from keyboard.
+    If there are other send operations like --image, --file, etc. are
+    used, no message will be read from keyboard.
     If there is a message provided via stdin input pipe, no message
     will be read from keyboard.
     In short, we only read from keyboard as last resort, if no messages are
-    specified or provided anywhere.
+    specified or provided anywhere and no other send-operations like
+    --image, --event, etc. are performed.
 
     Return [] if no input available on keyboard.
     Return ["some-msg"] if input is availble on keyboard.
@@ -2730,6 +2736,18 @@ def get_messages_from_keyboard() -> list:
         gs.log.debug(
             "Don't read from keyboard because there are "
             "messages provided in arguments with -m."
+        )
+        return messages  # return empty list because mesgs in -m
+    if (
+        gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+        or gs.pa.version
+    ):
+        gs.log.debug(
+            "Don't read from keyboard because there are "
+            "other send operations or --version provided in arguments."
         )
         return messages  # return empty list because mesgs in -m
     stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
@@ -4386,16 +4404,18 @@ def main(
         action="extend",
         nargs="+",
         type=str,
-        help="Send this message. If not specified, and no "
-        "input piped in from stdin, then message "
-        "will be read from stdin, i.e. keyboard. "
+        help="Send this message. Message data must not be binary data, it "
+        "must be text. If no '-m' is used and no other conflicting"
+        "arguments are provided, and information is piped into the program, "
+        "then the piped data will be used as message. "
+        "Finally, if there are no operations at all in the arguemnts, then "
+        "a message will be read from stdin, i.e. from the keyboard. "
         "This option can be used multiple times to send "
         "multiple messages. If there is data piped "
         "into this program, then first data from the "
         "pipe is published, then messages from this "
         "option are published. Messages will be sent last, "
-        "i.e. after objects like images, audio, files, etc. "
-        "To force that no message is sent, use \"-m ''\". "
+        "i.e. after objects like images, audio, files, events, etc. "
         "Input piped via stdin can additionally be specified with the "
         "special character '-'. "
         f"If you want to feed a text message into {PROG_WITHOUT_EXT} "
@@ -4409,7 +4429,7 @@ def main(
         "'-' may appear only once overall in all arguments. ",
     )
     # allow multiple messages , e.g. -i "i1.jpg" "i2.gif"
-    # or -m "i1.png" -i "i2.jpeg"
+    # or -i "i1.png" -i "i2.jpeg"
     # image is going to be a list of strings
     # e.g. image=[ 'i1.jpg', 'i2.png' ]
     ap.add_argument(
@@ -4436,7 +4456,7 @@ def main(
         "file name than to pipe the file through stdin.",
     )
     # allow multiple audio files , e.g. -i "a1.mp3" "a2.wav"
-    # or -m "a1.mp3" -i "a2.m4a"
+    # or -i "a1.mp3" -i "a2.m4a"
     # audio is going to be a list of strings
     # e.g. audio=[ 'a1.mp3', 'a2.m4a' ]
     ap.add_argument(
@@ -4454,8 +4474,8 @@ def main(
         "via a pipe, via stdin, then specify the special "
         "character '-'. See description of '-i' to see how '-' is handled.",
     )
-    # allow multiple files , e.g. -i "a1.pdf" "a2.doc"
-    # or -m "a1.pdf" -i "a2.doc"
+    # allow multiple files , e.g. -f "a1.pdf" "a2.doc"
+    # or -f "a1.pdf" -f "a2.doc"
     # file is going to be a list of strings
     # e.g. file=[ 'a1.pdf', 'a2.doc' ]
     ap.add_argument(
@@ -4884,10 +4904,33 @@ def main(
             "Nothing has been sent. Fix your arguments and run the command "
             "again."
         )
-    create_pid_file()
 
     if gs.pa.version:
         version()  # continue execution
+        if not (
+            gs.pa.message
+            or gs.pa.image
+            or gs.pa.audio
+            or gs.pa.file
+            or gs.pa.event
+            or gs.pa.room_create
+            or gs.pa.room_join
+            or gs.pa.room_leave
+            or gs.pa.room_forget
+            or gs.pa.room_invite
+            or gs.pa.room_ban
+            or gs.pa.room_unban
+            or gs.pa.room_kick
+            or gs.pa.listen != LISTEN_DEFAULT
+            or gs.pa.tail != TAIL_UNUSED_DEFAULT
+            or gs.pa.verify
+            or gs.pa.rename_device
+            or gs.pa.display_name
+        ):
+            gs.log.debug("Only --version. Print and quit.")
+            return  # just version, quit
+
+    create_pid_file()
 
     gs.log.debug(f'Stdin pipe is assigned to "{gs.stdin_use}".')
     if gs.pa.ssl_certificate != SSL_CERTIFICATE_DEFAULT:

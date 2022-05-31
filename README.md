@@ -110,7 +110,7 @@ to the preconfigured room.
 
 Messages to send can be provided
 1) in the command line (-m or --message)
-2) as input from the keyboard
+2) as input from the keyboard (if there is no other input or command)
 3) through a pipe from stdin (|), i.e. piped in from another program.
 
 For sending messages the program supports various text formats:
@@ -266,7 +266,7 @@ $ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
 $ # send 2 images and 1 text, text will be sent last
 $ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
-$ matrix-commander -i photo1.jpg -m ""
+$ matrix-commander -i photo1.jpg
 $ # pipe 1 image and no text
 $ cat image1.jpg | matrix-commander -i -
 $ # send 1 audio and 1 text to 2 rooms
@@ -518,25 +518,28 @@ options:
                         This option --topic specifies the topics to be used
                         with the command --room-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
-                        Send this message. If not specified, and no input
-                        piped in from stdin, then message will be read from
-                        stdin, i.e. keyboard. This option can be used multiple
-                        times to send multiple messages. If there is data
-                        piped into this program, then first data from the pipe
-                        is published, then messages from this option are
-                        published. Messages will be sent last, i.e. after
-                        objects like images, audio, files, etc. To force that
-                        no message is sent, use "-m ''". Input piped via stdin
-                        can additionally be specified with the special
-                        character '-'. If you want to feed a text message into
-                        matrix-commander via a pipe, via stdin, then specify
-                        the special character '-'. If '-' is specified as
-                        message, then the program will read the message from
-                        stdin. If your message is literally '-' then use '\-'
-                        as message in the argument. '-' may appear in any
-                        position, i.e. '-m "start" - "end"' will send 3
-                        messages out of which the second one is read from
-                        stdin. '-' may appear only once overall in all
+                        Send this message. Message data must not be binary
+                        data, it must be text. If no '-m' is used and no other
+                        conflictingarguments are provided, and information is
+                        piped into the program, then the piped data will be
+                        used as message. Finally, if there are no operations
+                        at all in the arguemnts, then a message will be read
+                        from stdin, i.e. from the keyboard. This option can be
+                        used multiple times to send multiple messages. If
+                        there is data piped into this program, then first data
+                        from the pipe is published, then messages from this
+                        option are published. Messages will be sent last, i.e.
+                        after objects like images, audio, files, events, etc.
+                        Input piped via stdin can additionally be specified
+                        with the special character '-'. If you want to feed a
+                        text message into matrix-commander via a pipe, via
+                        stdin, then specify the special character '-'. If '-'
+                        is specified as message, then the program will read
+                        the message from stdin. If your message is literally
+                        '-' then use '\-' as message in the argument. '-' may
+                        appear in any position, i.e. '-m "start" - "end"' will
+                        send 3 messages out of which the second one is read
+                        from stdin. '-' may appear only once overall in all
                         arguments.
   -i IMAGE [IMAGE ...], --image IMAGE [IMAGE ...]
                         Send this image. This option can be used multiple
@@ -751,7 +754,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.17.0 2022-05-30. Enjoy, star on Github and
+You are running version 2.18.0 2022-05-31. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
