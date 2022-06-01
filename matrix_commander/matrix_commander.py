@@ -23,6 +23,13 @@ https://github.com/poljar/matrix-nio)
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
+- new option `--joined-rooms` to list rooms you are a member of
+- new option `--joined-members` to list members of the specified rooms
+- new feature "DM" or "direct message" which allows you to send to
+  (or listen from) a room whose members are only you (the sender) and the
+  recipient by specifying the recipients name.
+- Minor incompatibility: From now `-u` is assigned to `--user` and no
+  longer to `--download-media`
 
 # matrix-commander
 
@@ -38,6 +45,7 @@ creating rooms, inviting, verifying, and so much more.
     - download media files like images or audio
     - perform Matrix emoji verification
     - performs actions of rooms (create rooms, invite to rooms, etc.)
+    - list rooms and room members
     - and much more
 - It exclusively offers a command-line interface (CLI).
 - Hence the word-play: matrix-command(lin)er
@@ -270,6 +278,19 @@ $ # Send to multiple rooms
 $ matrix-commander -m "hi" -r '!r1:example.org' '!r2:example.org'
 $ # Send to multiple rooms, another way
 $ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
+$ # Send to a specific user, DM, direct messaging, using full user id
+$ matrix-commander -m "hi" --user '@MyFriend:example.org'
+$ # Send to a specific user, DM, direct messaging, using partial user id
+$ # It will be assumed that user @MyFriend is on same homeserver
+$ matrix-commander -m "hi" --user '@MyFriend'
+$ # Send to a specific user, DM, direct messaging, using display name
+$ # Careful! Display names might not be unique. Don't DM the wrong person!
+$ # To double-check the display names do a --joined-members "*"
+$ matrix-commander -m "hi" -u 'Joe'
+$ # Send to multiple users
+$ matrix-commander -m "hi" -u '@Joe:example.org' '@Jane:example.org'
+$ # Send to multiple users, another way
+$ matrix-commander -m "hi" -u '@Joe:example.org' -u '@Jane:example.org'
 $ # send 2 images and 1 text, text will be sent last
 $ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
@@ -402,14 +423,15 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--room-ban ROOM_BAN [ROOM_BAN ...]]
                            [--room-unban ROOM_UNBAN [ROOM_UNBAN ...]]
                            [--room-kick ROOM_KICK [ROOM_KICK ...]]
-                           [--user USER [USER ...]] [--name NAME [NAME ...]]
+                           [-u USER [USER ...]] [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
                            [-j CONFIG] [--proxy PROXY] [-n] [--encrypted]
                            [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
-                           [--print-event-id] [-u [DOWNLOAD_MEDIA]] [-o]
+                           [--print-event-id]
+                           [--download-media [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [-x RENAME_DEVICE]
                            [--display-name DISPLAY_NAME] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
@@ -459,16 +481,23 @@ options:
                         the provided file name will be used as credentials
                         file instead of the default one.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
-                        Send to this room or these rooms. None, one or
-                        multiple rooms can be specified. The default room is
-                        provided in credentials file. If a room (or multiple
-                        ones) is (or are) provided in the arguments, then it
-                        (or they) will be used instead of the one from the
-                        credentials file. The user must have access to the
-                        specified room in order to send messages there.
-                        Messages cannot be sent to arbitrary rooms. When
-                        specifying the room id some shells require the
-                        exclamation mark to be escaped with a backslash.
+                        Send to or receive from this room or these rooms.
+                        None, one or multiple rooms can be specified. The
+                        default room is provided in credentials file. If a
+                        room (or multiple ones) is (or are) provided in the
+                        arguments, then it (or they) will be used instead of
+                        the one from the credentials file. The user must have
+                        access to the specified room in order to send messages
+                        there or listen on the room. Messages cannot be sent
+                        to arbitrary rooms. When specifying the room id some
+                        shells require the exclamation mark to be escaped with
+                        a backslash. As an alternative to specifying a room as
+                        destination, one can specify a user as a destination
+                        with the '--user' argument. See '--user' and the term
+                        'DM (direct messaging)' for details. Specifying a room
+                        is always faster and more efficient than specifying a
+                        user. Not all listen operations allow setting a room.
+                        Read more under the --listen options and similar.
   --room-create ROOM_CREATE [ROOM_CREATE ...]
                         Create this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -517,12 +546,42 @@ options:
                         the rooms as arguments to this option, i.e. as
                         arguments to --room-kick. The user must have
                         permissions to kick users.
-  --user USER [USER ...]
-                        Specify one or multiple users. This option is only
-                        meaningful in combination with options like --room-
-                        invite, --room-ban, --room-unban, --room-kick. This
-                        option --user specifies the users to be used with
-                        these other room commands (like invite, ban, etc.)
+  -u USER [USER ...], --user USER [USER ...]
+                        Specify one or multiple users. This option is
+                        meaningful in combination with a) room actions like
+                        --room-invite, --room-ban, --room-unban, etc. and b)
+                        send actions like -m, -i, -f, etc. as well as c) some
+                        listen actions --listen. In case of a) this option
+                        --user specifies the users to be used with room
+                        commands (like invite, ban, etc.). In case of b) the
+                        option --user can be used as an alternative to
+                        specifying a room as destination for text (-m), images
+                        (-i), etc. For send actions '--user' is providing the
+                        functionality of 'DM (direct messaging)'. For c) this
+                        option allows an alternative to specifying a room as
+                        destination for some --listen actions. What is a DM?
+                        matrix-commander tries to find a room that contains
+                        only the sender and the receiver, hence DM. These
+                        rooms have nothing special other the fact that they
+                        only have 2 members and them being the sender and
+                        recipient respectively. If such a room is found, the
+                        first one found will be used as destination. If no
+                        such room is found, the send fails and the user should
+                        do a --room-create and --room-invite first. If
+                        multiple such rooms exist, one of them will be used
+                        (arbitrarily). For sending and listening, specifying a
+                        room directly is always faster and more efficient than
+                        specifying a user. So, if you know the room, it is
+                        preferred to use --room instead of --user. For b) and
+                        c) --user can be specified in 3 ways: 1) full user id
+                        as in '@user:example.org', 2) partial user id as in
+                        '@user' when the user is on the same homeserver
+                        (example.org will be automatically appended), or 3) a
+                        display name. Be careful, when using display names as
+                        they might not be unique, and you could be sending to
+                        the wrong person. To see possible display names use
+                        the --joined-members '*' option which will show you
+                        the display names in the middle column.
   --name NAME [NAME ...]
                         Specify one or multiple names. This option is only
                         meaningful in combination with option --room-create.
@@ -703,7 +762,7 @@ options:
                         default messages from oneself are not printed.
   --print-event-id      If set and listening, then program will print also the
                         event id foreach message or other event.
-  -u [DOWNLOAD_MEDIA], --download-media [DOWNLOAD_MEDIA]
+  --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
                         PDF files). media will be downloaded to local
@@ -777,7 +836,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.19.0 2022-05-31. Enjoy, star on Github and
+You are running version 2.20.0 2022-06-01. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -935,64 +994,25 @@ import aiofiles.os
 import magic
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    EnableEncryptionBuilder,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    ProfileGetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadResponse,
-    crypto,
-)
+from nio import (AsyncClient, AsyncClientConfig, EnableEncryptionBuilder,
+                 JoinedMembersError, JoinedRoomsError, JoinError,
+                 KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginResponse, MatrixRoom,
+                 MessageDirection, ProfileGetAvatarResponse,
+                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
+                 RoomAliasEvent, RoomBanError, RoomCreateError,
+                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
+                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
+                 RoomForgetError, RoomInviteError, RoomKickError,
+                 RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
+                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
+                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
+                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
+                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1003,8 +1023,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-05-31"
-VERSIONNR = "2.19.0"
+VERSION = "2022-06-01"
+VERSIONNR = "2.20.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1072,6 +1092,8 @@ class MatrixCommanderError(RuntimeError):
         self.errmsg = errmsg
         self.traceback = traceback
         self.level = level  # debug, info, warning, error
+        self.room_action = False  # argv contains room action
+        self.send_action = False  # argv contains send action
 
     def __str__(self):
         return self.errmsg
@@ -1898,7 +1920,122 @@ def determine_store_dir() -> str:
     return pargs_store_norm  # create in the specified, local dir without path
 
 
-def determine_rooms(room_id) -> list:
+async def determine_dm_rooms(
+    users: list, client: AsyncClient, credentials: dict
+) -> list:
+    """Determine the rooms to send to.
+
+    Users can be specified with --user for send and listen operations.
+    These rooms we label DM (direct messaging) rooms.
+    By that we means rooms that only have 2 members, and these two
+    members being the sender and the recipient in question.
+    We do not care about 'is_group' or 'is_direct' flags (hints).
+
+    If given a user and known the sender, we try to find a matching room.
+    There might be 0, 1, or more matching rooms. If 0, then giver error
+    and the user should run --room-invite first. if 1 found, use it.
+    If more than 1 found, just use 1 of them arbitrarily.
+
+    The steps are:
+    - get all rooms where sender is member
+    - get all members to these rooms
+    - check if there is a room with just 2 members and them
+      being sender and recipient (user from users arg)
+
+    In order to match a user to a RoomMember we allow 3 choices:
+    - user_id: perfect match, is unique, full user id, e.g. "@user:example.org"
+    - user_id without homeserver domain: partial user id, e.g. "@user"
+      this partial user will be completed by adding the homeserver of the
+      sender to the end, i.e. assuming that sender and receiver are on the
+      same homeserver.
+    - display name: be careful, display names are NOT unique, you could be
+      mistaken and by error send to the wrong person.
+      '--joined-members "*"' shows you the display names in the middle column
+
+    Arguments:
+    ---------
+        users: list(str): list of user_ids
+            try to find a matching DM room for each user
+        client: AsyncClient: client, allows as to query the server
+        credentials: dict: allows to get the user_id of sender
+
+    Returns a list of found DM rooms. List may be empty if no matches were
+    found.
+
+    """
+    rooms = []
+    if not users:
+        gs.log.debug(f"Room(s) from --user: {rooms}, no users were specified.")
+        return rooms
+    sender = credentials["user_id"]  # who am i
+    domain = sender.partition(":")[2]
+    gs.log.debug(f"Trying to get members for all rooms of sender: {sender}")
+    resp = await client.joined_rooms()
+    if isinstance(resp, JoinedRoomsError):
+        gs.log.error(
+            f"joined_rooms failed with {resp}. Not able to "
+            "get all rooms. "
+            f"Not able to find DM rooms for sender {sender}. "
+            f"Not able to send to receivers {users}."
+        )
+        senderrooms = []
+    else:
+        gs.log.debug(f"joined_rooms successful with {resp}")
+        senderrooms = resp.rooms
+    room_found_for_users = []
+    for room in senderrooms:
+        resp = await client.joined_members(room)
+        if isinstance(resp, JoinedMembersError):
+            gs.log.error(
+                f"joined_members failed with {resp}. Not able to "
+                f"get room members for room {room}. "
+                f"Not able to find DM rooms for sender {sender}. "
+                f"Not able to send to some of these receivers {users}."
+            )
+        else:
+            # resp.room_id
+            # resp.members = List[RoomMember] ; RoomMember
+            # member.user_id
+            # member.display_name
+            # member.avatar_url
+            gs.log.debug(f"joined_members successful with {resp}")
+            if resp.members and len(resp.members) == 2:
+                if resp.members[0].user_id == sender:
+                    # sndr = resp.members[0]
+                    rcvr = resp.members[1]
+                elif resp.members[1].user_id == sender:
+                    # sndr = resp.members[1]
+                    rcvr = resp.members[0]
+                else:
+                    # sndr = None
+                    rcvr = None
+                    gs.log.error(f"Sender does not match {resp}")
+                for user in users:
+                    if (
+                        rcvr
+                        and user == rcvr.user_id
+                        or user + ":" + domain == rcvr.user_id
+                        or user == rcvr.display_name
+                    ):
+                        room_found_for_users.append(user)
+                        rooms.append(resp.room_id)
+    for user in users:
+        if user not in room_found_for_users:
+            gs.log.error(
+                "Room(s) were specified for a DM (direct messaging) "
+                "send operation via --room. But no DM room was "
+                f"found for user '{user}'. "
+                "Try setting up a room first via --room-create and "
+                "--room-invite option."
+            )
+    rooms = list(dict.fromkeys(rooms))  # remove duplicates in list
+    gs.log.debug(f"Room(s) from --user: {rooms}")
+    return rooms
+
+
+async def determine_rooms(
+    room_id: str, client: AsyncClient, credentials: dict
+) -> list:
     """Determine the room to send to.
 
     Arguments:
@@ -1908,28 +2045,42 @@ def determine_rooms(room_id) -> list:
     Look at room from credentials file and at rooms from command line
     and prepares a definite list of rooms.
 
+    New: Also look at --user. For DM (direct messaging), destinations
+    are specified via --user. For every user found, see if there is a
+    "DM" room, a room with only 2 members (sender and recipient).
+    If such a "DM" room is found, add it to the general rooms list
+    that is returned.
+
+    Mixing and matching of --room and --user is possible.
+    --room R1 R2 --user U1 U2 might lead to 4 rooms in total.
+    If no "DM" room is found then give error and tell user to do
+    --room-invite first.
+
     Return list of rooms to send to. Returned list is never empty.
 
     """
-    if not gs.pa.room:
+    if not gs.pa.room and not gs.pa.user:
         gs.log.debug(
             "Room id was provided via credentials file. "
-            "No rooms given in commands line.  "
+            "No rooms given in commands line. "
+            "No users given in command line for DM rooms. "
             f'Setting rooms to "{room_id}".'
         )
         return [room_id]  # list of 1
-    else:
-        rooms = []
+    rooms = []
+    if gs.pa.room:
         for room in gs.pa.room:
             room_id = room.replace(r"\!", "!")  # remove possible escape
             rooms.append(room_id)
-        gs.log.debug(
-            "Room(s) were provided via command line. "
-            "Overwriting room id from credentials file "
-            f'with rooms "{rooms}" '
-            "from command line."
-        )
-        return rooms
+        gs.log.debug(f"Room(s) from --room: {rooms}")
+    rooms += await determine_dm_rooms(gs.pa.user, client, credentials)
+    gs.log.debug(
+        "Room(s) or user(s) were provided via command line. "
+        "Overwriting room id from credentials file "
+        f'with rooms "{rooms}" '
+        "from command line."
+    )
+    return rooms
 
 
 async def map_roomalias_to_roomid(client, alias) -> str:
@@ -2190,6 +2341,7 @@ async def send_event(client, rooms, event):  # noqa: C901
     if not rooms:
         gs.log.info(
             "No rooms are given. This should not happen. "
+            "Maybe your DM rooms specified via --user were not found. "
             "This file is being droppend and NOT sent."
         )
         return
@@ -2284,6 +2436,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     if not rooms:
         gs.log.info(
             "No rooms are given. This should not happen. "
+            "Maybe your DM rooms specified via --user were not found. "
             "This file is being droppend and NOT sent."
         )
         return
@@ -2449,6 +2602,7 @@ async def send_image(client, rooms, image):  # noqa: C901
     if not rooms:
         gs.log.warning(
             "No rooms are given. This should not happen. "
+            "Maybe your DM rooms specified via --user were not found. "
             "This image is being droppend and NOT sent."
         )
         return
@@ -2611,6 +2765,7 @@ async def send_message(client, rooms, message):  # noqa: C901
     if not rooms:
         gs.log.info(
             "No rooms are given. This should not happen. "
+            "Maybe your DM rooms specified via --user were not found. "
             "This text message is being droppend and NOT sent."
         )
         return
@@ -3412,7 +3567,7 @@ async def listen_tail(  # noqa: C901
     # room_id = list(client.rooms.keys())[0]  # first room_id from dict
 
     # get rooms as specified by the user thru args or credential file
-    rooms = determine_rooms(credentials["room_id"])
+    rooms = await determine_rooms(credentials["room_id"], client, credentials)
     gs.log.debug(f"Rooms are: {rooms}")
 
     limit = gs.pa.tail
@@ -3558,7 +3713,7 @@ async def listen_all(  # noqa: C901
     # room_id = list(client.rooms.keys())[0]  # first room_id from dict
 
     # get rooms as specified by the user thru args or credential file
-    rooms = determine_rooms(credentials["room_id"])
+    rooms = await determine_rooms(credentials["room_id"], client, credentials)
     gs.log.debug(f"Rooms are: {rooms}")
 
     # To loop over all rooms, one can loop through the join dictionary. i.e.
@@ -3919,7 +4074,9 @@ async def main_send() -> None:
             credentials_file, store_dir
         )
         # a few more steps to prepare for sending messages
-        rooms = determine_rooms(credentials["room_id"])
+        rooms = await determine_rooms(
+            credentials["room_id"], client, credentials
+        )
         gs.log.debug(f"Rooms are: {rooms}")
         # Sync encryption keys with the server
         # Required for participating in encrypted rooms
@@ -4068,9 +4225,19 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.room_unban
         or gs.pa.room_kick
     ):
-        room_action = True
+        gs.room_action = True
     else:
-        room_action = False
+        gs.room_action = False
+    if (
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+    ):
+        gs.send_action = True
+    else:
+        gs.send_action = False
     # only 2 SSL states allowed: None (SSL default on), False (SSL off)
     if gs.pa.no_ssl is not True:
         gs.pa.no_ssl = None
@@ -4138,13 +4305,9 @@ def initial_check_of_args() -> None:  # noqa: C901
     elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
         t = f'For --verify currently only "{EMOJI}" is allowed ' "as keyword."
     elif gs.pa.verify and (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
+        gs.send_action
         or gs.pa.room
-        or room_action
+        or gs.room_action
         or gs.pa.listen != NEVER
         or gs.pa.rename_device
         or gs.pa.display_name
@@ -4160,13 +4323,9 @@ def initial_check_of_args() -> None:  # noqa: C901
     elif gs.pa.rename_device and (gs.pa.rename_device == ""):
         t = "Don't use an empty name for --rename_device."
     elif gs.pa.rename_device and (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
+        gs.send_action
         or gs.pa.room
-        or room_action
+        or gs.room_action
         or gs.pa.listen != NEVER
         or gs.pa.verify
         or gs.pa.display_name
@@ -4182,13 +4341,9 @@ def initial_check_of_args() -> None:  # noqa: C901
     elif gs.pa.display_name and (gs.pa.display_name == ""):
         t = "Don't use an empty name for --display_name."
     elif gs.pa.display_name and (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
+        gs.send_action
         or gs.pa.room
-        or room_action
+        or gs.room_action
         or gs.pa.listen != NEVER
         or gs.pa.verify
         or gs.pa.rename_device
@@ -4202,12 +4357,8 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No actions on rooms and memberships."
         )
     elif gs.pa.listen != NEVER and (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
-        or room_action
+        gs.send_action
+        or gs.room_action
         or gs.pa.verify
         or gs.pa.rename_device
         or gs.pa.display_name
@@ -4219,14 +4370,8 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No messages, images, files or events can be sent. "
             "No room or membership actions allowed."
         )
-    elif (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
-    ) and (
-        room_action
+    elif gs.send_action and (
+        gs.room_action
         or gs.pa.listen != NEVER
         or gs.pa.verify
         or gs.pa.rename_device
@@ -4239,11 +4384,12 @@ def initial_check_of_args() -> None:  # noqa: C901
             "be done. No listening allowed. "
             "No room or membership actions allowed."
         )
-    elif (gs.pa.user) and not room_action:
+    elif (gs.pa.user) and not (gs.send_action or gs.room_action):
         t = (
-            "If --user is specified, only room action can be "
-            "done. "
-            "Specify a room option like --room-create or remove --user."
+            "If --user is specified, only a send action or a room action "
+            "can be done. "
+            "Specify a send option like --message or a room option like "
+            "--room-createor. Alternatively, remove --user."
         )
     elif (gs.pa.listen == ONCE or gs.pa.listen == FOREVER) and gs.pa.room:
         t = (
@@ -4417,7 +4563,8 @@ def main(
         action="extend",
         nargs="+",
         type=str,
-        help="Send to this room or these rooms. None, one or "
+        help="Send to or receive from this room or these rooms. "
+        "None, one or "
         "multiple rooms can be specified. "
         "The default room is provided "
         "in credentials file. If a room (or multiple ones) "
@@ -4425,10 +4572,18 @@ def main(
         "(or they) will be used "
         "instead of the one from the credentials file. "
         "The user must have access to the specified room "
-        "in order to send messages there. Messages cannot "
+        "in order to send messages there or listen on the room. "
+        "Messages cannot "
         "be sent to arbitrary rooms. When specifying the "
         "room id some shells require the exclamation mark "
-        "to be escaped with a backslash.",
+        "to be escaped with a backslash. "
+        "As an alternative to specifying a room as destination, "
+        "one can specify a user as a destination with the '--user' "
+        "argument. See '--user' and the term 'DM (direct messaging)' "
+        "for details. Specifying a room is always faster and more "
+        "efficient than specifying a user. Not all listen operations "
+        "allow setting a room. Read more under the --listen options "
+        "and similar. ",
     )
     ap.add_argument(
         "--room-create",
@@ -4527,15 +4682,44 @@ def main(
         "The user must have permissions to kick users.",
     )
     ap.add_argument(
+        # starting with version 2.19 "-u" has been moved from
+        # --download-media to --user!
+        "-u",
         "--user",
         required=False,
         action="extend",
         nargs="+",
         type=str,
-        help="Specify one or multiple users. This option is only meaningful "
-        "in combination with options like --room-invite, --room-ban, "
-        "--room-unban, --room-kick. This option --user specifies the users "
-        "to be used with these other room commands (like invite, ban, etc.)",
+        help="Specify one or multiple users. This option is meaningful "
+        "in combination with a) room actions like --room-invite, --room-ban, "
+        "--room-unban, etc. and b) send actions like -m, -i, -f, etc. "
+        "as well as c) some listen actions --listen. "
+        "In case of a) this option --user specifies the users "
+        "to be used with room commands (like invite, ban, etc.). "
+        "In case of b) the option --user can be used as an alternative "
+        "to specifying a room as destination for text (-m), images (-i), "
+        "etc. For send actions '--user' is providing the functionality of "
+        "'DM (direct messaging)'. For c) this option allows an alternative "
+        "to specifying a room as destination for some --listen actions. "
+        f"What is a DM? {PROG_WITHOUT_EXT} tries to find a "
+        "room that contains only the sender and the receiver, hence DM. "
+        "These rooms have nothing special other the fact that they only have "
+        "2 members and them being the sender and recipient respectively. "
+        "If such a room is found, the first one found will be used as "
+        "destination. If no such room is found, the send fails and the user "
+        "should do a --room-create and --room-invite first. If multiple "
+        "such rooms exist, one of them will be used (arbitrarily). "
+        "For sending and listening, specifying a room directly is always "
+        "faster and more efficient than specifying a user. So, if you know "
+        "the room, it is preferred to use --room instead of --user. "
+        "For b) and c) --user can be specified in 3 ways: 1) full user id "
+        "as in '@user:example.org', 2) partial user id as in '@user' when "
+        "the user is on the same homeserver (example.org will be "
+        "automatically appended), or 3) a display name. Be careful, when "
+        "using display names as they might not be unique, and you could "
+        "be sending to the wrong person. To see possible display names use "
+        "the --joined-members '*' option which will show you the display "
+        "names in the middle column.",
     )
     ap.add_argument(
         "--name",
@@ -4892,13 +5076,13 @@ def main(
         "each message or other event.",
     )
     ap.add_argument(
-        "-u",
+        # starting with version 2.19 "-u" has been moved to --user!
         "--download-media",
         type=str,
-        default="",  # if -u is not used
+        default="",  # if --download-media is not used
         action="store",
         nargs="?",  # makes the word optional
-        const=MEDIA_DIR_DEFAULT,  # when -u is used, but no dir added
+        const=MEDIA_DIR_DEFAULT,  # when option is used, but no dir added
         help="If set and listening, "
         "then program will download "
         "received media files (e.g. image, audio, video, text, PDF files). "
@@ -5092,19 +5276,8 @@ def main(
     if gs.pa.version:
         version()  # continue execution
         if not (
-            gs.pa.message
-            or gs.pa.image
-            or gs.pa.audio
-            or gs.pa.file
-            or gs.pa.event
-            or gs.pa.room_create
-            or gs.pa.room_join
-            or gs.pa.room_leave
-            or gs.pa.room_forget
-            or gs.pa.room_invite
-            or gs.pa.room_ban
-            or gs.pa.room_unban
-            or gs.pa.room_kick
+            gs.send_action
+            or gs.room_action
             or gs.pa.listen != LISTEN_DEFAULT
             or gs.pa.tail != TAIL_UNUSED_DEFAULT
             or gs.pa.verify
@@ -5177,18 +5350,9 @@ def main(
             or gs.pa.listen == ALL
         ):
             asyncio.run(main_listen())
-        elif (
-            gs.pa.room_create
-            or gs.pa.room_join
-            or gs.pa.room_leave
-            or gs.pa.room_forget
-            or gs.pa.room_invite
-            or gs.pa.room_ban
-            or gs.pa.room_unban
-            or gs.pa.room_kick
-        ):
+        elif gs.room_action:
             asyncio.run(main_room_actions())
-        else:
+        else:  # send_action
             asyncio.run(main_send())
         # the next can be reached on success or failure
         gs.log.debug(f"The program {PROG_WITH_EXT} left the event loop.")
