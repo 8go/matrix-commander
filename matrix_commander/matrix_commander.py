@@ -863,6 +863,9 @@ contribute by submitting a Pull Request.
 - Sending of arbitrary files (PDF, xls, doc, txt, etc.)
 - Sending events such as emoji reactions, or replies as threads
 - Using events to edit sent messages
+- Supports DM (direct messaging), sending DMs, listening for DMs
+- Listing of joined rooms
+- Listing of members of given room(s)
 - Receiving messages forever
 - Receiving messages once
 - Receiving last messages
