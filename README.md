@@ -24,6 +24,9 @@ https://github.com/poljar/matrix-nio)
 - Minor incompatibility: From now `-u` is assigned to `--user` and no
   longer to `--download-media`
 - new option `--whoami`
+- Minor incompatibility: `--rename-device` has been renamed to
+  `--set-device-name` amd `-x` is no longer supported as shortcut.
+- new otion `--get_displayname` for itself, or one or multple users
 
 # matrix-commander
 
@@ -317,10 +320,15 @@ $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
 $ matrix-commander --listen all --listen-self
-$ # rename device-name, sometimes also called device display-name
-$ matrix-commander --rename-device "my new name"
-$ # set display-name for authenticated user
-$ matrix-commander --display-name "Alex"
+$ # set, rename device-name, sometimes also called device display-name
+$ matrix-commander --set-device-name "my new device name"
+$ # set, rename display name for authenticated user
+$ matrix-commander --set-display-name "Alex"
+$ # get display name for authenticated user, for itself
+$ matrix-commander --get-display-name
+$ # get display name for other users
+$ matrix-commander --get-display-name  \
+    --user '@user1:example.com' '@user2:example.com'
 $ # list all the rooms that I am a member of, all joined rooms
 $ matrix-commander --joined-rooms
 $ # list all the members of 2 specific rooms
@@ -428,8 +436,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
-                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
+                           [--set-display-name SET_DISPLAY_NAME]
+                           [--get-display-name] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
@@ -780,14 +789,19 @@ options:
                         reject verification. Once verification is complete,
                         stop the program and run it as a service again. Don't
                         send messages or files when you verify.
-  -x RENAME_DEVICE, --rename-device RENAME_DEVICE
-                        Rename the current device to the new device name
+  --set-device-name SET_DEVICE_NAME
+                        Set or rename the current device to the device name
                         provided. Send, listen and verify perations are
                         allowed when renaming the device.
-  --display-name DISPLAY_NAME
-                        Set the display name for the current user to the value
-                        provided. Send, listen and verify perations are
-                        allowed when setting the display name.
+  --set-display-name SET_DISPLAY_NAME
+                        Set or rename the display name for the current user to
+                        the display name provided. Send, listen and verify
+                        perations are allowed when setting the display name.
+  --get-display-name    Get the display name of matrix-commander (itself), or
+                        of one or multiple users. Specify user(s) with the
+                        --user option. If no user is specified get the display
+                        name of itself. Send, listen and verify perations are
+                        allowed when getting display name(s).
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -826,14 +840,14 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
-  --whoami              Print the user id used by matrix-commander. One can
-                        get this information also by looking at the
+  --whoami              Print the user id used by matrix-commander (itself).
+                        One can get this information also by looking at the
                         credentials file.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.21.0 2022-06-02. Enjoy, star on Github and
+You are running version 2.22.0 2022-06-02. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

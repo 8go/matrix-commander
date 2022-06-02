@@ -35,3 +35,7 @@ m_c
 versionnumber.txt
 /dist/
 /matrix_commander.egg-info/
+
+# ignore to-do list
+todo.txt
+todo.txt.*

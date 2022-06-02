@@ -31,6 +31,9 @@ https://github.com/poljar/matrix-nio)
 - Minor incompatibility: From now `-u` is assigned to `--user` and no
   longer to `--download-media`
 - new option `--whoami`
+- Minor incompatibility: `--rename-device` has been renamed to
+  `--set-device-name` amd `-x` is no longer supported as shortcut.
+- new otion `--get_displayname` for itself, or one or multple users
 
 # matrix-commander
 
@@ -324,10 +327,15 @@ $ # listen to (get) all messages, old and new, and process them in another app
 $ matrix-commander --listen all | process-in-other-app
 $ # listen to (get) all messages, including own
 $ matrix-commander --listen all --listen-self
-$ # rename device-name, sometimes also called device display-name
-$ matrix-commander --rename-device "my new name"
-$ # set display-name for authenticated user
-$ matrix-commander --display-name "Alex"
+$ # set, rename device-name, sometimes also called device display-name
+$ matrix-commander --set-device-name "my new device name"
+$ # set, rename display name for authenticated user
+$ matrix-commander --set-display-name "Alex"
+$ # get display name for authenticated user, for itself
+$ matrix-commander --get-display-name
+$ # get display name for other users
+$ matrix-commander --get-display-name  \
+    --user '@user1:example.com' '@user2:example.com'
 $ # list all the rooms that I am a member of, all joined rooms
 $ matrix-commander --joined-rooms
 $ # list all the members of 2 specific rooms
@@ -435,8 +443,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
                            [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [-x RENAME_DEVICE]
-                           [--display-name DISPLAY_NAME] [--no-ssl]
+                           [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
+                           [--set-display-name SET_DISPLAY_NAME]
+                           [--get-display-name] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
@@ -787,14 +796,19 @@ options:
                         reject verification. Once verification is complete,
                         stop the program and run it as a service again. Don't
                         send messages or files when you verify.
-  -x RENAME_DEVICE, --rename-device RENAME_DEVICE
-                        Rename the current device to the new device name
+  --set-device-name SET_DEVICE_NAME
+                        Set or rename the current device to the device name
                         provided. Send, listen and verify perations are
                         allowed when renaming the device.
-  --display-name DISPLAY_NAME
-                        Set the display name for the current user to the value
-                        provided. Send, listen and verify perations are
-                        allowed when setting the display name.
+  --set-display-name SET_DISPLAY_NAME
+                        Set or rename the display name for the current user to
+                        the display name provided. Send, listen and verify
+                        perations are allowed when setting the display name.
+  --get-display-name    Get the display name of matrix-commander (itself), or
+                        of one or multiple users. Specify user(s) with the
+                        --user option. If no user is specified get the display
+                        name of itself. Send, listen and verify perations are
+                        allowed when getting display name(s).
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -833,14 +847,14 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
-  --whoami              Print the user id used by matrix-commander. One can
-                        get this information also by looking at the
+  --whoami              Print the user id used by matrix-commander (itself).
+                        One can get this information also by looking at the
                         credentials file.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.21.0 2022-06-02. Enjoy, star on Github and
+You are running version 2.22.0 2022-06-02. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1000,25 +1014,65 @@ import aiofiles.os
 import magic
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, EnableEncryptionBuilder,
-                 JoinedMembersError, JoinedRoomsError, JoinError,
-                 KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginResponse, MatrixRoom,
-                 MessageDirection, ProfileGetAvatarResponse,
-                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
-                 RoomAliasEvent, RoomBanError, RoomCreateError,
-                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
-                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
-                 RoomForgetError, RoomInviteError, RoomKickError,
-                 RoomLeaveError, RoomMemberEvent, RoomMessage,
-                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
-                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
-                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
-                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadResponse, crypto)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    EnableEncryptionBuilder,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginResponse,
+    MatrixRoom,
+    MessageDirection,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomReadMarkersError,
+    RoomResolveAliasError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadResponse,
+    crypto,
+)
 from PIL import Image
 
 try:
@@ -1030,7 +1084,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-02"
-VERSIONNR = "2.21.0"
+VERSIONNR = "2.22.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1081,8 +1135,8 @@ TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
 VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
-RENAME_DEVICE_UNUSED_DEFAULT = None  # use None if -x is not specified
-DISPLAY_NAME_UNUSED_DEFAULT = None  # use None if --display-name is not given
+SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if -x is not specified
+SET_DISPLAY_NAME_UNUSED_DEFAULT = None  # use None option not used
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
 NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
@@ -3802,9 +3856,11 @@ async def main_listen() -> None:
             await client.close()
 
 
-async def action_rename_device(client: AsyncClient, credentials: dict) -> None:
-    """Rename the device name of itself while already being logged in."""
-    content = {"device_name": gs.pa.rename_device}
+async def action_set_device_name(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Set, rename the device name of itself while already being logged in."""
+    content = {"device_name": gs.pa.set_device_name}
     resp = await client.update_device(credentials["device_id"], content)
     if isinstance(resp, UpdateDeviceError):
         gs.log.error(f"update_device failed with {resp}")
@@ -3812,17 +3868,44 @@ async def action_rename_device(client: AsyncClient, credentials: dict) -> None:
         gs.log.debug(f"update_device successful with {resp}")
 
 
-async def action_display_name(client: AsyncClient, credentials: dict) -> None:
-    """Rename the logged in user's display name. Change my own
+async def action_set_display_name(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Set, rename the logged in user's display name. Change my own
     display name.
-    Rename the user by changing display name (display_name).
+    Rename the user by changing display name.
     Assumes that user is already logged in.
     """
-    resp = await client.set_displayname(gs.pa.display_name)
+    resp = await client.set_displayname(gs.pa.set_display_name)
     if isinstance(resp, ProfileSetDisplayNameError):
         gs.log.error(f"set_displayname failed with {resp}")
     else:
         gs.log.debug(f"set_displayname successful with {resp}")
+
+
+async def action_get_display_name(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get display name(s) while already logged in."""
+    if not gs.pa.user:
+        # get display name of myself
+        whoami = credentials["user_id"]
+        users = [whoami]
+    else:
+        users = gs.pa.user
+    users = list(dict.fromkeys(users))  # remove duplicates in list
+    for user in users:
+        resp = await client.get_displayname(user)
+        if isinstance(resp, ProfileGetDisplayNameError):
+            gs.log.error(f"get_displayname failed with {resp}")
+        else:
+            gs.log.debug(f"get_displayname successful with {resp}")
+            # resp.displayname is str or None (has no display name)
+            if not resp.displayname:
+                displayname = ""  # means no display name is set
+            else:
+                displayname = resp.displayname
+            print(f"{user}    {displayname}")
 
 
 async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
@@ -3896,8 +3979,8 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     print(whoami)
 
 
-async def main_setget_action() -> None:
-    """Use credentials to log in and set or get info on/from server."""
+async def main_roomsetget_action() -> None:
+    """Use credentials to log in and perform actions on server."""
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
@@ -3916,44 +3999,9 @@ async def main_setget_action() -> None:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
-        # set_action
-        if gs.pa.display_name:
-            await action_display_name(client, credentials)
-        if gs.pa.rename_device:
-            await action_rename_device(client, credentials)
-        # get_action
-        if gs.pa.joined_rooms:
-            await action_joined_rooms(client, credentials)
-        if gs.pa.joined_members:
-            await action_joined_members(client, credentials)
-        if gs.pa.whoami:
-            await action_whoami(client, credentials)
-    finally:
-        if client:
-            await client.close()
-
-
-# according to pylama: function too complex: C901 # noqa: C901
-async def main_room_action() -> None:  # noqa: C901
-    """Perform various room actions such as create, join, etc."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            perform room actions.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
+        # room_action
+        # we already checked args at the beginning, no need to check
+        # room and user argument combinations again.
         if gs.pa.room_create:
             await create_rooms(
                 client, gs.pa.room_create, gs.pa.name, gs.pa.topic
@@ -3972,20 +4020,24 @@ async def main_room_action() -> None:  # noqa: C901
             await unban_from_rooms(client, gs.pa.room_unban, gs.pa.user)
         if gs.pa.room_kick and gs.pa.user:
             await kick_from_rooms(client, gs.pa.room_kick, gs.pa.user)
-        if (
-            gs.pa.room_invite
-            or gs.pa.room_ban
-            or gs.pa.room_unban
-            or gs.pa.room_kick
-        ) and not gs.pa.user:
-            gs.log.warning(
-                "No room action(s) were performed because no users "
-                "were specified. Use --user option to specify users."
-            )
-        gs.log.debug(
-            "Room action(s) were performed or attempted. "
-            "We close the client and quit"
-        )
+        if gs.room_action:
+            gs.log.debug("Room action(s) were performed or attempted.")
+        # set_action
+        if gs.pa.set_display_name:
+            await action_set_display_name(client, credentials)
+        if gs.pa.set_device_name:
+            await action_set_device_name(client, credentials)
+        # get_action
+        if gs.pa.get_display_name:
+            await action_get_display_name(client, credentials)
+        if gs.pa.joined_rooms:
+            await action_joined_rooms(client, credentials)
+        if gs.pa.joined_members:
+            await action_joined_members(client, credentials)
+        if gs.pa.whoami:
+            await action_whoami(client, credentials)
+        if gs.setget_action:
+            gs.log.debug("Set or get action(s) were performed or attempted.")
     finally:
         if client:
             await client.close()
@@ -4210,9 +4262,10 @@ def initial_check_of_args() -> None:  # noqa: C901
     else:
         gs.room_action = False
     if (
-        gs.pa.rename_device  # set
-        or gs.pa.display_name
-        or gs.pa.joined_rooms  # get
+        gs.pa.set_device_name  # set
+        or gs.pa.set_display_name
+        or gs.pa.get_display_name  # get
+        or gs.pa.joined_rooms
         or gs.pa.joined_members
         or gs.pa.whoami
     ):
@@ -4317,16 +4370,27 @@ def initial_check_of_args() -> None:  # noqa: C901
             "be done. No listening allowed. "
             "No room or other actions allowed."
         )
-    elif gs.pa.rename_device and (gs.pa.rename_device.strip() == ""):
-        t = "Don't use an empty name for --rename_device."
-    elif gs.pa.display_name and (gs.pa.display_name.strip() == ""):
-        t = "Don't use an empty name for --display_name."
-    elif (gs.pa.user) and not (gs.send_action or gs.room_action):
+    elif gs.pa.set_device_name and (gs.pa.set_device_name.strip() == ""):
+        t = "Don't use an empty name for --set-device-name."
+    elif gs.pa.set_display_name and (gs.pa.set_display_name.strip() == ""):
+        t = "Don't use an empty name for --set-display-name."
+    elif (gs.pa.user) and not (
+        gs.send_action or gs.room_action or gs.pa.get_display_name
+    ):
         t = (
-            "If --user is specified, only a send action or a room action "
-            "can be done. "
-            "Specify a send option like --message or a room option like "
-            "--room-createor. Alternatively, remove --user."
+            "If --user is specified, only a send action, a room action, "
+            "or --get-display-name can be done. "
+            "Adjust your arguments accordingly."
+        )
+    elif not gs.pa.user and (
+        gs.pa.room_invite
+        or gs.pa.room_ban
+        or gs.pa.room_unban
+        or gs.pa.room_kick
+    ):
+        t = (
+            "User not specified for room action. "
+            "Use --user option to specify user(s) for given room action."
         )
     elif (gs.pa.listen == ONCE or gs.pa.listen == FOREVER) and gs.pa.room:
         t = (
@@ -5062,25 +5126,36 @@ def main(
         "files when you verify.",
     )
     ap.add_argument(
-        "-x",
-        "--rename-device",
+        # removed "-x", starting v2.21 -x is no longer supported
+        "--set-device-name",
         required=False,
         type=str,
-        default=RENAME_DEVICE_UNUSED_DEFAULT,  # when option isn't used
-        help="Rename the current device to the new "
+        default=SET_DEVICE_NAME_UNUSED_DEFAULT,  # when option isn't used
+        help="Set or rename the current device to the "
         "device name provided. "
         "Send, listen and verify perations are allowed when "
         "renaming the device.",
     )
     ap.add_argument(
-        "--display-name",
+        "--set-display-name",
         required=False,
         type=str,
-        default=DISPLAY_NAME_UNUSED_DEFAULT,  # when option isn't used
-        help="Set the display name for the current user to the value "
-        "provided. "
+        default=SET_DISPLAY_NAME_UNUSED_DEFAULT,  # when option isn't used
+        help="Set or rename the display name for the current user to the "
+        "display name provided. "
         "Send, listen and verify perations are allowed when "
         "setting the display name.",
+    )
+    ap.add_argument(
+        "--get-display-name",
+        required=False,
+        action="store_true",
+        help=f"Get the display name of {PROG_WITHOUT_EXT} (itself), "
+        "or of one or multiple users. Specify user(s) with the "
+        "--user option. If no user is specified get the display name of "
+        "itself. "
+        "Send, listen and verify perations are allowed when "
+        "getting display name(s).",
     )
     ap.add_argument(
         # no single char flag
@@ -5153,7 +5228,8 @@ def main(
         "--whoami",
         required=False,
         action="store_true",
-        help=f"Print the user id used by {PROG_WITHOUT_EXT}. One can get "
+        help=f"Print the user id used by {PROG_WITHOUT_EXT} (itself). "
+        "One can get "
         "this information also by looking at the credentials file.",
     )
     ap.add_argument(
@@ -5285,10 +5361,8 @@ def main(
             or gs.pa.listen == ALL
         ):
             asyncio.run(main_listen())
-        elif gs.room_action:
-            asyncio.run(main_room_action())
-        elif gs.setget_action:
-            asyncio.run(main_setget_action())
+        elif gs.room_action or gs.setget_action:
+            asyncio.run(main_roomsetget_action())
         else:  # send_action
             asyncio.run(main_send())
         # the next can be reached on success or failure
