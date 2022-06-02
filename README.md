@@ -25,8 +25,18 @@ https://github.com/poljar/matrix-nio)
   longer to `--download-media`
 - new option `--whoami`
 - Minor incompatibility: `--rename-device` has been renamed to
-  `--set-device-name` amd `-x` is no longer supported as shortcut.
-- new otion `--get_displayname` for itself, or one or multple users
+  `--set-device-name` and `-x` is no longer supported as shortcut.
+- new otion `--get_displayname` for itself, or one or multiple users
+- new options `--set-presence` and `--get-presence` to set/get presence
+  of itself, or one or multiple users
+
+# Summary, TLDR
+
+This simple Matrix client written in Python allows you to send and
+receive messages and files, verify other devices, and interact with
+your Matrix account or other Matrix users in many ways.
+You use it from the terminal (CLI) or integrate it into other simple
+Python programs. Enjoy and please :star: star on Github.
 
 # matrix-commander
 
@@ -50,12 +60,9 @@ creating rooms, inviting, verifying, and so much more.
   OS notification)
 - It uses the [matrix-nio](https://github.com/poljar/matrix-nio/) SDK
 - Both `matrix-nio` and `matrix-commander` are written in Python 3
-- Convenient to install via `pip` or `pip3`.
+- Convenient to install via `pip`.
 
-# Summary
-
-This program is a simple but convenient app to send and receive Matrix
-messages from the CLI in various different ways.
+# What for? Why? For whom? Use cases?
 
 Use cases for this program could be
 - a bot or part of a bot,
@@ -64,6 +71,7 @@ Use cases for this program could be
 - send yourself daily/weekly reminders via a cron job
 - send yourself a daily song from your music collection
 - a trivial way to fire off some instant messages from the command line
+- a trivial way to read messages in the terminal
 - to automate sending via programs and scripts
 - a "blogger" who frequently sends messages and images to the same
   room(s) could use it
@@ -72,9 +80,73 @@ Use cases for this program could be
 - as educational material that showcases the use of the `matrix-nio` SDK
 
 # Give it a Star
+
 If you like it, use it, fork it, make a Pull Request or contribute.
 Please give it a :star: on Github right now so others find it more easily.
 :heart:
+
+
+# Features
+
+- CLI, Command Line Interface
+- Python 3
+- Simplicity
+- Small footprint, small application (only around 250K)
+- Uses `nio-template`
+- End-to-end encryption
+- Storage for End-to-end encryption
+- Storage of credentials
+- Supports access token instead of password
+- Supports SSO (Single Sign-On)
+- Sending messages
+- Sending notices
+- Sending formatted messages
+- Sending MarkDown messages
+- Message splitting before sending
+- Sending Code-formatted messages
+- Sending to one room
+- Sending to multiple rooms
+- Sending image files (photos, etc.)
+- Sending of media files (music, videos, etc.)
+- Sending of arbitrary files (PDF, xls, doc, txt, etc.)
+- Sending events such as emoji reactions, or replies as threads
+- Using events to edit sent messages
+- Supports DM (direct messaging), sending DMs, listening for DMs
+- Listing of joined rooms
+- Listing of members of given room(s)
+- Receiving messages forever
+- Receiving messages once
+- Receiving last messages
+- Receiving or skipping its own messages
+- Receiving and downloading media files
+  - including automatic decryption
+- Creating new rooms
+- Joining rooms
+- Leaving rooms
+- Forgetting rooms
+- Inviting other users to rooms
+- Banning from rooms
+- Unbanning from rooms
+- Kicking from rooms
+- Supports renaming of device
+- Supports getting and setting display name
+- Supports getting and setting presence
+- Supports skipping SSL verification to use HTTP instead of HTTPS
+- Supports providing local SSL certificate files
+- Supports notification via OS of received messages
+- Supports periodic execution via crontab
+- Supports room aliases
+- Provides PID files
+- Logging (at various levels)
+- In-source documentation
+- Can be run as a service
+- Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
+- More than 200 stars :stars: on Github
+- Easy installation, available through `pip`, i.e. available in PyPi store
+- Callable from the terminal, from shells like `bash`, etc.
+- Callable from Python programs via the entry point (function) `main`.
+- Open source
+- Free, GPL3+ license
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
@@ -175,12 +247,6 @@ The program can create rooms, join, leave and forget rooms.
 It can also send invitations to join rooms to
 others (given that user has the appropriate permissions) as
 well as ban, unban and kick other users from rooms.
-
-# Summary, TLDR
-
-This simple Matrix client written in Python allows you to send and
-receive messages and files and verify other devices. End-to-end encryption
-is enabled by default and cannot be turned off.
 
 # Dependencies and Installation
 
@@ -336,7 +402,14 @@ $ matrix-commander --joined-members '!someroomId1:example.com' \
     '!someroomId2:example.com'
 $ # list all the members of all rooms  that I am member of
 $ matrix-commander --joined-members '*'
-$ # print my own user id
+$ # set presence
+$ matrix-commander --set-presence "unavailable"
+$ # get presence of matrix-commander itself
+$ matrix-commander --get-presence
+$ # get presence of other users
+$ matrix-commander --get-presence \
+    --user '@user1:example.com' '@user2:example.com'
+$ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
@@ -438,7 +511,8 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
-                           [--get-display-name] [--no-ssl]
+                           [--get-display-name] [--set-presence SET_PRESENCE]
+                           [--get-presence] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
@@ -453,7 +527,11 @@ rooms and/or users. The text messages can be of various formats such as
 events can be sent as well. For receiving there are three main options: listen
 forever, listen once and quit, and get the last N messages and quit. Emoji
 verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. ─── For even more
+encryption is enabled by default and cannot be turned off. ─── Bundling
+several actions together into a single call to {PROG_WITHOUT_EXT} is faster
+than calling {PROG_WITHOUT_EXT} multiple times with only one action. If there
+are both 'set' and 'get' actions present in the arguments, then the 'set'
+actions will be performed before the 'get' actions. ─── For even more
 explications and examples also read the documentation provided in the on-line
 Github README.md file or the README.md in your local installation.
 
@@ -791,17 +869,26 @@ options:
                         send messages or files when you verify.
   --set-device-name SET_DEVICE_NAME
                         Set or rename the current device to the device name
-                        provided. Send, listen and verify perations are
+                        provided. Send, listen and verify operations are
                         allowed when renaming the device.
   --set-display-name SET_DISPLAY_NAME
                         Set or rename the display name for the current user to
                         the display name provided. Send, listen and verify
-                        perations are allowed when setting the display name.
+                        operations are allowed when setting the display name.
   --get-display-name    Get the display name of matrix-commander (itself), or
                         of one or multiple users. Specify user(s) with the
                         --user option. If no user is specified get the display
-                        name of itself. Send, listen and verify perations are
+                        name of itself. Send, listen and verify operations are
                         allowed when getting display name(s).
+  --set-presence SET_PRESENCE
+                        Set presence of {PROG_WITHOUT_EXT} to the given value.
+                        Must be one of these values: “online”, “offline”,
+                        “unavailable”. Otherwise an error will be produced.
+  --get-presence        Get presence of {PROG_WITHOUT_EXT} (itself), or of one
+                        or multiple users. Specify user(s) with the --user
+                        option. If no user is specified get the presence of
+                        itself. Send, listen and verify operations are allowed
+                        when getting presence(s).
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -847,66 +934,9 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.22.0 2022-06-02. Enjoy, star on Github and
+You are running version 2.23.0 2022-06-02. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
-
-# Features
-
-- CLI, Command Line Interface
-- Python 3
-- Uses nio-template
-- End-to-end encryption
-- Storage for End-to-end encryption
-- Storage of credentials
-- Supports access token instead of password
-- Supports SSO (Single Sign-On)
-- Sending messages
-- Sending notices
-- Sending formatted messages
-- Sending MarkDown messages
-- Message splitting before sending
-- Sending Code-formatted messages
-- Sending to one room
-- Sending to multiple rooms
-- Sending image files (photos, etc.)
-- Sending of media files (music, videos, etc.)
-- Sending of arbitrary files (PDF, xls, doc, txt, etc.)
-- Sending events such as emoji reactions, or replies as threads
-- Using events to edit sent messages
-- Supports DM (direct messaging), sending DMs, listening for DMs
-- Listing of joined rooms
-- Listing of members of given room(s)
-- Receiving messages forever
-- Receiving messages once
-- Receiving last messages
-- Receiving or skipping its own messages
-- Receiving and downloading media files
-  - including automatic decryption
-- Creating new rooms
-- Joining rooms
-- Leaving rooms
-- Forgetting rooms
-- Inviting other users to rooms
-- Banning from rooms
-- Unbanning from rooms
-- Kicking from rooms
-- Supports renaming of device
-- Supports renaming of display name
-- Supports skipping SSL verification to use HTTP instead of HTTPS
-- Supports providing local SSL certificate files
-- Supports notification via OS of received messages
-- Supports periodic execution via crontab
-- Supports room aliases
-- Provides PID files
-- Logging (at various levels)
-- In-source documentation
-- Can be run as a service
-- Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
-- More than 200 stars :stars: on Github
-- Available through `pip`, i.e. available in PyPi store
-- Callable from the terminal, from shells like `bash`, etc.
-- Callable from Python programs via the entry point (function) `main`.
 
 # Autocompletion
 
@@ -958,7 +988,6 @@ under GPL3. Versions on or after this date are GPL3Plus, i.e.
 GPL3 or later.
 
 See [GPL3 at FSF](https://www.fsf.org/licensing/).
-
 
 # Things to do, Things missing
 
