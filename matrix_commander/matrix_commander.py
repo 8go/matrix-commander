@@ -9,7 +9,7 @@ r"""matrix_commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](https://github.com/8go/matrix-commander/blob/master/logos/matrix-commander-logo.svg)
+![MC> logo](logos/matrix-commander-logo.svg)
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
@@ -30,6 +30,7 @@ https://github.com/poljar/matrix-nio)
   recipient by specifying the recipients name.
 - Minor incompatibility: From now `-u` is assigned to `--user` and no
   longer to `--download-media`
+- new option `--whoami`
 
 # matrix-commander
 
@@ -334,6 +335,8 @@ $ matrix-commander --joined-members '!someroomId1:example.com' \
     '!someroomId2:example.com'
 $ # list all the members of all rooms  that I am member of
 $ matrix-commander --joined-members '*'
+$ # print my own user id
+$ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
 $ # use your own SSL certificate for a homeserver with SSL and local certs
@@ -437,21 +440,20 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
-                           [--version]
+                           [--whoami] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
 simple Matrix CLI client that can send messages, listen to messages, verify
 devices, etc. It can send one or multiple message to one or multiple Matrix
-rooms. The text messages can be of various formats such as "text", "html",
-"markdown" or "code". Images, audio or arbitrary files can be sent as well.
-For receiving there are three main options: listen forever, listen once and
-quit, and get the last N messages and quit. Emoji verification is built-in
-which can be used to verify devices. End-to-end encryption is enabled by
-default and cannot be turned off. ─── See dependencies in source code or in
-README.md on Github. For even more explications and examples also read the
-documentation provided in the top portion of the source code and in the Github
-README.md file.
+rooms and/or users. The text messages can be of various formats such as
+"text", "html", "markdown" or "code". Images, audio, arbitrary files, or
+events can be sent as well. For receiving there are three main options: listen
+forever, listen once and quit, and get the last N messages and quit. Emoji
+verification is built-in which can be used to verify devices. End-to-end
+encryption is enabled by default and cannot be turned off. ─── For even more
+explications and examples also read the documentation provided in the on-line
+Github README.md file or the README.md in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -787,13 +789,12 @@ options:
                         send messages or files when you verify.
   -x RENAME_DEVICE, --rename-device RENAME_DEVICE
                         Rename the current device to the new device name
-                        provided. No other operations like sending, listening,
-                        or verifying are allowed when renaming the device.
+                        provided. Send, listen and verify perations are
+                        allowed when renaming the device.
   --display-name DISPLAY_NAME
                         Set the display name for the current user to the value
-                        provided. No other operations like sending, listening,
-                        or verifying are allowed when setting the display
-                        name.
+                        provided. Send, listen and verify perations are
+                        allowed when setting the display name.
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -832,11 +833,14 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
+  --whoami              Print the user id used by matrix-commander. One can
+                        get this information also by looking at the
+                        credentials file.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.20.0 2022-06-01. Enjoy, star on Github and
+You are running version 2.21.0 2022-06-02. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -903,8 +907,7 @@ Tab completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
 Here is a sample snapshot of tab completion in action:
 
-![tab completion](
-https://github.com/8go/matrix-commander/blob/master/screenshots/tab_complete.png)
+![tab completion screenshot](screenshots/tab_complete.png)
 
 # Performance and Speed
 
@@ -961,7 +964,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
     @opk12, etc.
 - Enjoy!
-- Pull requests are welcome  :heart:
+- Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 
 """
 
@@ -1026,8 +1029,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-06-01"
-VERSIONNR = "2.20.0"
+VERSION = "2022-06-02"
+VERSIONNR = "2.21.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1095,8 +1098,6 @@ class MatrixCommanderError(RuntimeError):
         self.errmsg = errmsg
         self.traceback = traceback
         self.level = level  # debug, info, warning, error
-        self.room_action = False  # argv contains room action
-        self.send_action = False  # argv contains send action
 
     def __str__(self):
         return self.errmsg
@@ -1120,6 +1121,9 @@ class GlobalState:
         # 3) ssl a valid SSLContext means that the specified context will be
         #    used. This is useful to using local SSL certificate.
         self.ssl: Union[None, SSLContext, bool] = None
+        self.send_action = False  # argv contains send action
+        self.room_action = False  # argv contains room action
+        self.setget_action = False  # argv contains set or get action
 
 
 def choose_available_filename(filename):
@@ -3798,103 +3802,43 @@ async def main_listen() -> None:
             await client.close()
 
 
-async def main_rename_device() -> None:
-    """Use credentials to log in and rename the device name of itself."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            rename device.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        content = {"display_name": gs.pa.rename_device}
-        resp = await client.update_device(credentials["device_id"], content)
-        if isinstance(resp, UpdateDeviceError):
-            gs.log.error(f"update_device failed with {resp}")
-        else:
-            gs.log.debug(f"update_device successful with {resp}")
-    finally:
-        if client:
-            await client.close()
+async def action_rename_device(client: AsyncClient, credentials: dict) -> None:
+    """Rename the device name of itself while already being logged in."""
+    content = {"device_name": gs.pa.rename_device}
+    resp = await client.update_device(credentials["device_id"], content)
+    if isinstance(resp, UpdateDeviceError):
+        gs.log.error(f"update_device failed with {resp}")
+    else:
+        gs.log.debug(f"update_device successful with {resp}")
 
 
-# rename display name: display_name() display-name
+async def action_display_name(client: AsyncClient, credentials: dict) -> None:
+    """Rename the logged in user's display name. Change my own
+    display name.
+    Rename the user by changing display name (display_name).
+    Assumes that user is already logged in.
+    """
+    resp = await client.set_displayname(gs.pa.display_name)
+    if isinstance(resp, ProfileSetDisplayNameError):
+        gs.log.error(f"set_displayname failed with {resp}")
+    else:
+        gs.log.debug(f"set_displayname successful with {resp}")
 
 
-async def main_rename_user() -> None:
-    """Use credentials to log in and rename the login users display name."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            rename user.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        resp = await client.set_displayname(gs.pa.display_name)
-        if isinstance(resp, ProfileSetDisplayNameError):
-            gs.log.error(f"set_displayname failed with {resp}")
-        else:
-            gs.log.debug(f"set_displayname successful with {resp}")
-    finally:
-        if client:
-            await client.close()
+async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
+    """Get joined rooms while already logged in."""
+    resp = await client.joined_rooms()
+    if isinstance(resp, JoinedRoomsError):
+        gs.log.error(f"joined_rooms failed with {resp}")
+    else:
+        gs.log.debug(f"joined_rooms successful with {resp}")
+        print(*resp.rooms, sep="\n")  # one per line
 
 
-async def main_joined_rooms() -> None:
-    """Use credentials to log in and get joined rooms."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            get joined rooms.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        resp = await client.joined_rooms()
-        if isinstance(resp, JoinedRoomsError):
-            gs.log.error(f"joined_rooms failed with {resp}")
-        else:
-            gs.log.debug(f"joined_rooms successful with {resp}")
-            print(*resp.rooms, sep="\n")  # one per line
-    finally:
-        if client:
-            await client.close()
-
-
-async def main_joined_members() -> None:
-    """Use credentials to log in and get members of given rooms."""
+async def action_joined_members(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get members of given rooms while already being logged in."""
     rooms = gs.pa.joined_members
     if not rooms:
         gs.log.warning(
@@ -3902,6 +3846,58 @@ async def main_joined_members() -> None:
             "were specified. Use --joined-members option and specify rooms."
         )
         return
+
+    # print(credentials["user_id"])  ## who am i, whoami
+    gs.log.debug(f"Trying to get members for these rooms: {rooms}")
+    if "*" in rooms:
+        resp = await client.joined_rooms()
+        if isinstance(resp, JoinedRoomsError):
+            gs.log.error(
+                f"joined_rooms failed with {resp}. Not able to "
+                "get all rooms as specified by '*'. "
+                "The member listing will be incomplete or missing."
+            )
+            # since we can't get all rooms leave room list as is
+            rooms = filter(lambda val: val != "*", rooms)  # remove all *
+        else:
+            gs.log.debug(f"joined_rooms successful with {resp}")
+            gs.log.debug(
+                "Room list has been successfully overwritten with '*'"
+            )
+            rooms = resp.rooms  # overwrite args with full list
+    for room in rooms:
+        resp = await client.joined_members(room)
+        if isinstance(resp, JoinedMembersError):
+            gs.log.error(f"joined_members failed with {resp}")
+        else:
+            gs.log.debug(f"joined_members successful with {resp}")
+            print(resp.room_id)
+            # members = List[RoomMember] ; RoomMember
+            print(
+                *list(
+                    map(
+                        lambda member: "    "
+                        + member.user_id
+                        + "    "
+                        + member.display_name
+                        + "    "
+                        + member.avatar_url,
+                        resp.members,
+                    )
+                ),
+                sep="\n",
+            )
+
+
+async def action_whoami(client: AsyncClient, credentials: dict) -> None:
+    """Get user id while already logged in."""
+    whoami = credentials["user_id"]
+    gs.log.debug(f"whoami: user id: {whoami}")
+    print(whoami)
+
+
+async def main_setget_action() -> None:
+    """Use credentials to log in and set or get info on/from server."""
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
@@ -3910,7 +3906,7 @@ async def main_joined_members() -> None:
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can
-            get room members.
+            perform any other actions.
             Aborting due to missing or not-found credentials file.""",
             traceback=False,
             level="error",
@@ -3920,53 +3916,25 @@ async def main_joined_members() -> None:
         client, credentials = login_using_credentials_file(
             credentials_file, store_dir
         )
-        # print(credentials["user_id"])  ## who am i
-        gs.log.debug(f"Trying to get members for these rooms: {rooms}")
-        if "*" in rooms:
-            resp = await client.joined_rooms()
-            if isinstance(resp, JoinedRoomsError):
-                gs.log.error(
-                    f"joined_rooms failed with {resp}. Not able to "
-                    "get all rooms as specified by '*'. "
-                    "The member listing will be incomplete or missing."
-                )
-                # since we can't get all rooms leave room list as is
-                rooms = filter(lambda val: val != "*", rooms)  # remove all *
-            else:
-                gs.log.debug(f"joined_rooms successful with {resp}")
-                gs.log.debug(
-                    "Room list has been successfully overwritten with '*'"
-                )
-                rooms = resp.rooms  # overwrite args with full list
-        for room in rooms:
-            resp = await client.joined_members(room)
-            if isinstance(resp, JoinedMembersError):
-                gs.log.error(f"joined_members failed with {resp}")
-            else:
-                gs.log.debug(f"joined_members successful with {resp}")
-                print(resp.room_id)
-                # members = List[RoomMember] ; RoomMember
-                print(
-                    *list(
-                        map(
-                            lambda member: "    "
-                            + member.user_id
-                            + "    "
-                            + member.display_name
-                            + "    "
-                            + member.avatar_url,
-                            resp.members,
-                        )
-                    ),
-                    sep="\n",
-                )
+        # set_action
+        if gs.pa.display_name:
+            await action_display_name(client, credentials)
+        if gs.pa.rename_device:
+            await action_rename_device(client, credentials)
+        # get_action
+        if gs.pa.joined_rooms:
+            await action_joined_rooms(client, credentials)
+        if gs.pa.joined_members:
+            await action_joined_members(client, credentials)
+        if gs.pa.whoami:
+            await action_whoami(client, credentials)
     finally:
         if client:
             await client.close()
 
 
 # according to pylama: function too complex: C901 # noqa: C901
-async def main_room_actions() -> None:  # noqa: C901
+async def main_room_action() -> None:  # noqa: C901
     """Perform various room actions such as create, join, etc."""
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
@@ -4219,6 +4187,16 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.pa.listen = TAIL  # --tail turns on --listen TAIL
         gs.log.debug('--listen set to "tail" because "--tail" is used.')
     if (
+        gs.pa.message
+        or gs.pa.image
+        or gs.pa.audio
+        or gs.pa.file
+        or gs.pa.event
+    ):
+        gs.send_action = True
+    else:
+        gs.send_action = False
+    if (
         gs.pa.room_create
         or gs.pa.room_join
         or gs.pa.room_leave
@@ -4232,15 +4210,15 @@ def initial_check_of_args() -> None:  # noqa: C901
     else:
         gs.room_action = False
     if (
-        gs.pa.message
-        or gs.pa.image
-        or gs.pa.audio
-        or gs.pa.file
-        or gs.pa.event
+        gs.pa.rename_device  # set
+        or gs.pa.display_name
+        or gs.pa.joined_rooms  # get
+        or gs.pa.joined_members
+        or gs.pa.whoami
     ):
-        gs.send_action = True
+        gs.setget_action = True
     else:
-        gs.send_action = False
+        gs.setget_action = False
     # only 2 SSL states allowed: None (SSL default on), False (SSL off)
     if gs.pa.no_ssl is not True:
         gs.pa.no_ssl = None
@@ -4312,81 +4290,37 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.room
         or gs.room_action
         or gs.pa.listen != NEVER
-        or gs.pa.rename_device
-        or gs.pa.display_name
-        or gs.pa.joined_rooms
-        or gs.pa.joined_members
+        or gs.setget_action
     ):
         t = (
             "If --verify is specified, only verify can be done. "
             "No messages, images, files or events can be sent."
-            "No listening or tailing allowed. No renaming. "
-            "No actions on rooms and memberships."
-        )
-    elif gs.pa.rename_device and (gs.pa.rename_device == ""):
-        t = "Don't use an empty name for --rename_device."
-    elif gs.pa.rename_device and (
-        gs.send_action
-        or gs.pa.room
-        or gs.room_action
-        or gs.pa.listen != NEVER
-        or gs.pa.verify
-        or gs.pa.display_name
-        or gs.pa.joined_rooms
-        or gs.pa.joined_members
-    ):
-        t = (
-            "If --rename-device is specified, only rename can be done. "
-            "No messages, images, files or events can be sent. "
-            "No listening or tailing allowed. No verification. "
-            "No actions on rooms and memberships."
-        )
-    elif gs.pa.display_name and (gs.pa.display_name == ""):
-        t = "Don't use an empty name for --display_name."
-    elif gs.pa.display_name and (
-        gs.send_action
-        or gs.pa.room
-        or gs.room_action
-        or gs.pa.listen != NEVER
-        or gs.pa.verify
-        or gs.pa.rename_device
-        or gs.pa.joined_rooms
-        or gs.pa.joined_members
-    ):
-        t = (
-            "If --display-name is specified, only naming display can be done. "
-            "No messages, images, files or events can be sent. "
-            "No listening or tailing allowed. No verification. "
-            "No actions on rooms and memberships."
+            "No listening or tailing allowed. "
+            "No other actions allowed."
         )
     elif gs.pa.listen != NEVER and (
-        gs.send_action
-        or gs.room_action
-        or gs.pa.verify
-        or gs.pa.rename_device
-        or gs.pa.display_name
-        or gs.pa.joined_rooms
-        or gs.pa.joined_members
+        gs.send_action or gs.room_action or gs.pa.verify or gs.setget_action
     ):
         t = (
             "If --listen is specified, only listening can be done. "
             "No messages, images, files or events can be sent. "
-            "No room or membership actions allowed."
+            "No room or other actions allowed."
         )
     elif gs.send_action and (
         gs.room_action
         or gs.pa.listen != NEVER
         or gs.pa.verify
-        or gs.pa.rename_device
-        or gs.pa.display_name
-        or gs.pa.joined_rooms
-        or gs.pa.joined_members
+        or gs.setget_action
     ):
         t = (
             "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
             "be done. No listening allowed. "
-            "No room or membership actions allowed."
+            "No room or other actions allowed."
         )
+    elif gs.pa.rename_device and (gs.pa.rename_device.strip() == ""):
+        t = "Don't use an empty name for --rename_device."
+    elif gs.pa.display_name and (gs.pa.display_name.strip() == ""):
+        t = "Don't use an empty name for --display_name."
     elif (gs.pa.user) and not (gs.send_action or gs.room_action):
         t = (
             "If --user is specified, only a send action or a room action "
@@ -4496,18 +4430,18 @@ def main(
             "On further runs this program implements a simple Matrix CLI "
             "client that can send messages, listen to messages, verify "
             "devices, etc. It can send one or multiple message to one or "
-            "multiple Matrix rooms. The text messages can be of various "
+            "multiple Matrix rooms and/or users. The text messages can be "
+            "of various "
             'formats such as "text", "html", "markdown" or "code". '
-            "Images, audio or arbitrary files can be sent as well. "
+            "Images, audio, arbitrary files, or events can be sent as well. "
             "For receiving there are three main options: listen forever, "
             "listen once and quit, and get the last N messages "
             "and quit. Emoji verification is built-in which can be used "
             "to verify devices. End-to-end encryption is enabled by default "
             "and cannot be turned off.  ─── "
-            "See dependencies in source code or in README.md on Github. "
             "For even more explications and examples also read the "
-            "documentation provided in the top portion of the source code  "
-            "and in the Github README.md file."
+            "documentation provided in the on-line Github README.md file "
+            "or the README.md in your local installation."
         ),
         epilog="You are running "
         f"version {VERSIONNR} {VERSION}. Enjoy, star on Github and "
@@ -5125,18 +5059,18 @@ def main(
         "via the keyboard to accept or reject verification. "
         "Once verification is complete, stop the program and "
         "run it as a service again. Don't send messages or "
-        "files when you verify. ",
+        "files when you verify.",
     )
     ap.add_argument(
         "-x",
         "--rename-device",
         required=False,
         type=str,
-        default=RENAME_DEVICE_UNUSED_DEFAULT,  # when -x isn't used
+        default=RENAME_DEVICE_UNUSED_DEFAULT,  # when option isn't used
         help="Rename the current device to the new "
-        "device name provided. No other operations like "
-        "sending, listening, or verifying are allowed when "
-        "renaming the device. ",
+        "device name provided. "
+        "Send, listen and verify perations are allowed when "
+        "renaming the device.",
     )
     ap.add_argument(
         "--display-name",
@@ -5144,8 +5078,9 @@ def main(
         type=str,
         default=DISPLAY_NAME_UNUSED_DEFAULT,  # when option isn't used
         help="Set the display name for the current user to the value "
-        "provided. No other operations like sending, listening, or "
-        "verifying are allowed when setting the display name. ",
+        "provided. "
+        "Send, listen and verify perations are allowed when "
+        "setting the display name.",
     )
     ap.add_argument(
         # no single char flag
@@ -5212,6 +5147,14 @@ def main(
         help="Print the list of joined members for one or multiple rooms. "
         "If you want to print the joined members of all rooms that you "
         "are member of, then use the special character '*'.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--whoami",
+        required=False,
+        action="store_true",
+        help=f"Print the user id used by {PROG_WITHOUT_EXT}. One can get "
+        "this information also by looking at the credentials file.",
     )
     ap.add_argument(
         # no single char flag
@@ -5284,10 +5227,7 @@ def main(
             or gs.pa.listen != LISTEN_DEFAULT
             or gs.pa.tail != TAIL_UNUSED_DEFAULT
             or gs.pa.verify
-            or gs.pa.rename_device
-            or gs.pa.display_name
-            or gs.pa.joined_rooms
-            or gs.pa.joined_members
+            or gs.setget_action
         ):
             gs.log.debug("Only --version. Print and quit.")
             return  # just version, quit
@@ -5338,14 +5278,6 @@ def main(
     try:
         if gs.pa.verify:
             asyncio.run(main_verify())
-        elif gs.pa.display_name:
-            asyncio.run(main_rename_user())
-        elif gs.pa.rename_device:
-            asyncio.run(main_rename_device())
-        elif gs.pa.joined_rooms:
-            asyncio.run(main_joined_rooms())
-        elif gs.pa.joined_members:
-            asyncio.run(main_joined_members())
         elif (
             gs.pa.listen == FOREVER
             or gs.pa.listen == ONCE
@@ -5354,7 +5286,9 @@ def main(
         ):
             asyncio.run(main_listen())
         elif gs.room_action:
-            asyncio.run(main_room_actions())
+            asyncio.run(main_room_action())
+        elif gs.setget_action:
+            asyncio.run(main_setget_action())
         else:  # send_action
             asyncio.run(main_send())
         # the next can be reached on success or failure

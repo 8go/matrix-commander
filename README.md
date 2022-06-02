@@ -2,7 +2,7 @@
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![logo](https://github.com/8go/matrix-commander/blob/master/logos/matrix-commander-logo.svg)
+![MC> logo](logos/matrix-commander-logo.svg)
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
@@ -23,6 +23,7 @@ https://github.com/poljar/matrix-nio)
   recipient by specifying the recipients name.
 - Minor incompatibility: From now `-u` is assigned to `--user` and no
   longer to `--download-media`
+- new option `--whoami`
 
 # matrix-commander
 
@@ -327,6 +328,8 @@ $ matrix-commander --joined-members '!someroomId1:example.com' \
     '!someroomId2:example.com'
 $ # list all the members of all rooms  that I am member of
 $ matrix-commander --joined-members '*'
+$ # print my own user id
+$ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
 $ matrix-commander --no-ssl -m "also working without Let's Encrypt SSL"
 $ # use your own SSL certificate for a homeserver with SSL and local certs
@@ -430,21 +433,20 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
-                           [--version]
+                           [--whoami] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
 simple Matrix CLI client that can send messages, listen to messages, verify
 devices, etc. It can send one or multiple message to one or multiple Matrix
-rooms. The text messages can be of various formats such as "text", "html",
-"markdown" or "code". Images, audio or arbitrary files can be sent as well.
-For receiving there are three main options: listen forever, listen once and
-quit, and get the last N messages and quit. Emoji verification is built-in
-which can be used to verify devices. End-to-end encryption is enabled by
-default and cannot be turned off. ─── See dependencies in source code or in
-README.md on Github. For even more explications and examples also read the
-documentation provided in the top portion of the source code and in the Github
-README.md file.
+rooms and/or users. The text messages can be of various formats such as
+"text", "html", "markdown" or "code". Images, audio, arbitrary files, or
+events can be sent as well. For receiving there are three main options: listen
+forever, listen once and quit, and get the last N messages and quit. Emoji
+verification is built-in which can be used to verify devices. End-to-end
+encryption is enabled by default and cannot be turned off. ─── For even more
+explications and examples also read the documentation provided in the on-line
+Github README.md file or the README.md in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -780,13 +782,12 @@ options:
                         send messages or files when you verify.
   -x RENAME_DEVICE, --rename-device RENAME_DEVICE
                         Rename the current device to the new device name
-                        provided. No other operations like sending, listening,
-                        or verifying are allowed when renaming the device.
+                        provided. Send, listen and verify perations are
+                        allowed when renaming the device.
   --display-name DISPLAY_NAME
                         Set the display name for the current user to the value
-                        provided. No other operations like sending, listening,
-                        or verifying are allowed when setting the display
-                        name.
+                        provided. Send, listen and verify perations are
+                        allowed when setting the display name.
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -825,11 +826,14 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
+  --whoami              Print the user id used by matrix-commander. One can
+                        get this information also by looking at the
+                        credentials file.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.20.0 2022-06-01. Enjoy, star on Github and
+You are running version 2.21.0 2022-06-02. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -896,8 +900,7 @@ Tab completion is provided for shells (e.g. bash), courtesy of @mizlan).
 
 Here is a sample snapshot of tab completion in action:
 
-![tab completion](
-https://github.com/8go/matrix-commander/blob/master/screenshots/tab_complete.png)
+![tab completion screenshot](screenshots/tab_complete.png)
 
 # Performance and Speed
 
@@ -954,5 +957,5 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
     @opk12, etc.
 - Enjoy!
-- Pull requests are welcome  :heart:
+- Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 
