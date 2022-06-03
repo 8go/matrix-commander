@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Read VERSION file
         id: getversion
-        run: echo "::set-output name=version::$(cat ${GITHUB_WORKSPACE}/VERSION)"
+        run: echo "::set-output name=version::$(cat ./VERSION)"
 
       - name: Checkout
         uses: actions/checkout@v2
