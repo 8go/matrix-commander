@@ -1,11 +1,12 @@
 = matrix-commander on Docker Hub
 
-If you want to install a docker image, `matrix-commander` is available on
-https://hub.docker.com/r/matrixcommander/matrix-commander[Docker Hub]
-and hence easy to install as docker image (:clap: to @pataquets for his PR).
-The container is based on the latest version of Ubuntu.
+If you want to run `matrix-commander` using Docker, there is an official image
+available on https://hub.docker.com/r/matrixcommander/matrix-commander[Docker Hub]
+built from source on each commit and hence easier to run, since only Docker is
+required (:clap: to @pataquets for his PR).
+The image is based on the latest version of Fedora (35 as of Jun '22).
 There is a `linux/amd64` and a `linux/arm64` version available.
-Install it via docker command
+Download/update your local image pulling it by doing:
 
 ```
 docker pull matrixcommander/matrix-commander
@@ -16,7 +17,7 @@ docker pull matrixcommander/matrix-commander
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
 For other systems, this options has no influence and can be ignored or removed.
 
-The provided `Dockerfile` is for Fedora, specifically Fedora 35. If you want to use `Debian`, `Ubuntu` or otherwise, you *must* adjust the `Dockerfile` (e.g. change `dnf` to `apt` and so forth).
+The provided `Dockerfile` builds `matrix-commander` using Fedora 35. If you want to use `Debian`, `Ubuntu` or otherwise, you *must* adjust the `Dockerfile` (e.g. change `dnf` to `apt` and so forth).
 
 == Building the image
 
