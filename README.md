@@ -29,6 +29,9 @@ https://github.com/poljar/matrix-nio)
 - new otion `--get_displayname` for itself, or one or multiple users
 - new options `--set-presence` and `--get-presence` to set/get presence
   of itself, or one or multiple users
+- new options `--upload` and `--download` to interact with the Matrix
+  content repository
+- new option `--separator` to customize the column separator in outputs
 
 # Summary, TLDR
 
@@ -131,6 +134,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports renaming of device
 - Supports getting and setting display name
 - Supports getting and setting presence
+- Uploading and downloading to/from resource depository
 - Supports skipping SSL verification to use HTTP instead of HTTPS
 - Supports providing local SSL certificate files
 - Supports notification via OS of received messages
@@ -409,6 +413,12 @@ $ matrix-commander --get-presence
 $ # get presence of other users
 $ matrix-commander --get-presence \
     --user '@user1:example.com' '@user2:example.com'
+$ # upload file to resource repository
+$ matrix-commander --upload "avatar.png"
+$ # download file from resource repository via URI (MXC)
+$ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
+$ # for more examples of "matrix-commander --upload" and
+$ # "matrix-commander --download" see tests/test-upload.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -461,6 +471,7 @@ $ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
 $ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
 $ matrix-commander -m "Don't do this"
 $ matrix-commander -m 'He said "No" to me.'
+$ matrix-commander --separator " || " # customize column separator in outputs
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -512,11 +523,13 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
                            [--get-display-name] [--set-presence SET_PRESENCE]
-                           [--get-presence] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--joined-rooms]
+                           [--get-presence] [--upload UPLOAD]
+                           [--download DOWNLOAD] [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
-                           [--whoami] [--version]
+                           [--whoami] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--file-name FILE_NAME] [--key-dict KEY_DICT]
+                           [--plain] [--separator SEPARATOR] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -889,6 +902,36 @@ options:
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
                         when getting presence(s).
+  --upload UPLOAD       Upload a file to the content repository. The file will
+                        be given a Matrix URI and stored on the server.
+                        --upload allows the optional argument --plain to skip
+                        encryption for upload.
+  --download DOWNLOAD   Download a file from the content repository. You must
+                        provide a Matrix URI (MXC) which is a string like this
+                        'mxc://example.com/SomeStrangeUriKey'. If found it
+                        will be downloaded, decrypted, and stored in a file.
+                        If a filename is specified with --file-name the
+                        download will be saved with that filename. If --file-
+                        name is not specified the original filename from the
+                        upload will be used. If neither specified nor
+                        available on server, then the file name of last resort
+                        'download.blob' will be used. By default, the upload
+                        was encrypted so a decryption dictionary must be
+                        provided to decrypt the data. Specify the decryption
+                        with --key-dict. If --key-dict is not set, not
+                        decryption is attempted; and the data might be stored
+                        in encrypted fashion, or might be plain-text if the
+                        --upload skipped encryption with --plain.
+  --joined-rooms        Print the list of joined rooms. All rooms that you are
+                        a member of will be printed, one room per line.
+  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
+                        Print the list of joined members for one or multiple
+                        rooms. If you want to print the joined members of all
+                        rooms that you are member of, then use the special
+                        character '*'.
+  --whoami              Print the user id used by matrix-commander (itself).
+                        One can get this information also by looking at the
+                        credentials file.
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -920,21 +963,33 @@ options:
                         on the first run that initializes matrix-commander.
                         Once credentials are established this option is
                         irrelevant and it will simply be ignored.
-  --joined-rooms        Print the list of joined rooms. All rooms that you are
-                        a member of will be printed, one room per line.
-  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
-                        Print the list of joined members for one or multiple
-                        rooms. If you want to print the joined members of all
-                        rooms that you are member of, then use the special
-                        character '*'.
-  --whoami              Print the user id used by matrix-commander (itself).
-                        One can get this information also by looking at the
-                        credentials file.
+  --file-name FILE_NAME
+                        Specify a filename for some actions. Use this option
+                        in combination with options like --download to specify
+                        a filename. Ignored if used by itself without an
+                        appropriate corresponding action.
+  --key-dict KEY_DICT   Specify a key dictionary for decryption. A decryption
+                        dictionary is provided by the --upload action as a
+                        result. It is a string like this: "{'v': 'v2', 'key':
+                        {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, 'k':
+                        'somekey', 'key_ops': ['encrypt', 'decrypt']}, 'iv':
+                        'someiv', 'hashes': {'sha256': 'someSHA'}}"
+  --plain               Disable encryption for a specific action. By default,
+                        everything is always encrypted. Actions that support
+                        this option are: --upload.
+  --separator SEPARATOR
+                        Set a custom separator used for certain print outs. By
+                        default, i.e. if --seperator is not used, 4 spaces are
+                        used as seperator between columns in print statements.
+                        You could set it to '\t' if you prefer a tab, but tabs
+                        are usually replaced with spaces by the terminal. So,
+                        that might not give you what you want. Maybe ' || ' is
+                        an alternative choice.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.23.0 2022-06-02. Enjoy, star on Github and
+You are running version 2.24.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

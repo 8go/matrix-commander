@@ -36,6 +36,9 @@ https://github.com/poljar/matrix-nio)
 - new otion `--get_displayname` for itself, or one or multiple users
 - new options `--set-presence` and `--get-presence` to set/get presence
   of itself, or one or multiple users
+- new options `--upload` and `--download` to interact with the Matrix
+  content repository
+- new option `--separator` to customize the column separator in outputs
 
 # Summary, TLDR
 
@@ -138,6 +141,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports renaming of device
 - Supports getting and setting display name
 - Supports getting and setting presence
+- Uploading and downloading to/from resource depository
 - Supports skipping SSL verification to use HTTP instead of HTTPS
 - Supports providing local SSL certificate files
 - Supports notification via OS of received messages
@@ -416,6 +420,12 @@ $ matrix-commander --get-presence
 $ # get presence of other users
 $ matrix-commander --get-presence \
     --user '@user1:example.com' '@user2:example.com'
+$ # upload file to resource repository
+$ matrix-commander --upload "avatar.png"
+$ # download file from resource repository via URI (MXC)
+$ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
+$ # for more examples of "matrix-commander --upload" and
+$ # "matrix-commander --download" see tests/test-upload.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -468,6 +478,7 @@ $ matrix-commander -m "{title: \"hello\", message: \"here it is\"}"
 $ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
 $ matrix-commander -m "Don't do this"
 $ matrix-commander -m 'He said "No" to me.'
+$ matrix-commander --separator " || " # customize column separator in outputs
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -519,11 +530,13 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
                            [--get-display-name] [--set-presence SET_PRESENCE]
-                           [--get-presence] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--joined-rooms]
+                           [--get-presence] [--upload UPLOAD]
+                           [--download DOWNLOAD] [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
-                           [--whoami] [--version]
+                           [--whoami] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--file-name FILE_NAME] [--key-dict KEY_DICT]
+                           [--plain] [--separator SEPARATOR] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -896,6 +909,36 @@ options:
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
                         when getting presence(s).
+  --upload UPLOAD       Upload a file to the content repository. The file will
+                        be given a Matrix URI and stored on the server.
+                        --upload allows the optional argument --plain to skip
+                        encryption for upload.
+  --download DOWNLOAD   Download a file from the content repository. You must
+                        provide a Matrix URI (MXC) which is a string like this
+                        'mxc://example.com/SomeStrangeUriKey'. If found it
+                        will be downloaded, decrypted, and stored in a file.
+                        If a filename is specified with --file-name the
+                        download will be saved with that filename. If --file-
+                        name is not specified the original filename from the
+                        upload will be used. If neither specified nor
+                        available on server, then the file name of last resort
+                        'download.blob' will be used. By default, the upload
+                        was encrypted so a decryption dictionary must be
+                        provided to decrypt the data. Specify the decryption
+                        with --key-dict. If --key-dict is not set, not
+                        decryption is attempted; and the data might be stored
+                        in encrypted fashion, or might be plain-text if the
+                        --upload skipped encryption with --plain.
+  --joined-rooms        Print the list of joined rooms. All rooms that you are
+                        a member of will be printed, one room per line.
+  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
+                        Print the list of joined members for one or multiple
+                        rooms. If you want to print the joined members of all
+                        rooms that you are member of, then use the special
+                        character '*'.
+  --whoami              Print the user id used by matrix-commander (itself).
+                        One can get this information also by looking at the
+                        credentials file.
   --no-ssl              Skip SSL verification. By default (if this option is
                         not used) the SSL certificate is validated for the
                         connection. But, if this option is used, then the SSL
@@ -927,21 +970,33 @@ options:
                         on the first run that initializes matrix-commander.
                         Once credentials are established this option is
                         irrelevant and it will simply be ignored.
-  --joined-rooms        Print the list of joined rooms. All rooms that you are
-                        a member of will be printed, one room per line.
-  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
-                        Print the list of joined members for one or multiple
-                        rooms. If you want to print the joined members of all
-                        rooms that you are member of, then use the special
-                        character '*'.
-  --whoami              Print the user id used by matrix-commander (itself).
-                        One can get this information also by looking at the
-                        credentials file.
+  --file-name FILE_NAME
+                        Specify a filename for some actions. Use this option
+                        in combination with options like --download to specify
+                        a filename. Ignored if used by itself without an
+                        appropriate corresponding action.
+  --key-dict KEY_DICT   Specify a key dictionary for decryption. A decryption
+                        dictionary is provided by the --upload action as a
+                        result. It is a string like this: "{'v': 'v2', 'key':
+                        {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, 'k':
+                        'somekey', 'key_ops': ['encrypt', 'decrypt']}, 'iv':
+                        'someiv', 'hashes': {'sha256': 'someSHA'}}"
+  --plain               Disable encryption for a specific action. By default,
+                        everything is always encrypted. Actions that support
+                        this option are: --upload.
+  --separator SEPARATOR
+                        Set a custom separator used for certain print outs. By
+                        default, i.e. if --seperator is not used, 4 spaces are
+                        used as seperator between columns in print statements.
+                        You could set it to '\t' if you prefer a tab, but tabs
+                        are usually replaced with spaces by the terminal. So,
+                        that might not give you what you want. Maybe ' || ' is
+                        an alternative choice.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.23.0 2022-06-02. Enjoy, star on Github and
+You are running version 2.24.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1011,9 +1066,10 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 """
 
+import argparse
 # automatically sorted by isort,
 # then formatted by black --line-length 79
-import argparse
+import ast
 import asyncio
 import datetime
 import errno
@@ -1041,11 +1097,12 @@ from urllib.parse import urlparse
 import aiofiles
 import aiofiles.os
 import magic
+import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, EnableEncryptionBuilder,
-                 JoinedMembersError, JoinedRoomsError, JoinError,
-                 KeyVerificationCancel, KeyVerificationEvent,
+from nio import (AsyncClient, AsyncClientConfig, DownloadError,
+                 EnableEncryptionBuilder, JoinedMembersError, JoinedRoomsError,
+                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
                  KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
                  LocalProtocolError, LoginResponse, MatrixRoom,
                  MessageDirection, PresenceGetError, PresenceSetError,
@@ -1062,7 +1119,7 @@ from nio import (AsyncClient, AsyncClientConfig, EnableEncryptionBuilder,
                  RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
                  RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
                  SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadResponse, crypto)
+                 UpdateDeviceError, UploadError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1073,8 +1130,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-06-02"
-VERSIONNR = "2.23.0"
+VERSION = "2022-06-03"
+VERSIONNR = "2.24.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1120,17 +1177,19 @@ NEVER = "never"  # listening type
 FOREVER = "forever"  # listening type
 ALL = "all"  # listening type
 TAIL = "tail"  # listening type
-SEP = "    "  # separator used for sperating columns in print outputs
+DEFAULT_SEPARATOR = "    "  # used for sperating columns in print outputs
+SEP = DEFAULT_SEPARATOR
 LISTEN_DEFAULT = NEVER
 TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
 VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
-SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if -x is not specified
+SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if option is not specified
 SET_DISPLAY_NAME_UNUSED_DEFAULT = None  # use None option not used
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
 NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
+DOWNLOAD_FILENAME_DEFAULT = "download.blob"  # if option is not specified
 
 
 class MatrixCommanderError(RuntimeError):
@@ -3945,6 +4004,118 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
             )
 
 
+async def action_upload(client: AsyncClient, credentials: dict) -> None:
+    """Upload a file to content repository of Matrix server.
+    Assumes that user is already logged in.
+    """
+    filename = gs.pa.upload.strip()
+    encrypt = False if gs.pa.plain else True
+    mime_type = magic.from_file(filename, mime=True)
+    file_stat = await aiofiles.os.stat(filename)
+    async with aiofiles.open(filename, "r+b") as f:
+        resp, decryption_dict = await client.upload(
+            f,
+            content_type=mime_type,  # e.g. application/pdf
+            filename=os.path.basename(filename),
+            encrypt=encrypt,
+            filesize=file_stat.st_size,
+        )
+    if isinstance(resp, UploadError):
+        gs.log.error(
+            "Failed to upload. "
+            f'file="{filename}"; mime_type="{mime_type}"; '
+            f"filessize={file_stat.st_size}; encrypt={encrypt}"
+            f"Server response: {resp}"
+        )
+    else:
+        gs.log.debug(
+            f"File {filename}, mime={mime_type}, {file_stat.st_size} bytes, "
+            f"encrypt={encrypt} "
+            f"was successfully uploaded to server.Response is: {resp}."
+        )
+        gs.log.debug(f"URI of uploaded file {filename} is: {resp.content_uri}")
+        gs.log.debug(
+            f"Decryption key (dictionary) of uploaded file {filename} is: "
+            f"{decryption_dict}"
+        )
+        # decryption_dict will be None in case of plain-text
+        # the URI and keys will be needed later. so this print is a must
+        print(f"{resp.content_uri}{SEP}{decryption_dict}")
+
+
+async def action_download(client: AsyncClient, credentials: dict) -> None:
+    """Download a file from content repository of Matrix server.
+    Assumes that user is already logged in.
+    """
+    encrypted = True if gs.pa.key_dict else False
+    if not encrypted:
+        gs.log.debug(
+            "No key dictionary specified with --key-dict. So, it is assumed "
+            "that the download is not encrypted (i.e. plain-text). "
+            "No decryption will be attempted."
+        )
+    if not gs.pa.file_name:
+        # get filename from server, i.e. use the original filename from upload
+        filename = None
+    else:
+        filename = gs.pa.file_name  # 1st choice
+    mxc = gs.pa.download
+    # version incompatibility between matrix-nio 0.18.7 and 0.19.0
+    # https://mtrx.sytes.net/OIukKBUUpPsPXkEGBxuKVIEo
+    # server_name = "mtrx.sytes.net"
+    # media_id = "OIukKBUUpPsPXkEGBxuKVIEo"
+    # matrix-nio v0.19.0 has:  download(server_name: str, media_id: str, ...)
+    # convert mxc to server_name and media_id
+    url = urlparse(mxc)
+    server_name = url.netloc
+    media_id = url.path.replace("/", "")
+    nio_version = pkg_resources.get_distribution("matrix-nio").version
+    gs.log.debug(
+        f"You are running matrix-nio version {nio_version}. "
+        f"You should be running version 0.19.0+. Update if necessary. "
+        f"Converted mxc {mxc} to server_name {server_name} and "
+        f"media_id {media_id}."
+    )
+    # v0.18.7: resp = await client.download(mxc=mxc, filename=filename)
+    # v0.19.0+
+    resp = await client.download(
+        server_name=server_name, media_id=media_id, filename=filename
+    )
+    if isinstance(resp, DownloadError):
+        gs.log.error(
+            f"download of URI '{mxc}' to local file '{filename}' "
+            f"failed with response {resp}"
+        )
+    else:
+        if not filename:
+            filename = resp.filename  # 2nd choice, from server
+        if not filename:
+            filename = DOWNLOAD_FILENAME_DEFAULT  # 3rd choice, last resort
+        gs.log.debug(
+            f"download of URI '{mxc}' to local file '{filename}' "
+            f"successful with {len(resp.body)} bytes of data downloaded, "
+            f"content_type {resp.content_type}; "
+            f"remote filename {resp.filename}; "
+            f"encrypted {encrypted}; key dictionary {gs.pa.key_dict}. "
+            "Trying to save data now."
+        )
+        if encrypted:
+            decryption_str = gs.pa.key_dict
+            decryption_dict = ast.literal_eval(decryption_str)
+            with open(filename, "wb") as file:
+                file.write(
+                    crypto.attachments.decrypt_attachment(
+                        resp.body,
+                        decryption_dict["key"]["k"],
+                        decryption_dict["hashes"]["sha256"],
+                        decryption_dict["iv"],
+                    )
+                )
+        else:  # plain, unencrypted
+            with open(filename, "wb") as file:
+                file.write(resp.body)
+
+
 async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
     """Get joined rooms while already logged in."""
     resp = await client.joined_rooms()
@@ -4066,11 +4237,15 @@ async def main_roomsetget_action() -> None:
             await action_set_device_name(client, credentials)
         if gs.pa.set_presence:
             await action_set_presence(client, credentials)
+        if gs.pa.upload:
+            await action_upload(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
         if gs.pa.get_presence:
             await action_get_presence(client, credentials)
+        if gs.pa.download:
+            await action_download(client, credentials)
         if gs.pa.joined_rooms:
             await action_joined_rooms(client, credentials)
         if gs.pa.joined_members:
@@ -4306,8 +4481,10 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.pa.set_device_name  # set
         or gs.pa.set_display_name
         or gs.pa.set_presence
+        or gs.pa.upload
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
+        or gs.pa.download
         or gs.pa.joined_rooms
         or gs.pa.joined_members
         or gs.pa.whoami
@@ -4532,6 +4709,7 @@ def main(
     # prepare the global state
     global gs
     gs = GlobalState()
+    global SEP
     # Construct the argument parser
     ap = argparse.ArgumentParser(
         description=(
@@ -5230,6 +5408,65 @@ def main(
         "getting presence(s).",
     )
     ap.add_argument(
+        "--upload",
+        required=False,
+        type=str,
+        # defaults to None if not used, is str if used
+        help="Upload a file to the content repository. "
+        "The file will be given a Matrix URI and "
+        "stored on the server. --upload allows the optional argument "
+        "--plain to skip encryption for upload.",
+    )
+    ap.add_argument(
+        "--download",
+        required=False,
+        type=str,
+        # defaults to None if not used, is str if used
+        help="Download a file from the content repository. "
+        "You must provide a Matrix URI (MXC) which is a string like "
+        "this 'mxc://example.com/SomeStrangeUriKey'. If found it will "
+        "be downloaded, decrypted, and stored in a file. "
+        "If a filename is specified with --file-name the download "
+        "will be saved with that filename. If --file-name is not "
+        "specified the original filename from the upload will be used. "
+        "If neither specified nor available on server, then the file "
+        f"name of last resort '{DOWNLOAD_FILENAME_DEFAULT}' will be used. "
+        "By default, the upload was encrypted so a decryption dictionary "
+        "must be provided to decrypt the data. Specify the decryption "
+        "with --key-dict. If --key-dict is not set, not decryption is "
+        "attempted; and the data might be stored in encrypted fashion, "
+        "or might be plain-text if the --upload skipped encryption with "
+        "--plain.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--joined-rooms",
+        required=False,
+        action="store_true",
+        help="Print the list of joined rooms. All rooms that you are a "
+        "member of will be printed, one room per line.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--joined-members",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Print the list of joined members for one or multiple rooms. "
+        "If you want to print the joined members of all rooms that you "
+        "are member of, then use the special character '*'.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--whoami",
+        required=False,
+        action="store_true",
+        help=f"Print the user id used by {PROG_WITHOUT_EXT} (itself). "
+        "One can get "
+        "this information also by looking at the credentials file.",
+    )
+    ap.add_argument(
         # no single char flag
         "--no-ssl",
         required=False,
@@ -5277,32 +5514,49 @@ def main(
         "it will simply be ignored.",
     )
     ap.add_argument(
-        # no single char flag
-        "--joined-rooms",
+        "--file-name",
         required=False,
-        action="store_true",
-        help="Print the list of joined rooms. All rooms that you are a "
-        "member of will be printed, one room per line.",
-    )
-    ap.add_argument(
-        # no single char flag
-        "--joined-members",
-        required=False,
-        action="extend",
-        nargs="+",
         type=str,
-        help="Print the list of joined members for one or multiple rooms. "
-        "If you want to print the joined members of all rooms that you "
-        "are member of, then use the special character '*'.",
+        # defaults to None if not used, is str if used
+        help="Specify a filename for some actions. Use this option "
+        "in combination with options like --download to specify a filename. "
+        "Ignored if used by itself without an appropriate corresponding "
+        "action.",
     )
     ap.add_argument(
-        # no single char flag
-        "--whoami",
+        "--key-dict",
+        required=False,
+        type=str,
+        # defaults to None if not used, is str if used
+        help="Specify a key dictionary for decryption. A decryption "
+        "dictionary is provided by the --upload action as a result. "
+        "It is a string like this: "
+        "\"{'v': 'v2', 'key': {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, "
+        "'k': 'somekey', 'key_ops': ['encrypt', 'decrypt']}, "
+        "'iv': 'someiv', 'hashes': {'sha256': 'someSHA'}}\"",
+    )
+    ap.add_argument(
+        "--plain",
         required=False,
         action="store_true",
-        help=f"Print the user id used by {PROG_WITHOUT_EXT} (itself). "
-        "One can get "
-        "this information also by looking at the credentials file.",
+        help="Disable encryption for a specific action. By default, "
+        "everything is always encrypted. "
+        "Actions that support this option are: --upload. ",
+    )
+    ap.add_argument(
+        "--separator",
+        required=False,
+        type=str,
+        default=DEFAULT_SEPARATOR,  # defaults to SEP if not used
+        # Text is scanned and repeated spaces are removes, so "    "
+        # or {DEFAULT_SEPARATOR} will be truncated to " ". Hence "4 spaces"
+        help="Set a custom separator used for certain print outs. "
+        "By default, i.e. if --seperator is not used, "
+        "4 spaces are used as "
+        "seperator between columns in print statements. You could set "
+        "it to '\\t' if you prefer a tab, but tabs are usually replaced "
+        "with spaces by the terminal. So, that might not give you what you "
+        "want. Maybe ' || ' is an alternative choice.",
     )
     ap.add_argument(
         # no single char flag
@@ -5354,6 +5608,11 @@ def main(
         if gs.pa.log_level and len(gs.pa.log_level) > 0:
             gs.log.warning("Debug option -d overwrote option --log-level.")
 
+    SEP = bytes(gs.pa.separator, "utf-8").decode("unicode_escape")
+    gs.log.debug(
+        f'Separator is set to "{SEP}" of '
+        f"length {len(SEP)}. E.g. Col1{SEP}Col2."
+    )
     initial_check_of_args()
     check_download_media_dir()
     try:
