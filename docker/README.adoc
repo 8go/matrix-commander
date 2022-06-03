@@ -1,8 +1,9 @@
 = matrix-commander on Docker Hub
 
 If you want to install a docker image, `matrix-commander` is available on
-[Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
+https://hub.docker.com/r/matrixcommander/matrix-commander[Docker Hub]
 and hence easy to install as docker image (:clap: to @pataquets for his PR).
+The container is based on the latest version of Ubuntu.
 There is a `linux/amd64` and a `linux/arm64` version available.
 Install it via docker command
 

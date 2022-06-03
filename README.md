@@ -36,6 +36,7 @@ https://github.com/poljar/matrix-nio)
 - new options `--upload` and `--download` to interact with the Matrix
   content repository
 - new option `--separator` to customize the column separator in outputs
+- new option `--mxc-to-http`
 
 # Summary, TLDR
 
@@ -485,6 +486,7 @@ $ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
 $ matrix-commander -m "Don't do this"
 $ matrix-commander -m 'He said "No" to me.'
 $ matrix-commander --separator " || " # customize column separator in outputs
+$ matrix-commander --mxc-to-http mac://example.com/abc... # get HTTP
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -539,6 +541,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-presence] [--upload UPLOAD]
                            [--download DOWNLOAD] [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
+                           [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME] [--key-dict KEY_DICT]
@@ -942,6 +945,11 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
+  --mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]
+                        Convert one or more matrix content URIs to the
+                        corresponding HTTP URLs. The MXC URIs to provide look
+                        something like this
+                        'mxc://example.com/SomeStrangeUriKey'.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1002,7 +1010,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.26.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.27.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

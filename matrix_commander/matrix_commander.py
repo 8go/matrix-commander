@@ -43,6 +43,7 @@ https://github.com/poljar/matrix-nio)
 - new options `--upload` and `--download` to interact with the Matrix
   content repository
 - new option `--separator` to customize the column separator in outputs
+- new option `--mxc-to-http`
 
 # Summary, TLDR
 
@@ -492,6 +493,7 @@ $ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
 $ matrix-commander -m "Don't do this"
 $ matrix-commander -m 'He said "No" to me.'
 $ matrix-commander --separator " || " # customize column separator in outputs
+$ matrix-commander --mxc-to-http mac://example.com/abc... # get HTTP
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -546,6 +548,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-presence] [--upload UPLOAD]
                            [--download DOWNLOAD] [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
+                           [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME] [--key-dict KEY_DICT]
@@ -949,6 +952,11 @@ options:
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
+  --mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]
+                        Convert one or more matrix content URIs to the
+                        corresponding HTTP URLs. The MXC URIs to provide look
+                        something like this
+                        'mxc://example.com/SomeStrangeUriKey'.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1009,7 +1017,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.26.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.27.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1144,7 +1152,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-03"
-VERSIONNR = "2.26.0"
+VERSIONNR = "2.27.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4193,6 +4201,14 @@ async def action_joined_members(
             )
 
 
+async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
+    """Convert MXC URI to HTTP URL while already logged in."""
+    for mxc in gs.pa.mxc_to_http:
+        mxc = mxc.strip()
+        http = await client.mxc_to_http(mxc)  # returns None or str
+        print(f"{mxc}{SEP}{http}")
+
+
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
@@ -4263,6 +4279,8 @@ async def main_roomsetget_action() -> None:
             await action_joined_rooms(client, credentials)
         if gs.pa.joined_members:
             await action_joined_members(client, credentials)
+        if gs.pa.mxc_to_http:
+            await action_mxc_to_http(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -4500,6 +4518,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.download
         or gs.pa.joined_rooms
         or gs.pa.joined_members
+        or gs.pa.mxc_to_http
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -5469,6 +5488,17 @@ def main(
         help="Print the list of joined members for one or multiple rooms. "
         "If you want to print the joined members of all rooms that you "
         "are member of, then use the special character '*'.",
+    )
+    ap.add_argument(
+        "--mxc-to-http",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Convert one or more matrix content URIs to the "
+        "corresponding HTTP URLs. The MXC URIs "
+        "to provide look something like this "
+        "'mxc://example.com/SomeStrangeUriKey'.",
     )
     ap.add_argument(
         # no single char flag
