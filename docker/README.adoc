@@ -1,3 +1,15 @@
+= matrix-commander on Docker Hub
+
+If you want to install a docker image, `matrix-commander` is available on
+[Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
+and hence easy to install as docker image (:clap: to @pataquets for his PR).
+There is a `linux/amd64` and a `linux/arm64` version available.
+Install it via docker command
+
+```
+docker pull matrixcommander/matrix-commander
+```
+
 = matrix-commander with Docker
 
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
