@@ -10,11 +10,15 @@ The provided `Dockerfile` is for Fedora, specifically Fedora 35. If you want to 
 From the root folder of the git repository, run:
 
 ```
-docker build -t matrix-commander . -f docker/Dockerfile
+docker build -t matrix-commander -f docker/Dockerfile .
 ```
 
 This will create an image called `matrix-commander`.
 
+Alternatively, you can build the Docker image directly from sources, without cloning the repo:
+```
+docker build -t matrix-commander -f docker/Dockerfile github.com/8go/matrix-commander
+```
 
 == Using the image
 
