@@ -9,6 +9,10 @@ jobs:
   buildx:
     runs-on: ubuntu-latest
     steps:
+      - name: Read VERSION file
+        id: getversion
+        run: echo "::set-output name=version::$(cat VERSION)"
+
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -35,4 +39,4 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:${{ steps.getversion.outputs.version }}

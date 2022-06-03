@@ -1,6 +1,7 @@
 #!/bin/bash
 
 FN="matrix_commander/matrix_commander.py"
+VERSION_FILE="VERSION"
 
 if ! [ -f "$FN" ]; then
     FN="../$FN"
@@ -51,7 +52,7 @@ if [ "$COUNT" == "1" ]; then
     Z=$(echo $NR | cut -d'.' -f3)
     M=$((M + 1))
     NEWVERSIONNR="${A}.${M}.${Z}"
-    echo $NEWVERSIONNR >versionnumber.txt
+    echo $NEWVERSIONNR >"$VERSION_FILE"
     NEWVERSION="$PREFIX\"${A}.${M}.${Z}\""
     sed -i "s/$REGEX/$NEWVERSION/" $FN
     RETURN=$?
