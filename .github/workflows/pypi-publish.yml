@@ -11,6 +11,9 @@ jobs:
       contents: write
 
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
       - name: pypi-publish
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
