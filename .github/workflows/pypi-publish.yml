@@ -1,5 +1,18 @@
-name: pypi-publish
-uses: pypa/gh-action-pypi-publish@v1.5.0
-with:
-  user: __token__
-  password: ${{ secrets.PYPI_API_TOKEN }}
+name: PyPi Publish
+
+on: push
+
+jobs:
+  publish-pypi:
+    # Only publish on `main` branch
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:  # Don't forget permissions
+      contents: write
+
+    steps:
+      - name: pypi-publish
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
