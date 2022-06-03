@@ -6,7 +6,11 @@ https://github.com/poljar/matrix-nio)
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
-- `matrix-commander` new available on
+- `matrix-commander` now available on
+  [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
+  and hence easy to install as docker image (:clap: to @pataquets for his PR).
+  Install via `docker pull matrixcommander/matrix-commander`.
+- `matrix-commander` now available on
   [PyPi](https://pypi.org/project/matrix-commander/)
   and hence easy to install via `pip install matrix-commander`
 - Slight incompatibility: From now on instead of using `matrix-commander.py`
@@ -146,7 +150,11 @@ Please give it a :star: on Github right now so others find it more easily.
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
 - More than 200 stars :stars: on Github
-- Easy installation, available through `pip`, i.e. available in PyPi store
+- Easy installation, available through `pip`, i.e. available in
+  [PyPi](https://pypi.org/project/matrix-commander/) store
+- Easy installation, available as docker image on
+  [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
+  (thanks to PR from @pataquets :clap:)
 - Callable from the terminal, from shells like `bash`, etc.
 - Callable from Python programs via the entry point (function) `main`.
 - Open source
@@ -261,36 +269,41 @@ well as ban, unban and kick other users from rooms.
   - Note that even if you install via `pip` you must have a) Python 3.8+
     and b) `libolm` installed. See `PyPi-Instructions.md`.
 
-If you install vit `git` or via file download then these are the
-dependencies that you must take care of:
+- If you install a docker image: `matrix-commander` is available on
+  [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
+  and hence easy to install as docker image (:clap: to @pataquets for his PR).
+  Install via `docker pull matrixcommander/matrix-commander`.
 
-- Python 3.8 or higher installed (3.7 will NOT work)
-- libolm-dev must be installed as it is required by matrix-nio
-  - libolm-dev on Debian/Ubuntu, libolm-devel on Fedora, libolm on MacOS
-- matrix-nio must be installed, see https://github.com/poljar/matrix-nio
-  - pip3 install --user --upgrade matrix-nio[e2e]
-- python3 package markdown must be installed to support MarkDown format
-  - pip3 install --user --upgrade markdown
-- python3 package python_magic must be installed to support image sending
-  - pip3 install --user --upgrade python_magic
-- if (and only if) you want OS notification support, then the python3
-  package notify2 and dbus-python should be installed
-  - pip3 install --user --upgrade dbus-python # optional
-  - pip3 install --user --upgrade notify2 # optional
-- python3 package urllib must be installed to support media download
-  - pip3 install --user --upgrade urllib
-- `matrix_commander/matrix_commander.py` file must be installed, and should
-  have execution permissions
-  - chmod 755 matrix_commander.py
-- `matrix_commander/matrix-commander` file is recommended for the install,
-  and should have execution permissions
-  - chmod 755 matrix-commander
-- for a full list or requirements look at the `requirements.txt` file
-  - run `pip install -r requirements.txt` to automatically install
-    all required Python packages
-  - if you e.g. run on a headless server and don't want dbus-python and
-    notify2, please remove the corresponding 2 lines from
-    the `requirements.txt` file
+- If you install vit `git` or via file download then these are the
+  dependencies that you must take care of:
+
+    - Python 3.8 or higher installed (3.7 will NOT work)
+    - libolm-dev must be installed as it is required by matrix-nio
+      - libolm-dev on Debian/Ubuntu, libolm-devel on Fedora, libolm on MacOS
+    - matrix-nio must be installed, see https://github.com/poljar/matrix-nio
+      - pip3 install --user --upgrade matrix-nio[e2e]
+    - python3 package markdown must be installed to support MarkDown format
+      - pip3 install --user --upgrade markdown
+    - python3 package python_magic must be installed to support image sending
+      - pip3 install --user --upgrade python_magic
+    - if (and only if) you want OS notification support, then the python3
+      package notify2 and dbus-python should be installed
+      - pip3 install --user --upgrade dbus-python # optional
+      - pip3 install --user --upgrade notify2 # optional
+    - python3 package urllib must be installed to support media download
+      - pip3 install --user --upgrade urllib
+    - `matrix_commander/matrix_commander.py` file must be installed, and should
+      have execution permissions
+      - chmod 755 matrix_commander.py
+    - `matrix_commander/matrix-commander` file is recommended for the install,
+      and should have execution permissions
+      - chmod 755 matrix-commander
+    - for a full list or requirements look at the `requirements.txt` file
+      - run `pip install -r requirements.txt` to automatically install
+        all required Python packages
+      - if you e.g. run on a headless server and don't want dbus-python and
+        notify2, please remove the corresponding 2 lines from
+        the `requirements.txt` file
 
 # Examples of calling `matrix-commander`
 
@@ -989,7 +1002,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.24.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.26.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1053,7 +1066,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, etc.
+    @opk12, @pataquets, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 

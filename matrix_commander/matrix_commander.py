@@ -1009,7 +1009,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.24.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.26.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1080,7 +1080,6 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
-
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1114,69 +1113,26 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    DownloadError,
-    EnableEncryptionBuilder,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-)
+from nio import (AsyncClient, AsyncClientConfig, DownloadError,
+                 EnableEncryptionBuilder, JoinedMembersError, JoinedRoomsError,
+                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginResponse, MatrixRoom,
+                 MessageDirection, PresenceGetError, PresenceSetError,
+                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
+                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
+                 RoomAliasEvent, RoomBanError, RoomCreateError,
+                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
+                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
+                 RoomForgetError, RoomInviteError, RoomKickError,
+                 RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
+                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
+                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
+                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
+                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1188,7 +1144,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-03"
-VERSIONNR = "2.25.0"
+VERSIONNR = "2.26.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
