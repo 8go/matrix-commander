@@ -9,14 +9,14 @@ jobs:
   buildx:
     runs-on: ubuntu-latest
     steps:
-      - name: Read VERSION file
-        id: getversion
-        run: echo "::set-output name=version::$(cat ./VERSION)"
-
       - name: Checkout
         uses: actions/checkout@v2
 
-        # Required if building multi-arch images
+      - name: Read VERSION file
+        id: getversion
+        run: echo "::set-output name=version::$(cat VERSION)"
+
+      # Required if building multi-arch images
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
