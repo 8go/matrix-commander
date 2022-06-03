@@ -37,6 +37,9 @@ https://github.com/poljar/matrix-nio)
   content repository
 - new option `--separator` to customize the column separator in outputs
 - new option `--mxc-to-http`
+- new option `--devices` to list devices of current user
+- new option `--discovery-info` to print discovery info of homeserver
+- new option `--login_info` to get the available login methods from the server
 
 # Summary, TLDR
 
@@ -140,6 +143,9 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports getting and setting display name
 - Supports getting and setting presence
 - Uploading and downloading to/from resource depository
+- Listing your devices
+- Listing discovery info
+- Listing available login methods supported by server
 - Supports skipping SSL verification to use HTTP instead of HTTPS
 - Supports providing local SSL certificate files
 - Supports notification via OS of received messages
@@ -486,7 +492,10 @@ $ matrix-commander -m "{title: \"${TITLE}\", message: \"${MSG}\"}"
 $ matrix-commander -m "Don't do this"
 $ matrix-commander -m 'He said "No" to me.'
 $ matrix-commander --separator " || " # customize column separator in outputs
-$ matrix-commander --mxc-to-http mac://example.com/abc... # get HTTP
+$ matrix-commander --mxc-to-http mxc://example.com/abc... # get HTTP
+$ matrix-commander --devices # to list devices of matrix-commander
+$ matrix-commander --discovery-info # print discovery info of homeserver
+$ matrix-commander --login-info # list login methods
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -542,6 +551,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--download DOWNLOAD] [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
+                           [--devices] [--discovery-info] [--login-info]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME] [--key-dict KEY_DICT]
@@ -950,6 +960,13 @@ options:
                         corresponding HTTP URLs. The MXC URIs to provide look
                         something like this
                         'mxc://example.com/SomeStrangeUriKey'.
+  --devices             Print the list of devices. All device of this account
+                        will be printed, one device per line.
+  --discovery-info      Print discovery information about current homeserver.
+                        Note that not all homeservers support discovery and an
+                        error might be reported.
+  --login-info          Print login methods supported by the homeserver. It
+                        prints one login method per line.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1010,7 +1027,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.27.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.28.0 2022-06-03. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

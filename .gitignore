@@ -32,7 +32,7 @@ m_c
 /matrix_commander/__pycache__/
 
 # PyPi build files
-# leave /dist as it is used by Github PyPi-Publish Workflow
+# leave /dist because it is used by Github PyPi-Publish Workflow
 versionnumber.txt
 /matrix_commander.egg-info/
 

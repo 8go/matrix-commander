@@ -12,6 +12,9 @@ Download/update your local image pulling it by doing:
 docker pull matrixcommander/matrix-commander
 ```
 
+When using Docker, it is recommended to use the `--no-sso` flag because
+there is no browser available to perform web-based Single Sign-On.
+
 = matrix-commander with Docker
 
 NOTE: In the following docker commands, the option `:z` is here to make sure that the commands work in systems that use SELinux (eg. Fedora).
@@ -43,7 +46,7 @@ This folder must be provided to further `run` commands using the `/data` mountpo
 
 Run this command to initialize the `matrix-commander` data folder with new credentials − you must answer all the questions that will pop up interactively (homeserver, username, etc.):
 ```
-docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander
+docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --no-ssl
 ```
 
 You can now use this data folder to send messages or verify your session.
