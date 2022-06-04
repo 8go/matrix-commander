@@ -2,18 +2,31 @@ FROM fedora:35
 
 # standard install packages: pip libolm-devel gcc python-devel python3-dbus
 # additional packages: libffi-devel libjpeg-devel zlib-devel (required on Raspberry Pi (4b, 32bit, running buster of Raspberry Pi OS))
-RUN dnf install -y pip libolm-devel gcc python-devel python3-dbus libffi-devel libjpeg-devel zlib-devel
+RUN \
+  dnf install -y --nodocs \
+    gcc \
+    libolm-devel \
+    libffi-devel \
+    libjpeg-devel \
+    pip \
+    python-devel \
+    python3-dbus \
+    zlib-devel \
+  && dnf clean all \
+  && rm -rf /var/cache/yum/
 
+RUN pip3 install --no-cache wheel
 
-WORKDIR /app
+RUN mkdir -vp /app/matrix_commander/
 
+WORKDIR /app/
 COPY requirements.txt .
-RUN mkdir -p matrix_commander
-COPY matrix_commander/matrix_commander.py matrix_commander/matrix_commander.py
-COPY matrix_commander/matrix-commander matrix_commander/matrix-commander
-COPY matrix_commander/__init__.py matrix_commander/__init__.py
+RUN pip3 install --no-cache -r requirements.txt
 
-RUN pip3 install wheel && pip3 install -r /app/requirements.txt
+WORKDIR /app/matrix_commander/
+COPY matrix_commander/matrix_commander.py .
+COPY matrix_commander/matrix-commander .
+COPY matrix_commander/__init__.py .
 
 VOLUME /data
 
