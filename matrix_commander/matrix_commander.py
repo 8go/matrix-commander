@@ -37,7 +37,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--whoami`
 - Minor incompatibility: `--rename-device` has been renamed to
   `--set-device-name` and `-x` is no longer supported as shortcut.
-- new otion `--get_displayname` for itself, or one or multiple users
+- new option `--get_displayname` for itself, or one or multiple users
 - new options `--set-presence` and `--get-presence` to set/get presence
   of itself, or one or multiple users
 - new options `--upload` and `--download` to interact with the Matrix
@@ -46,7 +46,8 @@ https://github.com/poljar/matrix-nio)
 - new option `--mxc-to-http`
 - new option `--devices` to list devices of current user
 - new option `--discovery-info` to print discovery info of homeserver
-- new option `--login_info` to get the available login methods from the server
+- new option `--login-info` to get the available login methods from the server
+- new option `--delete-mxc` to delete objects from content repository
 
 # Summary, TLDR
 
@@ -149,7 +150,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports renaming of device
 - Supports getting and setting display name
 - Supports getting and setting presence
-- Uploading and downloading to/from resource depository
+- Uploading, downloading, and deleting to/from resource depository
 - Listing your devices
 - Listing discovery info
 - Listing available login methods supported by server
@@ -214,7 +215,7 @@ future runs it will use the homeserver, user id
 and access token found in the credentials file to log
 into the Matrix account. Now this program can be used
 to easily send simple text messages, images, and so forth
-to the preconfigured room.
+to the just configured room.
 
 # Sending
 
@@ -288,7 +289,7 @@ well as ban, unban and kick other users from rooms.
   and hence easy to install as docker image (:clap: to @pataquets for his PR).
   Install via `docker pull matrixcommander/matrix-commander`.
 
-- If you install vit `git` or via file download then these are the
+- If you install it via `git` or via file download then these are the
   dependencies that you must take care of:
 
     - Python 3.8 or higher installed (3.7 will NOT work)
@@ -444,8 +445,8 @@ $ # upload file to resource repository
 $ matrix-commander --upload "avatar.png"
 $ # download file from resource repository via URI (MXC)
 $ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
-$ # for more examples of "matrix-commander --upload" and
-$ # "matrix-commander --download" see tests/test-upload.sh
+$ # for more examples of --upload, --download, --delete-mxc, --mxc-to-http,
+$ # see file tests/test-upload.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -503,6 +504,7 @@ $ matrix-commander --mxc-to-http mxc://example.com/abc... # get HTTP
 $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
+$ matrix-commander --delete-mxc mxc://... # delete image from database
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -554,15 +556,19 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
                            [--get-display-name] [--set-presence SET_PRESENCE]
-                           [--get-presence] [--upload UPLOAD]
-                           [--download DOWNLOAD] [--joined-rooms]
+                           [--get-presence] [--upload UPLOAD [UPLOAD ...]]
+                           [--download DOWNLOAD [DOWNLOAD ...]]
+                           [--delete-mxc DELETE_MXC [DELETE_MXC ...]]
+                           [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--file-name FILE_NAME] [--key-dict KEY_DICT]
-                           [--plain] [--separator SEPARATOR] [--version]
+                           [--file-name FILE_NAME [FILE_NAME ...]]
+                           [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
+                           [--separator SEPARATOR]
+                           [--access-token ACCESS_TOKEN] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -723,10 +729,10 @@ options:
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. Message data must not be binary
                         data, it must be text. If no '-m' is used and no other
-                        conflictingarguments are provided, and information is
+                        conflicting arguments are provided, and information is
                         piped into the program, then the piped data will be
                         used as message. Finally, if there are no operations
-                        at all in the arguemnts, then a message will be read
+                        at all in the arguments, then a message will be read
                         from stdin, i.e. from the keyboard. This option can be
                         used multiple times to send multiple messages. If
                         there is data piped into this program, then first data
@@ -752,7 +758,7 @@ options:
                         then specify the special character '-'. If '-' is
                         specified as image file name, then the program will
                         read the image data from stdin. If your image file is
-                        literally named '-' then use '\-' as filename in the
+                        literally named '-' then use '\-' as file name in the
                         argument. '-' may appear in any position, i.e. '-i
                         image1.jpg - image3.png' will send 3 images out of
                         which the second one is read from stdin. '-' may
@@ -888,8 +894,8 @@ options:
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
-  --print-event-id      If set and listening, then program will print also the
-                        event id foreach message or other event.
+  --print-event-id      If set and listening, then the program will print also
+                        the event id for each message or other event.
   --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
@@ -935,26 +941,49 @@ options:
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
                         when getting presence(s).
-  --upload UPLOAD       Upload a file to the content repository. The file will
-                        be given a Matrix URI and stored on the server.
-                        --upload allows the optional argument --plain to skip
-                        encryption for upload.
-  --download DOWNLOAD   Download a file from the content repository. You must
-                        provide a Matrix URI (MXC) which is a string like this
-                        'mxc://example.com/SomeStrangeUriKey'. If found it
-                        will be downloaded, decrypted, and stored in a file.
-                        If a filename is specified with --file-name the
-                        download will be saved with that filename. If --file-
-                        name is not specified the original filename from the
-                        upload will be used. If neither specified nor
+  --upload UPLOAD [UPLOAD ...]
+                        Upload one or multiple files to the content
+                        repository. The files will be given a Matrix URI and
+                        stored on the server. --upload allows the optional
+                        argument --plain to skip encryption for upload.
+  --download DOWNLOAD [DOWNLOAD ...]
+                        Download one or multiple files from the content
+                        repository. You must provide one or multiple Matrix
+                        URIs (MXCs) which are strings like this
+                        'mxc://example.com/SomeStrangeUriKey'. If found they
+                        will be downloaded, decrypted, and stored in local
+                        files. If file names are specified with --file-name
+                        the downloads will be saved with these file names. If
+                        --file-name is not specified the original file name
+                        from the upload will be used. If neither specified nor
                         available on server, then the file name of last resort
-                        'download.blob' will be used. By default, the upload
+                        'mxc-<mxc-id>' will be used. If a file name in --file-
+                        name contains the placeholder __mxc_id__, it will be
+                        replaced with the mxc-id. If a file name is specified
+                        as empty string in --file-name, then also the name
+                        'mxc-<mxc-id>' will be used. By default, the upload
                         was encrypted so a decryption dictionary must be
-                        provided to decrypt the data. Specify the decryption
-                        with --key-dict. If --key-dict is not set, not
-                        decryption is attempted; and the data might be stored
-                        in encrypted fashion, or might be plain-text if the
-                        --upload skipped encryption with --plain.
+                        provided to decrypt the data. Specify one or multiple
+                        decryption keys with --key-dict. If --key-dict is not
+                        set, not decryption is attempted; and the data might
+                        be stored in encrypted fashion, or might be plain-text
+                        if the --upload skipped encryption with --plain.
+  --delete-mxc DELETE_MXC [DELETE_MXC ...]
+                        Delete one or multiple objects (e.g. files) from the
+                        content repository. You must provide one or multiple
+                        Matrix URIs (MXC) which are strings like this
+                        'mxc://example.com/SomeStrangeUriKey'. Alternatively,
+                        you can just provide the MXC id, i.e. the part after
+                        the last slash. If found they will be deleted from the
+                        server database. In order to delete objects one must
+                        have server admin permissions. Having only room admin
+                        permissions is not sufficient and it will fail. Read
+                        https://matrix-org.github.io/synapse/latest/usage/admi
+                        nistration/admin_api/ for learning how to set server
+                        admin permissions on the server. Alternatively, and
+                        optionally, one can specify an access token which has
+                        server admin permissions with the --access-token
+                        argument.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
   --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
@@ -996,7 +1025,7 @@ options:
   --no-sso              This argument is optional. If it is not used, the
                         default login method will be used. This default login
                         method is: SSO (Single Sign-On). SSO starts a web
-                        browser and connects the user to a webpage on the
+                        browser and connects the user to a web page on the
                         server for login. SSO will only work if the server
                         supports it and if there is access to a browser. If
                         this argument is used, then SSO will be avoided. This
@@ -1008,33 +1037,43 @@ options:
                         on the first run that initializes matrix-commander.
                         Once credentials are established this option is
                         irrelevant and it will simply be ignored.
-  --file-name FILE_NAME
-                        Specify a filename for some actions. Use this option
-                        in combination with options like --download to specify
-                        a filename. Ignored if used by itself without an
-                        appropriate corresponding action.
-  --key-dict KEY_DICT   Specify a key dictionary for decryption. A decryption
-                        dictionary is provided by the --upload action as a
-                        result. It is a string like this: "{'v': 'v2', 'key':
-                        {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, 'k':
-                        'somekey', 'key_ops': ['encrypt', 'decrypt']}, 'iv':
-                        'someiv', 'hashes': {'sha256': 'someSHA'}}"
+  --file-name FILE_NAME [FILE_NAME ...]
+                        Specify one or multiple file names for some actions.
+                        This is an optional argument. Use this option in
+                        combination with options like --download to specify
+                        one or multiple file names. Ignored if used by itself
+                        without an appropriate corresponding action.
+  --key-dict KEY_DICT [KEY_DICT ...]
+                        Specify one or multiple key dictionaries for
+                        decryption. One or multiple decryption dictionaries
+                        are provided by the --upload action as a result. A
+                        decryption dictionary is a string like this: "{'v':
+                        'v2', 'key': {'kty': 'oct', 'alg': 'A256CTR', 'ext':
+                        True, 'k': 'somekey', 'key_ops': ['encrypt',
+                        'decrypt']}, 'iv': 'someiv', 'hashes': {'sha256':
+                        'someSHA'}}". If you have a list of key dictionaries
+                        and want to skip one, use the empty string.
   --plain               Disable encryption for a specific action. By default,
                         everything is always encrypted. Actions that support
                         this option are: --upload.
   --separator SEPARATOR
                         Set a custom separator used for certain print outs. By
-                        default, i.e. if --seperator is not used, 4 spaces are
-                        used as seperator between columns in print statements.
+                        default, i.e. if --separator is not used, 4 spaces are
+                        used as separator between columns in print statements.
                         You could set it to '\t' if you prefer a tab, but tabs
                         are usually replaced with spaces by the terminal. So,
                         that might not give you what you want. Maybe ' || ' is
                         an alternative choice.
+  --access-token ACCESS_TOKEN
+                        Set a custom access token for use by certain actions.
+                        It is an optional argument. By default --access-token
+                        is ignored and not used. It is used only by the
+                        --delete-mxc action.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.28.0 2022-06-03. Enjoy, star on Github and
+You are running version 2.29.0 2022-06-05. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1053,7 +1092,7 @@ Here is a sample snapshot of tab completion in action:
   at the same time. However, with very careful set-up one can run
   multiple instances, but that is not the target use case.
 - Where possible bundle several actions together into a single call.
-  For example if one wants to send 8 images, then it is significatly faster
+  For example if one wants to send 8 images, then it is significantly faster
   to call `matrix-commander` once with `-i` specifying 8 images, than
   to call `matrix-commander` 8 times with one image each call. One needs
   to send 5 messages, 10 images, 5 audios, 3 PDF files and 7 events to
@@ -1061,13 +1100,13 @@ Here is a sample snapshot of tab completion in action:
 
 # For Developers
 
-- Don't change tabbing, spacing, or formating as file is automatically
+- Don't change tabbing, spacing, or formatting as file is automatically
   sorted, linted and formatted.
 - `pylama:format=pep8:linters=pep8`
 - first `isort` import sorter
 - then `flake8` linter/formater
 - then `black` linter/formater
-- linelength: 79
+- line length: 79
   - isort matrix_commander.py
   - flake8 matrix_commander.py
   - python3 -m black --line-length 79 matrix_commander.py
@@ -1105,6 +1144,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
+
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1138,27 +1178,72 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 JoinedMembersError, JoinedRoomsError, JoinError,
-                 KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
-                 MessageDirection, PresenceGetError, PresenceSetError,
-                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
-                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
-                 RoomAliasEvent, RoomBanError, RoomCreateError,
-                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
-                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
-                 RoomForgetError, RoomInviteError, RoomKickError,
-                 RoomLeaveError, RoomMemberEvent, RoomMessage,
-                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
-                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
-                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
-                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomReadMarkersError,
+    RoomResolveAliasError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+)
 from PIL import Image
 
 try:
@@ -1169,8 +1254,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-06-03"
-VERSIONNR = "2.28.0"
+VERSION = "2022-06-05"
+VERSIONNR = "2.29.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1228,7 +1313,7 @@ SET_DISPLAY_NAME_UNUSED_DEFAULT = None  # use None option not used
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
 NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
-DOWNLOAD_FILENAME_DEFAULT = "download.blob"  # if option is not specified
+MXC_ID_PLACEHOLDER = "__mxc_id__"
 
 
 class MatrixCommanderError(RuntimeError):
@@ -3260,7 +3345,7 @@ async def create_credentials_file(  # noqa: C901
 
     # check for password/SSO
     connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
-    async with ClientSession(connector=connector) as session:
+    async with ClientSession(connector=connector) as session:  # aiohttp
         async with session.get(
             f"{homeserver}/_matrix/client/r0/login",
             raise_for_status=True,
@@ -4044,115 +4129,198 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
 
 
 async def action_upload(client: AsyncClient, credentials: dict) -> None:
-    """Upload a file to content repository of Matrix server.
+    """Upload one or more files to content repository of Matrix server.
     Assumes that user is already logged in.
     """
-    filename = gs.pa.upload.strip()
-    encrypt = False if gs.pa.plain else True
-    mime_type = magic.from_file(filename, mime=True)
-    file_stat = await aiofiles.os.stat(filename)
-    async with aiofiles.open(filename, "r+b") as f:
-        resp, decryption_dict = await client.upload(
-            f,
-            content_type=mime_type,  # e.g. application/pdf
-            filename=os.path.basename(filename),
-            encrypt=encrypt,
-            filesize=file_stat.st_size,
+    for filename in gs.pa.upload:
+        filename = filename.strip()
+        encrypt = False if gs.pa.plain else True
+        mime_type = magic.from_file(filename, mime=True)
+        file_stat = await aiofiles.os.stat(filename)
+        async with aiofiles.open(filename, "r+b") as f:
+            resp, decryption_dict = await client.upload(
+                f,
+                content_type=mime_type,  # e.g. application/pdf
+                filename=os.path.basename(filename),
+                encrypt=encrypt,
+                filesize=file_stat.st_size,
+            )
+        if isinstance(resp, UploadError):
+            gs.log.error(
+                "Failed to upload. "
+                f'file="{filename}"; mime_type="{mime_type}"; '
+                f"filessize={file_stat.st_size}; encrypt={encrypt}"
+                f"Server response: {resp}"
+            )
+        else:
+            gs.log.debug(
+                f"File {filename}, mime={mime_type}, "
+                f"{file_stat.st_size} bytes, encrypt={encrypt} "
+                f"was successfully uploaded to server. Response is: {resp}."
+            )
+            gs.log.debug(
+                f"URI of uploaded file {filename} is: {resp.content_uri}"
+            )
+            gs.log.debug(
+                f"Decryption key (dictionary) of uploaded file {filename} is: "
+                f"{decryption_dict}"
+            )
+            # decryption_dict will be None in case of plain-text
+            # the URI and keys will be needed later. So this print is a must
+            print(f"{resp.content_uri}{SEP}{decryption_dict}")
+
+
+async def action_delete_mxc(client: AsyncClient, credentials: dict) -> None:
+    """Delete one or more files from content repository of Matrix server.
+    Assumes that user is already logged in.
+    """
+    # see: https://docs.aiohttp.org/en/stable/client_quickstart.html
+    # we must emulate a curl like this:
+    # curl -XDELETE  "https://SERVERHERE/_synapse/admin/v1/media/SERVERHERE/
+    #      MXCIDHERE?access_token=ACCESS_TOKEN_HERE"
+    for mxc in gs.pa.delete_mxc:
+        mxc = mxc.strip()
+        gs.log.debug(f"Preparing to delete MXC {mxc}.")
+        # we allow mxc to be a) mxc://server/mxc-id or just mxc-id
+        if urlparse(mxc).scheme == "mxc":
+            mxc = urlparse(mxc).path.replace("/", "")
+        gs.log.debug(f"Preparing to delete MXC ID {mxc}.")
+        if gs.pa.access_token:
+            at = gs.pa.access_token
+            gs.log.debug("Using access token from --access-token argument.")
+        else:
+            at = credentials["access_token"]
+            gs.log.debug("Using access token from credentials file.")
+        srv_full = credentials["homeserver"]  # https://example.matrix.org
+        srv_host = urlparse(srv_full).hostname  # example.matrix.org
+        rest = (
+            srv_full
+            + "/_synapse/admin/v1/media/"
+            + srv_host
+            + "/"
+            + mxc
+            + "?access_token="
+            + at
         )
-    if isinstance(resp, UploadError):
-        gs.log.error(
-            "Failed to upload. "
-            f'file="{filename}"; mime_type="{mime_type}"; '
-            f"filessize={file_stat.st_size}; encrypt={encrypt}"
-            f"Server response: {resp}"
-        )
-    else:
-        gs.log.debug(
-            f"File {filename}, mime={mime_type}, {file_stat.st_size} bytes, "
-            f"encrypt={encrypt} "
-            f"was successfully uploaded to server.Response is: {resp}."
-        )
-        gs.log.debug(f"URI of uploaded file {filename} is: {resp.content_uri}")
-        gs.log.debug(
-            f"Decryption key (dictionary) of uploaded file {filename} is: "
-            f"{decryption_dict}"
-        )
-        # decryption_dict will be None in case of plain-text
-        # the URI and keys will be needed later. so this print is a must
-        print(f"{resp.content_uri}{SEP}{decryption_dict}")
+        gs.log.debug(f"Issuing REST Matrix API call: DELETE {rest}")
+        connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
+        async with ClientSession(connector=connector) as session:  # aiohttp
+            async with session.delete(rest) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+        if status != 200:
+            # txt is str like this:
+            # {"errcode":"M_FORBIDDEN","error":"You are not a server admin"}
+            gs.log.error(
+                f"Failed to delete object (mxc) '{mxc}' from server "
+                f"'{srv_full}'. Failed with error code {status} and "
+                f"error text {txt}."
+            )
+        else:
+            gs.log.debug(
+                f"MXC object {mxc} was successfully deleted from server "
+                f"{srv_full}. Response is: {txt}."
+            )
 
 
 async def action_download(client: AsyncClient, credentials: dict) -> None:
     """Download a file from content repository of Matrix server.
     Assumes that user is already logged in.
     """
-    encrypted = True if gs.pa.key_dict else False
-    if not encrypted:
+    if not gs.pa.download:
+        gs.log.debug("Download list is empty. Nothing to download. Skipping.")
+        return
+    filenames = gs.pa.file_name
+    if filenames:
+        while len(filenames) < len(gs.pa.download):
+            filenames.append(None)
+    decryption_strings = gs.pa.key_dict
+    if decryption_strings:
+        while len(decryption_strings) < len(gs.pa.key_dict):
+            decryption_strings.append(None)
+    # filenames is now None or list at least as long as downloads
+    # decryption_strings is now None or list at least as long as downloads
+    gs.log.debug(f"File names provided in arguments: {filenames}")
+    gs.log.debug(f"File names provided in arguments: {decryption_strings}")
+    ii = 0
+    for download in gs.pa.download:
+        if gs.pa.file_name:
+            filename = filenames[ii]  # 1st choice
+        else:
+            # 2nd choice; get filename from server
+            # i.e. use the original filename from upload
+            filename = None
+        if gs.pa.key_dict:
+            decryption_str = decryption_strings[ii]
+        else:
+            decryption_str = None
+        encrypted = True if decryption_str else False
+        if not encrypted:
+            gs.log.debug(
+                "No key dictionary specified with --key-dict. So, it is "
+                "assumed that the download is not encrypted "
+                "(i.e. plain-text). No decryption will be attempted."
+            )
+        mxc = download
+        # version incompatibility between matrix-nio 0.18.7 and 0.19.0
+        # https://mtrx.sytes.net/OIukKBUUpPsPXkEGBxuKVIEo
+        # server_name = "mtrx.sytes.net"
+        # media_id = "OIukKBUUpPsPXkEGBxuKVIEo"
+        # matrix-nio v0.19.0 has: download(server_name: str, media_id: str, ..)
+        # convert mxc to server_name and media_id
+        url = urlparse(mxc)
+        server_name = url.netloc
+        media_id = url.path.replace("/", "")
+        nio_version = pkg_resources.get_distribution("matrix-nio").version
         gs.log.debug(
-            "No key dictionary specified with --key-dict. So, it is assumed "
-            "that the download is not encrypted (i.e. plain-text). "
-            "No decryption will be attempted."
+            f"You are running matrix-nio version {nio_version}. "
+            f"You should be running version 0.19.0+. Update if necessary. "
+            f"Converted mxc {mxc} to server_name {server_name} and "
+            f"media_id {media_id}."
         )
-    if not gs.pa.file_name:
-        # get filename from server, i.e. use the original filename from upload
-        filename = None
-    else:
-        filename = gs.pa.file_name  # 1st choice
-    mxc = gs.pa.download
-    # version incompatibility between matrix-nio 0.18.7 and 0.19.0
-    # https://mtrx.sytes.net/OIukKBUUpPsPXkEGBxuKVIEo
-    # server_name = "mtrx.sytes.net"
-    # media_id = "OIukKBUUpPsPXkEGBxuKVIEo"
-    # matrix-nio v0.19.0 has:  download(server_name: str, media_id: str, ...)
-    # convert mxc to server_name and media_id
-    url = urlparse(mxc)
-    server_name = url.netloc
-    media_id = url.path.replace("/", "")
-    nio_version = pkg_resources.get_distribution("matrix-nio").version
-    gs.log.debug(
-        f"You are running matrix-nio version {nio_version}. "
-        f"You should be running version 0.19.0+. Update if necessary. "
-        f"Converted mxc {mxc} to server_name {server_name} and "
-        f"media_id {media_id}."
-    )
-    # v0.18.7: resp = await client.download(mxc=mxc, filename=filename)
-    # v0.19.0+
-    resp = await client.download(
-        server_name=server_name, media_id=media_id, filename=filename
-    )
-    if isinstance(resp, DownloadError):
-        gs.log.error(
-            f"download of URI '{mxc}' to local file '{filename}' "
-            f"failed with response {resp}"
+        # v0.18.7: resp = await client.download(mxc=mxc, filename=filename)
+        # v0.19.0+
+        resp = await client.download(
+            server_name=server_name, media_id=media_id, filename=filename
         )
-    else:
-        if not filename:
-            filename = resp.filename  # 2nd choice, from server
-        if not filename:
-            filename = DOWNLOAD_FILENAME_DEFAULT  # 3rd choice, last resort
-        gs.log.debug(
-            f"download of URI '{mxc}' to local file '{filename}' "
-            f"successful with {len(resp.body)} bytes of data downloaded, "
-            f"content_type {resp.content_type}; "
-            f"remote filename {resp.filename}; "
-            f"encrypted {encrypted}; key dictionary {gs.pa.key_dict}. "
-            "Trying to save data now."
-        )
-        if encrypted:
-            decryption_str = gs.pa.key_dict
-            decryption_dict = ast.literal_eval(decryption_str)
-            with open(filename, "wb") as file:
-                file.write(
-                    crypto.attachments.decrypt_attachment(
-                        resp.body,
-                        decryption_dict["key"]["k"],
-                        decryption_dict["hashes"]["sha256"],
-                        decryption_dict["iv"],
+        if isinstance(resp, DownloadError):
+            gs.log.error(
+                f"download of URI '{mxc}' to local file '{filename}' "
+                f"failed with response {resp}"
+            )
+        else:
+            if filename == "":
+                filename = "mxc-" + MXC_ID_PLACEHOLDER
+            if not filename:
+                filename = resp.filename  # 2nd choice, from server
+                gs.log.debug(f"File name on server: {filenames}")
+            else:
+                filename = filename.replace(MXC_ID_PLACEHOLDER, media_id)
+            if not filename:
+                filename = "mxc-" + media_id  # 3rd choice, mxc_id
+            gs.log.debug(
+                f"Download of URI '{mxc}' to local file '{filename}' "
+                f"successful with {len(resp.body)} bytes of data downloaded, "
+                f"content_type {resp.content_type}; "
+                f"remote filename {resp.filename}; "
+                f"encrypted {encrypted}; key dictionary {decryption_str}. "
+                "Trying to save data now."
+            )
+            if encrypted:
+                decryption_dict = ast.literal_eval(decryption_str)
+                with open(filename, "wb") as file:
+                    file.write(
+                        crypto.attachments.decrypt_attachment(
+                            resp.body,
+                            decryption_dict["key"]["k"],
+                            decryption_dict["hashes"]["sha256"],
+                            decryption_dict["iv"],
+                        )
                     )
-                )
-        else:  # plain, unencrypted
-            with open(filename, "wb") as file:
-                file.write(resp.body)
+            else:  # plain, unencrypted
+                with open(filename, "wb") as file:
+                    file.write(resp.body)
+        ii += 1
 
 
 async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
@@ -4318,6 +4486,8 @@ async def main_roomsetget_action() -> None:
             await action_set_presence(client, credentials)
         if gs.pa.upload:
             await action_upload(client, credentials)
+        if gs.pa.delete_mxc:
+            await action_delete_mxc(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -4569,6 +4739,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.set_display_name
         or gs.pa.set_presence
         or gs.pa.upload
+        or gs.pa.delete_mxc
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5075,10 +5246,10 @@ def main(
         nargs="+",
         type=str,
         help="Send this message. Message data must not be binary data, it "
-        "must be text. If no '-m' is used and no other conflicting"
+        "must be text. If no '-m' is used and no other conflicting "
         "arguments are provided, and information is piped into the program, "
         "then the piped data will be used as message. "
-        "Finally, if there are no operations at all in the arguemnts, then "
+        "Finally, if there are no operations at all in the arguments, then "
         "a message will be read from stdin, i.e. from the keyboard. "
         "This option can be used multiple times to send "
         "multiple messages. If there is data piped "
@@ -5118,7 +5289,7 @@ def main(
         "character '-'. If '-' is specified as image file name, "
         "then the program will read the image data from stdin. "
         "If your image file is literally named '-' then use '\\-' "
-        "as filename in the argument. "
+        "as file name in the argument. "
         "'-' may appear in any position, i.e. '-i image1.jpg - image3.png' "
         "will send 3 images out of which the second one is read from stdin. "
         "'-' may appear only once overall in all arguments. "
@@ -5393,7 +5564,7 @@ def main(
         required=False,
         action="store_true",
         help="If set and listening, "
-        "then program will print also the event id for"
+        "then the program will print also the event id for "
         "each message or other event.",
     )
     ap.add_argument(
@@ -5501,33 +5672,64 @@ def main(
     ap.add_argument(
         "--upload",
         required=False,
+        action="extend",
+        nargs="+",
         type=str,
-        # defaults to None if not used, is str if used
-        help="Upload a file to the content repository. "
-        "The file will be given a Matrix URI and "
+        help="Upload one or multiple files to the content repository. "
+        "The files will be given a Matrix URI and "
         "stored on the server. --upload allows the optional argument "
         "--plain to skip encryption for upload.",
     )
     ap.add_argument(
         "--download",
         required=False,
+        action="extend",
+        nargs="+",
         type=str,
-        # defaults to None if not used, is str if used
-        help="Download a file from the content repository. "
-        "You must provide a Matrix URI (MXC) which is a string like "
-        "this 'mxc://example.com/SomeStrangeUriKey'. If found it will "
-        "be downloaded, decrypted, and stored in a file. "
-        "If a filename is specified with --file-name the download "
-        "will be saved with that filename. If --file-name is not "
-        "specified the original filename from the upload will be used. "
+        help="Download one or multiple files from the content repository. "
+        "You must provide one or multiple Matrix URIs (MXCs) which are "
+        "strings like "
+        "this 'mxc://example.com/SomeStrangeUriKey'. If found they will "
+        "be downloaded, decrypted, and stored in local files. "
+        "If file names are specified with --file-name the downloads "
+        "will be saved with these file names. If --file-name is not "
+        "specified the original file name from the upload will be used. "
         "If neither specified nor available on server, then the file "
-        f"name of last resort '{DOWNLOAD_FILENAME_DEFAULT}' will be used. "
+        f"name of last resort 'mxc-<mxc-id>' will be used. "
+        f"If a file name in --file-name contains the placeholder "
+        f"{MXC_ID_PLACEHOLDER}, it will be replaced with the mxc-id. "
+        "If a file name is specified as empty string in --file-name, then "
+        "also the name 'mxc-<mxc-id>' will be used. "
         "By default, the upload was encrypted so a decryption dictionary "
-        "must be provided to decrypt the data. Specify the decryption "
+        "must be provided to decrypt the data. Specify one or multiple "
+        "decryption keys "
         "with --key-dict. If --key-dict is not set, not decryption is "
         "attempted; and the data might be stored in encrypted fashion, "
         "or might be plain-text if the --upload skipped encryption with "
         "--plain.",
+    )
+    ap.add_argument(
+        "--delete-mxc",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Delete one or multiple objects (e.g. files) from the content "
+        "repository. You must provide one or multiple Matrix URIs (MXC) "
+        "which are strings like "
+        "this 'mxc://example.com/SomeStrangeUriKey'. Alternatively, you "
+        "can just provide the MXC id, i.e. the part after the last slash. "
+        "If found they will "
+        "be deleted from the server database. In order to delete objects "
+        "one must have server admin permissions. Having only room admin "
+        "permissions is not sufficient and it will fail. "
+        "Read "
+        "https://matrix-org.github.io/synapse/"
+        "latest/usage/administration/admin_api/ "
+        "for learning how to set server admin permissions on the "
+        "server. Alternatively, and optionally, one can specify "
+        "an access token which has server admin permissions with the "
+        "--access-token argument.",
     )
     ap.add_argument(
         # no single char flag
@@ -5629,7 +5831,7 @@ def main(
         help="This argument is optional. If it is not used, the default "
         "login method will be used. This default login method is: "
         "SSO (Single Sign-On). SSO starts a web browser and connects the "
-        "user to a webpage on the server for login. SSO will only work if "
+        "user to a web page on the server for login. SSO will only work if "
         "the server supports it and if there is access to a browser. "
         "If this argument is used, then SSO will be avoided. This is useful "
         "on headless homeservers where there is no browser installed or "
@@ -5643,24 +5845,30 @@ def main(
     ap.add_argument(
         "--file-name",
         required=False,
+        action="extend",
+        nargs="+",
         type=str,
-        # defaults to None if not used, is str if used
-        help="Specify a filename for some actions. Use this option "
-        "in combination with options like --download to specify a filename. "
+        help="Specify one or multiple file names for some actions. "
+        "This is an optional argument. Use this option "
+        "in combination with options like --download to specify one or "
+        "multiple file names. "
         "Ignored if used by itself without an appropriate corresponding "
         "action.",
     )
     ap.add_argument(
         "--key-dict",
         required=False,
+        action="extend",
+        nargs="+",
         type=str,
-        # defaults to None if not used, is str if used
-        help="Specify a key dictionary for decryption. A decryption "
-        "dictionary is provided by the --upload action as a result. "
-        "It is a string like this: "
+        help="Specify one or multiple key dictionaries for decryption. "
+        "One or multiple decryption "
+        "dictionaries are provided by the --upload action as a result. "
+        "A decryption dictionary is a string like this: "
         "\"{'v': 'v2', 'key': {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, "
         "'k': 'somekey', 'key_ops': ['encrypt', 'decrypt']}, "
-        "'iv': 'someiv', 'hashes': {'sha256': 'someSHA'}}\"",
+        "'iv': 'someiv', 'hashes': {'sha256': 'someSHA'}}\". If you have a "
+        "list of key dictionaries and want to skip one, use the empty string.",
     )
     ap.add_argument(
         "--plain",
@@ -5678,12 +5886,21 @@ def main(
         # Text is scanned and repeated spaces are removes, so "    "
         # or {DEFAULT_SEPARATOR} will be truncated to " ". Hence "4 spaces"
         help="Set a custom separator used for certain print outs. "
-        "By default, i.e. if --seperator is not used, "
+        "By default, i.e. if --separator is not used, "
         "4 spaces are used as "
-        "seperator between columns in print statements. You could set "
+        "separator between columns in print statements. You could set "
         "it to '\\t' if you prefer a tab, but tabs are usually replaced "
         "with spaces by the terminal. So, that might not give you what you "
         "want. Maybe ' || ' is an alternative choice.",
+    )
+    ap.add_argument(
+        "--access-token",
+        required=False,
+        type=str,
+        help="Set a custom access token for use by certain actions. "
+        "It is an optional argument. "
+        "By default --access-token is ignored and not used. "
+        "It is used only by the --delete-mxc action.",
     )
     ap.add_argument(
         # no single char flag
