@@ -41,6 +41,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--discovery-info` to print discovery info of homeserver
 - new option `--login-info` to get the available login methods from the server
 - new option `--delete-mxc` to delete objects from content repository
+- new option `--rest` to invoke the full Matrix REST API
 
 # Summary, TLDR
 
@@ -440,6 +441,8 @@ $ # download file from resource repository via URI (MXC)
 $ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
 $ # for more examples of --upload, --download, --delete-mxc, --mxc-to-http,
 $ # see file tests/test-upload.sh
+$ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
+$ # for more examples of --rest see file tests/test-rest.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -556,7 +559,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--whoami] [--no-ssl]
+                           [--rest REST REST REST] [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -784,7 +787,8 @@ options:
                         messages are sent. If you want to feed an event into
                         matrix-commander via a pipe, via stdin, then specify
                         the special character '-'. See description of '-i' to
-                        see how '-' is handled.
+                        see how '-' is handled. See tests/test-event.sh for
+                        examples.
   -w, --html            Send message as format "HTML". If not specified,
                         message will be sent as format "TEXT". E.g. that
                         allows some text to be bold, etc. Only a subset of
@@ -938,7 +942,8 @@ options:
                         Upload one or multiple files to the content
                         repository. The files will be given a Matrix URI and
                         stored on the server. --upload allows the optional
-                        argument --plain to skip encryption for upload.
+                        argument --plain to skip encryption for upload. See
+                        tests/test-upload.sh for an example.
   --download DOWNLOAD [DOWNLOAD ...]
                         Download one or multiple files from the content
                         repository. You must provide one or multiple Matrix
@@ -960,7 +965,8 @@ options:
                         decryption keys with --key-dict. If --key-dict is not
                         set, not decryption is attempted; and the data might
                         be stored in encrypted fashion, or might be plain-text
-                        if the --upload skipped encryption with --plain.
+                        if the --upload skipped encryption with --plain. See
+                        tests/test-upload.sh for an example.
   --delete-mxc DELETE_MXC [DELETE_MXC ...]
                         Delete one or multiple objects (e.g. files) from the
                         content repository. You must provide one or multiple
@@ -976,7 +982,7 @@ options:
                         admin permissions on the server. Alternatively, and
                         optionally, one can specify an access token which has
                         server admin permissions with the --access-token
-                        argument.
+                        argument. See tests/test-upload.sh for an example.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
   --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
@@ -988,7 +994,8 @@ options:
                         Convert one or more matrix content URIs to the
                         corresponding HTTP URLs. The MXC URIs to provide look
                         something like this
-                        'mxc://example.com/SomeStrangeUriKey'.
+                        'mxc://example.com/SomeStrangeUriKey'. See tests/test-
+                        upload.sh for an example.
   --devices             Print the list of devices. All device of this account
                         will be printed, one device per line.
   --discovery-info      Print discovery information about current homeserver.
@@ -996,6 +1003,32 @@ options:
                         error might be reported.
   --login-info          Print login methods supported by the homeserver. It
                         prints one login method per line.
+  --rest REST REST REST
+                        Use the Matrix Client REST API. Matrix has several
+                        extensive REST APIs. With the --rest argument you can
+                        invoke a Matrix REST API call. This allows the user to
+                        do pretty much anything, at the price of not being
+                        very convenient. The APIs are described in
+                        https://matrix.org/docs/api/,
+                        https://spec.matrix.org/latest/client-server-api/,
+                        https://matrix-org.github.io/synapse/latest/usage/admi
+                        nistration/admin_api/, etc. Exactly 3 arguments must
+                        be given with --rest. (a) the method, a string of GET,
+                        POST, PUT, DELETE, or OPTIONS. (b) a string containing
+                        the data (if any) in JSON format. (c) a string
+                        containing the URL. All strings must be UTF-8. There
+                        are a few placeholders. They are: __homeserver__ (like
+                        https://matrix.example.org), __hostname__ (like
+                        matrix.example.org), _access_token__, __user_id__
+                        (like @mc:matrix.example.com), __device_id__, and
+                        __room_id__. If a placeholder is found it is replaced
+                        with the value from the local credentials file. An
+                        example would be: --rest 'GET' ''
+                        '__homeserver__/_matrix/client/versions'. If there is
+                        no data, i.e. data (b) is empty, then use '' for it.
+                        Optionally, --access-token can be used to overwrite
+                        the access token from credentials (if needed). See
+                        tests/test-rest.sh for an example.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1061,12 +1094,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc action.
+                        --delete-mxc and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.29.0 2022-06-05. Enjoy, star on Github and
+You are running version 2.30.0 2022-06-05. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

@@ -48,6 +48,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--discovery-info` to print discovery info of homeserver
 - new option `--login-info` to get the available login methods from the server
 - new option `--delete-mxc` to delete objects from content repository
+- new option `--rest` to invoke the full Matrix REST API
 
 # Summary, TLDR
 
@@ -447,6 +448,8 @@ $ # download file from resource repository via URI (MXC)
 $ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
 $ # for more examples of --upload, --download, --delete-mxc, --mxc-to-http,
 $ # see file tests/test-upload.sh
+$ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
+$ # for more examples of --rest see file tests/test-rest.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -563,7 +566,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--whoami] [--no-ssl]
+                           [--rest REST REST REST] [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -791,7 +794,8 @@ options:
                         messages are sent. If you want to feed an event into
                         matrix-commander via a pipe, via stdin, then specify
                         the special character '-'. See description of '-i' to
-                        see how '-' is handled.
+                        see how '-' is handled. See tests/test-event.sh for
+                        examples.
   -w, --html            Send message as format "HTML". If not specified,
                         message will be sent as format "TEXT". E.g. that
                         allows some text to be bold, etc. Only a subset of
@@ -945,7 +949,8 @@ options:
                         Upload one or multiple files to the content
                         repository. The files will be given a Matrix URI and
                         stored on the server. --upload allows the optional
-                        argument --plain to skip encryption for upload.
+                        argument --plain to skip encryption for upload. See
+                        tests/test-upload.sh for an example.
   --download DOWNLOAD [DOWNLOAD ...]
                         Download one or multiple files from the content
                         repository. You must provide one or multiple Matrix
@@ -967,7 +972,8 @@ options:
                         decryption keys with --key-dict. If --key-dict is not
                         set, not decryption is attempted; and the data might
                         be stored in encrypted fashion, or might be plain-text
-                        if the --upload skipped encryption with --plain.
+                        if the --upload skipped encryption with --plain. See
+                        tests/test-upload.sh for an example.
   --delete-mxc DELETE_MXC [DELETE_MXC ...]
                         Delete one or multiple objects (e.g. files) from the
                         content repository. You must provide one or multiple
@@ -983,7 +989,7 @@ options:
                         admin permissions on the server. Alternatively, and
                         optionally, one can specify an access token which has
                         server admin permissions with the --access-token
-                        argument.
+                        argument. See tests/test-upload.sh for an example.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
   --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
@@ -995,7 +1001,8 @@ options:
                         Convert one or more matrix content URIs to the
                         corresponding HTTP URLs. The MXC URIs to provide look
                         something like this
-                        'mxc://example.com/SomeStrangeUriKey'.
+                        'mxc://example.com/SomeStrangeUriKey'. See tests/test-
+                        upload.sh for an example.
   --devices             Print the list of devices. All device of this account
                         will be printed, one device per line.
   --discovery-info      Print discovery information about current homeserver.
@@ -1003,6 +1010,32 @@ options:
                         error might be reported.
   --login-info          Print login methods supported by the homeserver. It
                         prints one login method per line.
+  --rest REST REST REST
+                        Use the Matrix Client REST API. Matrix has several
+                        extensive REST APIs. With the --rest argument you can
+                        invoke a Matrix REST API call. This allows the user to
+                        do pretty much anything, at the price of not being
+                        very convenient. The APIs are described in
+                        https://matrix.org/docs/api/,
+                        https://spec.matrix.org/latest/client-server-api/,
+                        https://matrix-org.github.io/synapse/latest/usage/admi
+                        nistration/admin_api/, etc. Exactly 3 arguments must
+                        be given with --rest. (a) the method, a string of GET,
+                        POST, PUT, DELETE, or OPTIONS. (b) a string containing
+                        the data (if any) in JSON format. (c) a string
+                        containing the URL. All strings must be UTF-8. There
+                        are a few placeholders. They are: __homeserver__ (like
+                        https://matrix.example.org), __hostname__ (like
+                        matrix.example.org), _access_token__, __user_id__
+                        (like @mc:matrix.example.com), __device_id__, and
+                        __room_id__. If a placeholder is found it is replaced
+                        with the value from the local credentials file. An
+                        example would be: --rest 'GET' ''
+                        '__homeserver__/_matrix/client/versions'. If there is
+                        no data, i.e. data (b) is empty, then use '' for it.
+                        Optionally, --access-token can be used to overwrite
+                        the access token from credentials (if needed). See
+                        tests/test-rest.sh for an example.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1068,12 +1101,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc action.
+                        --delete-mxc and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.29.0 2022-06-05. Enjoy, star on Github and
+You are running version 2.30.0 2022-06-05. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1144,7 +1177,6 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
-
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1170,7 +1202,7 @@ from os import R_OK, access
 from os.path import isfile
 from ssl import SSLContext
 from typing import Union
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import aiofiles
 import aiofiles.os
@@ -1178,72 +1210,27 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-)
+from nio import (AsyncClient, AsyncClientConfig, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 JoinedMembersError, JoinedRoomsError, JoinError,
+                 KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
+                 MessageDirection, PresenceGetError, PresenceSetError,
+                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
+                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
+                 RoomAliasEvent, RoomBanError, RoomCreateError,
+                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
+                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
+                 RoomForgetError, RoomInviteError, RoomKickError,
+                 RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
+                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
+                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
+                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
+                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1255,7 +1242,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-05"
-VERSIONNR = "2.29.0"
+VERSIONNR = "2.30.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1314,6 +1301,12 @@ NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
 NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
 MXC_ID_PLACEHOLDER = "__mxc_id__"
+HOMESERVER_PLACEHOLDER = "__homeserver__"  # like https://matrix.example.org
+HOSTNAME_PLACEHOLDER = "__hostname__"  # like matrix.example.org
+ACCESS_TOKEN_PLACEHOLDER = "__access_token__"
+USER_ID_PLACEHOLDER = "__user_id__"  # like @ mc: matrix.example.com
+DEVICE_ID_PLACEHOLDER = "__device_id__"
+ROOM_ID_PLACEHOLDER = "__room_id__"
 
 
 class MatrixCommanderError(RuntimeError):
@@ -4427,6 +4420,124 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         print(*resp.flows, sep="\n")  # one per line
 
 
+async def action_rest(client: AsyncClient, credentials: dict) -> None:
+    """Invoke REST API on Matrix server.
+    Assumes that user is already logged in.
+    """
+    # see: https://docs.aiohttp.org/en/stable/client_quickstart.html
+    # we must emulate a curl like this:
+    # curl -XDELETE  "https://SERVERHERE/_synapse/admin/v1/media/SERVERHERE/
+    #      MXCIDHERE?access_token=ACCESS_TOKEN_HERE"
+    # curl -XPOST -d '{"msgtype":"m.text", "body":"hello"}' \
+    #   "__homeserver__/_matrix/client/r0/rooms/__encoded_full_room_id__/\
+    #   send/m.room.message?access_token=YOURTOKENHERE"
+    # curl -XGET -d "" '__homeserver__/_matrix/client/versions'
+    method = gs.pa.rest[0]
+    if not method or method.upper().strip() not in [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+    ]:
+        gs.log.error(
+            f"Incorrect REST method {method}. "
+            'Must be on of: "GET", "POST", "PUT", "DELETE", "OPTIONS".'
+        )
+        return
+    method = method.upper().strip()
+    data = gs.pa.rest[1]
+    if not data:
+        data = ""
+    url = gs.pa.rest[2]
+    if not url or url.strip() == "":
+        gs.log.error(f"Incorrect REST URL {url}. Must not be empty.")
+    if gs.pa.access_token:
+        at = gs.pa.access_token
+        gs.log.debug("Using access token from --access-token argument.")
+    else:
+        at = credentials["access_token"]
+        gs.log.debug("Using access token from credentials file.")
+    for ph in [
+        HOMESERVER_PLACEHOLDER,
+        HOSTNAME_PLACEHOLDER,
+        ACCESS_TOKEN_PLACEHOLDER,
+        USER_ID_PLACEHOLDER,
+        DEVICE_ID_PLACEHOLDER,
+        ROOM_ID_PLACEHOLDER,
+    ]:
+        if ph == HOMESERVER_PLACEHOLDER:
+            data = data.replace(ph, credentials["homeserver"])
+            url = url.replace(ph, credentials["homeserver"])
+        elif ph == HOSTNAME_PLACEHOLDER:
+            hostname = urlparse(credentials["homeserver"]).hostname
+            data = data.replace(ph, hostname)
+            url = url.replace(ph, hostname)
+        elif ph == ACCESS_TOKEN_PLACEHOLDER:
+            data = data.replace(ph, at)
+            url = url.replace(ph, at)
+        elif ph == USER_ID_PLACEHOLDER:
+            data = data.replace(ph, credentials["user_id"])
+            url = url.replace(ph, credentials["user_id"])
+        elif ph == DEVICE_ID_PLACEHOLDER:
+            data = data.replace(ph, credentials["device_id"])
+            url = url.replace(ph, credentials["device_id"])
+        elif ph == ROOM_ID_PLACEHOLDER:
+            room_id = quote(credentials["room_id"])
+            data = data.replace(ph, room_id)
+            url = url.replace(ph, room_id)
+    url = url.strip()
+    # if data != "" and (
+    #     method == "GET" or method == "DELETE" or method == "OPTIONS"
+    # ):
+    #     gs.log.error(
+    #         f'Incorrect REST data "{data}" for method {method}. '
+    #         'Data must be empty for: "GET", "DELETE", "OPTIONS".'
+    #     )
+    #     return
+    gs.log.debug(
+        f"Preparing to invoke REST API call: method={method} "
+        f"data={data}, url={url}."
+    )
+    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
+    async with ClientSession(connector=connector) as session:  # aiohttp
+        if method == "GET":
+            async with session.get(url, data=data) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+        elif method == "POST":
+            async with session.post(url, data=data) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+        elif method == "PUT":
+            async with session.put(url, data=data) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+        elif method == "DELETE":
+            async with session.delete(url, data=data) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+        elif method == "OPTIONS":
+            async with session.options(url, data=data) as resp:
+                status = resp.status  # int, 200 success
+                txt = await resp.text()  # str in dict format
+    if status != 200:
+        # txt is str like this:
+        # {"errcode":"M_FORBIDDEN","error":"You are not a server admin"}
+        gs.log.error(
+            f"REST API call failed. Failed with error code {status} and "
+            f"error text {txt}. Input was: method={method} "
+            f"data={data}, url={url}."
+        )
+    else:
+        gs.log.debug(
+            f"REST API call was successful. "
+            f"Response is: {txt}. Input was: method={method} "
+            f"data={data}, url={url}."
+        )
+        print(f"{txt}")
+
+
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
@@ -4488,6 +4599,8 @@ async def main_roomsetget_action() -> None:
             await action_upload(client, credentials)
         if gs.pa.delete_mxc:
             await action_delete_mxc(client, credentials)
+        if gs.pa.rest:
+            await action_rest(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -4740,6 +4853,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.set_presence
         or gs.pa.upload
         or gs.pa.delete_mxc
+        or gs.pa.rest
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5352,7 +5466,8 @@ def main(
         "then text messages are sent. "
         f"If you want to feed an event into {PROG_WITHOUT_EXT} "
         "via a pipe, via stdin, then specify the special "
-        "character '-'. See description of '-i' to see how '-' is handled.",
+        "character '-'. See description of '-i' to see how '-' is handled. "
+        "See tests/test-event.sh for examples.",
     )
     # -h already used for --help, -w for "web"
     ap.add_argument(
@@ -5678,7 +5793,8 @@ def main(
         help="Upload one or multiple files to the content repository. "
         "The files will be given a Matrix URI and "
         "stored on the server. --upload allows the optional argument "
-        "--plain to skip encryption for upload.",
+        "--plain to skip encryption for upload. "
+        "See tests/test-upload.sh for an example.",
     )
     ap.add_argument(
         "--download",
@@ -5706,7 +5822,8 @@ def main(
         "with --key-dict. If --key-dict is not set, not decryption is "
         "attempted; and the data might be stored in encrypted fashion, "
         "or might be plain-text if the --upload skipped encryption with "
-        "--plain.",
+        "--plain. "
+        "See tests/test-upload.sh for an example.",
     )
     ap.add_argument(
         "--delete-mxc",
@@ -5729,7 +5846,8 @@ def main(
         "for learning how to set server admin permissions on the "
         "server. Alternatively, and optionally, one can specify "
         "an access token which has server admin permissions with the "
-        "--access-token argument.",
+        "--access-token argument. "
+        "See tests/test-upload.sh for an example.",
     )
     ap.add_argument(
         # no single char flag
@@ -5759,7 +5877,8 @@ def main(
         help="Convert one or more matrix content URIs to the "
         "corresponding HTTP URLs. The MXC URIs "
         "to provide look something like this "
-        "'mxc://example.com/SomeStrangeUriKey'.",
+        "'mxc://example.com/SomeStrangeUriKey'. "
+        "See tests/test-upload.sh for an example.",
     )
     ap.add_argument(
         # no single char flag
@@ -5785,6 +5904,38 @@ def main(
         action="store_true",
         help="Print login methods supported by the homeserver. "
         "It prints one login method per line.",
+    )
+    ap.add_argument(
+        # no single char flag
+        "--rest",
+        required=False,
+        action="extend",
+        nargs=3,
+        type=str,
+        help="Use the Matrix Client REST API. Matrix has several extensive "
+        "REST APIs. With the --rest argument you can invoke a Matrix REST "
+        "API call. This allows the user to do pretty much anything, at the "
+        "price of not being very convenient. The APIs are described in "
+        "https://matrix.org/docs/api/, "
+        "https://spec.matrix.org/latest/client-server-api/, "
+        "https://matrix-org.github.io/synapse/latest/usage/administration/"
+        "admin_api/, etc. "
+        "Exactly 3 arguments must be given with --rest. "
+        "(a) the method, a string of GET, POST, PUT, DELETE, or OPTIONS. "
+        "(b) a string containing the data (if any) in JSON format. "
+        "(c) a string containing the URL. All strings must be UTF-8. "
+        "There are a few placeholders. They are: "
+        "__homeserver__ (like https://matrix.example.org), "
+        "__hostname__ (like matrix.example.org), "
+        "_access_token__, __user_id__ (like @mc:matrix.example.com), "
+        "__device_id__, and __room_id__. If a placeholder is found it is "
+        "replaced with the value from the local credentials file. "
+        "An example would be: "
+        "--rest 'GET' '' '__homeserver__/_matrix/client/versions'. "
+        "If there is no data, i.e. data (b) is empty, then use '' for it. "
+        "Optionally, --access-token can be used to overwrite the "
+        "access token from credentials (if needed). "
+        "See tests/test-rest.sh for an example.",
     )
     ap.add_argument(
         # no single char flag
@@ -5900,7 +6051,7 @@ def main(
         help="Set a custom access token for use by certain actions. "
         "It is an optional argument. "
         "By default --access-token is ignored and not used. "
-        "It is used only by the --delete-mxc action.",
+        "It is used only by the --delete-mxc and --rest actions.",
     )
     ap.add_argument(
         # no single char flag

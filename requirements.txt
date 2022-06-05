@@ -1,3 +1,4 @@
+ast
 aiohttp
 aiofiles>=0.6.0
 argparse
