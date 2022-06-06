@@ -160,9 +160,16 @@ function test6() {
     matrix-commander --delete-mxc "${MXCS[0]}" "${MXCS[1]}"
 }
 
+function test7() {
+    echo "=== Test 7: deleting old resources from content repository ==="
+    echo "Note: This will FAIL if you do not have server admin permissions!"
+    matrix-commander --delete-mxc-before "20.01.2022 19:38:42" "1000000"
+}
+
 test1
 test2
 test3
 test4
 test5
 test6
+test7

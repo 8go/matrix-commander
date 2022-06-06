@@ -41,6 +41,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--discovery-info` to print discovery info of homeserver
 - new option `--login-info` to get the available login methods from the server
 - new option `--delete-mxc` to delete objects from content repository
+- new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
 
 # Summary, TLDR
@@ -439,8 +440,10 @@ $ # upload file to resource repository
 $ matrix-commander --upload "avatar.png"
 $ # download file from resource repository via URI (MXC)
 $ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
-$ # for more examples of --upload, --download, --delete-mxc, --mxc-to-http,
-$ # see file tests/test-upload.sh
+$ matrix-commander --delete-mxc mxc://... # delete image from database
+$ matrix-commander --delete-mxc-before '20.01.2022 19:38:42' 1024000
+$ # for more examples of --upload, --download, --delete-mxc,
+$ # --delete-mxc-before, --mxc-to-http, see file tests/test-upload.sh
 $ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
 $ # for more examples of --rest see file tests/test-rest.sh
 $ # print its own user id
@@ -500,7 +503,6 @@ $ matrix-commander --mxc-to-http mxc://example.com/abc... # get HTTP
 $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
-$ matrix-commander --delete-mxc mxc://... # delete image from database
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -545,9 +547,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
-                           [-j CONFIG] [--proxy PROXY] [-n] [--encrypted]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
-                           [--print-event-id]
+                           [--config CONFIG] [--proxy PROXY] [-n]
+                           [--encrypted] [-s STORE] [-l [LISTEN]] [-t [TAIL]]
+                           [-y] [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
@@ -555,11 +557,12 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-presence] [--upload UPLOAD [UPLOAD ...]]
                            [--download DOWNLOAD [DOWNLOAD ...]]
                            [--delete-mxc DELETE_MXC [DELETE_MXC ...]]
+                           [--delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--rest REST REST REST] [--whoami] [--no-ssl]
+                           [--rest REST [REST ...]] [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -810,10 +813,10 @@ options:
                         newlines. Then with --split set to "\n\n\n" each
                         article will be printed in a separate message. By
                         default, i.e. if not set, no messages will be split.
-  -j CONFIG, --config CONFIG
-                        Location of a config file. By default, no config file
+  --config CONFIG       Location of a config file. By default, no config file
                         is used. If this option is provided, the provided file
-                        name will be used to read configuration from.
+                        name will be used to read configuration from. Not
+                        implemented.
   --proxy PROXY         Optionally specify a proxy for connectivity. By
                         default, i.e. if this option is not set, no proxy is
                         used. If this option is used a proxy URL must be
@@ -983,6 +986,27 @@ options:
                         optionally, one can specify an access token which has
                         server admin permissions with the --access-token
                         argument. See tests/test-upload.sh for an example.
+  --delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]
+                        Delete objects (e.g. files) from the content
+                        repository that are older than a given timestamp. It
+                        is the timestamp of last access, not the timestamp
+                        when the file was created. Additionally you can
+                        specify a size in bytes to indicate that only files
+                        older than timestamp and larger than size will be
+                        deleted. You must provide a timestamp of the following
+                        format: 'DD.MM.YYYY HH:MM:SS' like '20.01.2022
+                        19:38:42' for January 20, 2022, 7pm 38min 42sec. Files
+                        that are still used in image data (e.g user profile,
+                        room avatar) will not be deleted from the server
+                        database. In order to delete objects one must have
+                        server admin permissions. Having only room admin
+                        permissions is not sufficient and it will fail. Read
+                        https://matrix-org.github.io/synapse/latest/usage/admi
+                        nistration/admin_api/ for learning how to set server
+                        admin permissions on the server. Alternatively, and
+                        optionally, one can specify an access token which has
+                        server admin permissions with the --access-token
+                        argument. See tests/test-upload.sh for an example.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
   --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
@@ -1003,7 +1027,7 @@ options:
                         error might be reported.
   --login-info          Print login methods supported by the homeserver. It
                         prints one login method per line.
-  --rest REST REST REST
+  --rest REST [REST ...]
                         Use the Matrix Client REST API. Matrix has several
                         extensive REST APIs. With the --rest argument you can
                         invoke a Matrix REST API call. This allows the user to
@@ -1012,12 +1036,14 @@ options:
                         https://matrix.org/docs/api/,
                         https://spec.matrix.org/latest/client-server-api/,
                         https://matrix-org.github.io/synapse/latest/usage/admi
-                        nistration/admin_api/, etc. Exactly 3 arguments must
-                        be given with --rest. (a) the method, a string of GET,
-                        POST, PUT, DELETE, or OPTIONS. (b) a string containing
-                        the data (if any) in JSON format. (c) a string
-                        containing the URL. All strings must be UTF-8. There
-                        are a few placeholders. They are: __homeserver__ (like
+                        nistration/admin_api/, etc. Each REST call requires
+                        exactly 3 arguments. So, the total number of arguments
+                        used with --rest must be a multiple of 3. The argument
+                        triples are: (a) the method, a string of GET, POST,
+                        PUT, DELETE, or OPTIONS. (b) a string containing the
+                        data (if any) in JSON format. (c) a string containing
+                        the URL. All strings must be UTF-8. There are a few
+                        placeholders. They are: __homeserver__ (like
                         https://matrix.example.org), __hostname__ (like
                         matrix.example.org), _access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
@@ -1094,12 +1120,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc and --rest actions.
+                        --delete-mxc, --delete-mxc-before and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.30.0 2022-06-05. Enjoy, star on Github and
+You are running version 2.31.0 2022-06-06. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

@@ -48,6 +48,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--discovery-info` to print discovery info of homeserver
 - new option `--login-info` to get the available login methods from the server
 - new option `--delete-mxc` to delete objects from content repository
+- new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
 
 # Summary, TLDR
@@ -446,8 +447,10 @@ $ # upload file to resource repository
 $ matrix-commander --upload "avatar.png"
 $ # download file from resource repository via URI (MXC)
 $ matrix-commander --download "mxc://example.com/SomeStrangeUriKey"
-$ # for more examples of --upload, --download, --delete-mxc, --mxc-to-http,
-$ # see file tests/test-upload.sh
+$ matrix-commander --delete-mxc mxc://... # delete image from database
+$ matrix-commander --delete-mxc-before '20.01.2022 19:38:42' 1024000
+$ # for more examples of --upload, --download, --delete-mxc,
+$ # --delete-mxc-before, --mxc-to-http, see file tests/test-upload.sh
 $ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
 $ # for more examples of --rest see file tests/test-rest.sh
 $ # print its own user id
@@ -507,7 +510,6 @@ $ matrix-commander --mxc-to-http mxc://example.com/abc... # get HTTP
 $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
-$ matrix-commander --delete-mxc mxc://... # delete image from database
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -552,9 +554,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
-                           [-j CONFIG] [--proxy PROXY] [-n] [--encrypted]
-                           [-s STORE] [-l [LISTEN]] [-t [TAIL]] [-y]
-                           [--print-event-id]
+                           [--config CONFIG] [--proxy PROXY] [-n]
+                           [--encrypted] [-s STORE] [-l [LISTEN]] [-t [TAIL]]
+                           [-y] [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
                            [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
@@ -562,11 +564,12 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-presence] [--upload UPLOAD [UPLOAD ...]]
                            [--download DOWNLOAD [DOWNLOAD ...]]
                            [--delete-mxc DELETE_MXC [DELETE_MXC ...]]
+                           [--delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]]
                            [--joined-rooms]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--rest REST REST REST] [--whoami] [--no-ssl]
+                           [--rest REST [REST ...]] [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -817,10 +820,10 @@ options:
                         newlines. Then with --split set to "\n\n\n" each
                         article will be printed in a separate message. By
                         default, i.e. if not set, no messages will be split.
-  -j CONFIG, --config CONFIG
-                        Location of a config file. By default, no config file
+  --config CONFIG       Location of a config file. By default, no config file
                         is used. If this option is provided, the provided file
-                        name will be used to read configuration from.
+                        name will be used to read configuration from. Not
+                        implemented.
   --proxy PROXY         Optionally specify a proxy for connectivity. By
                         default, i.e. if this option is not set, no proxy is
                         used. If this option is used a proxy URL must be
@@ -990,6 +993,27 @@ options:
                         optionally, one can specify an access token which has
                         server admin permissions with the --access-token
                         argument. See tests/test-upload.sh for an example.
+  --delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]
+                        Delete objects (e.g. files) from the content
+                        repository that are older than a given timestamp. It
+                        is the timestamp of last access, not the timestamp
+                        when the file was created. Additionally you can
+                        specify a size in bytes to indicate that only files
+                        older than timestamp and larger than size will be
+                        deleted. You must provide a timestamp of the following
+                        format: 'DD.MM.YYYY HH:MM:SS' like '20.01.2022
+                        19:38:42' for January 20, 2022, 7pm 38min 42sec. Files
+                        that are still used in image data (e.g user profile,
+                        room avatar) will not be deleted from the server
+                        database. In order to delete objects one must have
+                        server admin permissions. Having only room admin
+                        permissions is not sufficient and it will fail. Read
+                        https://matrix-org.github.io/synapse/latest/usage/admi
+                        nistration/admin_api/ for learning how to set server
+                        admin permissions on the server. Alternatively, and
+                        optionally, one can specify an access token which has
+                        server admin permissions with the --access-token
+                        argument. See tests/test-upload.sh for an example.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
   --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
@@ -1010,7 +1034,7 @@ options:
                         error might be reported.
   --login-info          Print login methods supported by the homeserver. It
                         prints one login method per line.
-  --rest REST REST REST
+  --rest REST [REST ...]
                         Use the Matrix Client REST API. Matrix has several
                         extensive REST APIs. With the --rest argument you can
                         invoke a Matrix REST API call. This allows the user to
@@ -1019,12 +1043,14 @@ options:
                         https://matrix.org/docs/api/,
                         https://spec.matrix.org/latest/client-server-api/,
                         https://matrix-org.github.io/synapse/latest/usage/admi
-                        nistration/admin_api/, etc. Exactly 3 arguments must
-                        be given with --rest. (a) the method, a string of GET,
-                        POST, PUT, DELETE, or OPTIONS. (b) a string containing
-                        the data (if any) in JSON format. (c) a string
-                        containing the URL. All strings must be UTF-8. There
-                        are a few placeholders. They are: __homeserver__ (like
+                        nistration/admin_api/, etc. Each REST call requires
+                        exactly 3 arguments. So, the total number of arguments
+                        used with --rest must be a multiple of 3. The argument
+                        triples are: (a) the method, a string of GET, POST,
+                        PUT, DELETE, or OPTIONS. (b) a string containing the
+                        data (if any) in JSON format. (c) a string containing
+                        the URL. All strings must be UTF-8. There are a few
+                        placeholders. They are: __homeserver__ (like
                         https://matrix.example.org), __hostname__ (like
                         matrix.example.org), _access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
@@ -1101,12 +1127,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc and --rest actions.
+                        --delete-mxc, --delete-mxc-before and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.30.0 2022-06-05. Enjoy, star on Github and
+You are running version 2.31.0 2022-06-06. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1241,8 +1267,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-06-05"
-VERSIONNR = "2.30.0"
+VERSION = "2022-06-06"
+VERSIONNR = "2.31.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1345,6 +1371,8 @@ class GlobalState:
         self.send_action = False  # argv contains send action
         self.room_action = False  # argv contains room action
         self.setget_action = False  # argv contains set or get action
+        self.err_count = 0  # how many errors have occurred so far
+        self.warn_count = 0  # how many warnings have occurred so far
 
 
 def choose_available_filename(filename):
@@ -1783,6 +1811,7 @@ def notify(title: str, content: str, image_url: str):
             "Make sure that notify2 and dbus are installed or remove the "
             "--os-notify option."
         )
+        gs.warn_count += 1
         return
     try:
         if image_url:
@@ -2206,6 +2235,7 @@ async def determine_dm_rooms(
             f"Not able to find DM rooms for sender {sender}. "
             f"Not able to send to receivers {users}."
         )
+        gs.err_count += 1
         senderrooms = []
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
@@ -2220,6 +2250,7 @@ async def determine_dm_rooms(
                 f"Not able to find DM rooms for sender {sender}. "
                 f"Not able to send to some of these receivers {users}."
             )
+            gs.err_count += 1
         else:
             # resp.room_id
             # resp.members = List[RoomMember] ; RoomMember
@@ -2238,6 +2269,7 @@ async def determine_dm_rooms(
                     # sndr = None
                     rcvr = None
                     gs.log.error(f"Sender does not match {resp}")
+                    gs.err_count += 1
                 for user in users:
                     if (
                         rcvr
@@ -2256,6 +2288,7 @@ async def determine_dm_rooms(
                 "Try setting up a room first via --room-create and "
                 "--room-invite option."
             )
+            gs.err_count += 1
     rooms = list(dict.fromkeys(rooms))  # remove duplicates in list
     gs.log.debug(f"Room(s) from --user: {rooms}")
     return rooms
@@ -2336,6 +2369,7 @@ async def map_roomalias_to_roomid(client, alias) -> str:
                 f"room_resolve_alias for alias {alias} failed with {resp}. "
                 f"Trying operation with input {alias} anyway. Might fail."
             )
+            gs.err_count += 1
         else:
             ret = resp.room_id
             gs.log.debug(
@@ -2391,11 +2425,13 @@ async def create_rooms(client, room_aliases, names, topics):
             )
             if isinstance(resp, RoomCreateError):
                 gs.log.error(f"Room_create failed with {resp}")
+                gs.err_count += 1
             else:
                 gs.log.info(f'Created room "{alias}".')
             index = index + 1
     except Exception:
         gs.log.error("Room creation failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2410,10 +2446,12 @@ async def join_rooms(client, rooms):
             resp = await client.join(room_id)
             if isinstance(resp, JoinError):
                 gs.log.error(f"join failed with {resp}")
+                gs.err_count += 1
             else:
                 gs.log.info(f'Joined room "{room_id}" successfully.')
     except Exception:
         gs.log.error("Joining rooms failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2428,10 +2466,12 @@ async def leave_rooms(client, rooms):
             resp = await client.room_leave(room_id)
             if isinstance(resp, RoomLeaveError):
                 gs.log.error(f"Leave failed with {resp}")
+                gs.err_count += 1
             else:
                 gs.log.info(f'Left room "{room_id}".')
     except Exception:
         gs.log.error("Room leave failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2446,6 +2486,7 @@ async def forget_rooms(client, rooms):
             resp = await client.room_forget(room_id)
             if isinstance(resp, RoomForgetError):
                 gs.log.error(f"Forget failed with {resp}")
+                gs.err_count += 1
             else:
                 gs.log.info(f'Forgot room "{room_id}".')
     except Exception:
@@ -2468,6 +2509,7 @@ async def invite_to_rooms(client, rooms, users):
                 resp = await client.room_invite(room_id, user)
                 if isinstance(resp, RoomInviteError):
                     gs.log.error(f"room_invite failed with {resp}")
+                    gs.err_count += 1
                 else:
                     gs.log.info(
                         f'User "{user}" was successfully invited '
@@ -2493,6 +2535,7 @@ async def ban_from_rooms(client, rooms, users):
                 resp = await client.room_ban(room_id, user)
                 if isinstance(resp, RoomBanError):
                     gs.log.error(f"room_ban failed with {resp}")
+                    gs.err_count += 1
                 else:
                     gs.log.info(
                         f'User "{user}" was successfully banned '
@@ -2518,6 +2561,7 @@ async def unban_from_rooms(client, rooms, users):
                 resp = await client.room_unban(room_id, user)
                 if isinstance(resp, RoomUnbanError):
                     gs.log.error(f"room_unban failed with {resp}")
+                    gs.err_count += 1
                 else:
                     gs.log.info(
                         f'User "{user}" was successfully unbanned '
@@ -2525,6 +2569,7 @@ async def unban_from_rooms(client, rooms, users):
                     )
     except Exception:
         gs.log.error("User unban failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2543,6 +2588,7 @@ async def kick_from_rooms(client, rooms, users):
                 resp = await client.room_kick(room_id, user)
                 if isinstance(resp, RoomKickError):
                     gs.log.error(f"room_kick failed with {resp}")
+                    gs.err_count += 1
                 else:
                     gs.log.info(
                         f'User "{user}" was successfully kicked '
@@ -2550,6 +2596,7 @@ async def kick_from_rooms(client, rooms, users):
                     )
     except Exception:
         gs.log.error("User kick failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2599,6 +2646,7 @@ async def send_event(client, rooms, event):  # noqa: C901
             "Event is not a valid JSON object or not of Matrix JSON format. "
             "This event is being droppend and NOT sent."
         )
+        gs.warn_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
 
@@ -2610,6 +2658,7 @@ async def send_event(client, rooms, event):  # noqa: C901
             gs.log.info(f'This event was sent: "{event}" to room "{room_id}".')
     except Exception:
         gs.log.error(f"Event send of file {event} failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2778,6 +2827,7 @@ async def send_file(client, rooms, file):  # noqa: C901
             gs.log.info(f'This file was sent: "{file}" to room "{room_id}".')
     except Exception:
         gs.log.error(f"File send of file {file} failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -2833,6 +2883,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             "Maybe your DM rooms specified via --user were not found. "
             "This image is being droppend and NOT sent."
         )
+        gs.warn_count += 1
         return
 
     # how to treat pipe on stdin?
@@ -2867,6 +2918,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             "is a directory. "
             "This image is being dropped and NOT sent."
         )
+        gs.warn_count += 1
         return
 
     # "bmp", "gif", "jpg", "jpeg", "png", "pbm", "pgm", "ppm", "xbm", "xpm",
@@ -2882,6 +2934,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             f"[{os.path.splitext(image)[1].lower()}] "
             "This image is being dropped and NOT sent."
         )
+        gs.warn_count += 1
         return
 
     # 'application/pdf' "image/jpeg"
@@ -2893,6 +2946,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             f"Found mime type {mime_type}. "
             "This image is being droppend and NOT sent."
         )
+        gs.warn_count += 1
         return
 
     im = Image.open(image)
@@ -2970,6 +3024,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             )
     except Exception:
         gs.log.error(f"Image send of file {image} failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -3059,6 +3114,7 @@ async def send_message(client, rooms, message):  # noqa: C901
             )
     except Exception:
         gs.log.error("Message send failed. Sorry.")
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
@@ -3408,6 +3464,7 @@ async def create_credentials_file(  # noqa: C901
                     f"Specified proxy {gs.pa.proxy} cannot "
                     "be configured for browser."
                 )
+                gs.warn_count += 1
 
             # launch web-browser
             if sys.platform.startswith("darwin"):
@@ -4018,6 +4075,7 @@ async def main_listen() -> None:
                 f'Unrecognized listening type "{gs.pa.listen}". '
                 "Closing client."
             )
+            gs.err_count += 1
     finally:
         if client:
             await client.close()
@@ -4031,6 +4089,7 @@ async def action_set_device_name(
     resp = await client.update_device(credentials["device_id"], content)
     if isinstance(resp, UpdateDeviceError):
         gs.log.error(f"update_device failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"update_device successful with {resp}")
 
@@ -4046,6 +4105,7 @@ async def action_set_display_name(
     resp = await client.set_displayname(gs.pa.set_display_name)
     if isinstance(resp, ProfileSetDisplayNameError):
         gs.log.error(f"set_displayname failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"set_displayname successful with {resp}")
 
@@ -4065,6 +4125,7 @@ async def action_get_display_name(
         resp = await client.get_displayname(user)
         if isinstance(resp, ProfileGetDisplayNameError):
             gs.log.error(f"get_displayname failed with {resp}")
+            gs.err_count += 1
         else:
             gs.log.debug(f"get_displayname successful with {resp}")
             # resp.displayname is str or None (has no display name)
@@ -4084,6 +4145,7 @@ async def action_set_presence(client: AsyncClient, credentials: dict) -> None:
     resp = await client.set_presence(state)
     if isinstance(resp, PresenceSetError):
         gs.log.error(f"set_presence failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"set_presence successful with {resp}")
 
@@ -4101,6 +4163,7 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
         resp = await client.get_presence(user)
         if isinstance(resp, PresenceGetError):
             gs.log.error(f"get_presence failed with {resp}")
+            gs.err_count += 1
         else:
             gs.log.debug(f"get_presence successful with {resp}")
             if not resp.last_active_ago:
@@ -4145,6 +4208,7 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
                 f"filessize={file_stat.st_size}; encrypt={encrypt}"
                 f"Server response: {resp}"
             )
+            gs.err_count += 1
         else:
             gs.log.debug(
                 f"File {filename}, mime={mime_type}, "
@@ -4209,11 +4273,85 @@ async def action_delete_mxc(client: AsyncClient, credentials: dict) -> None:
                 f"'{srv_full}'. Failed with error code {status} and "
                 f"error text {txt}."
             )
+            gs.err_count += 1
         else:
             gs.log.debug(
                 f"MXC object {mxc} was successfully deleted from server "
                 f"{srv_full}. Response is: {txt}."
             )
+
+
+async def action_delete_mxc_before(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Delete files older and larger from content repository of Matrix server.
+    Assumes that user is already logged in.
+    """
+    # https://matrix-org.github.io/synapse/latest/admin_api/
+    #   media_admin_api.html#delete-local-media-by-date-or-size
+    # POST /_synapse/admin/v1/media/<server_name>/delete?before_ts=<before_ts>
+    # &size_gt=<size>
+    if len(gs.pa.delete_mxc_before) > 2:
+        gs.log.error(
+            "Incorrect number of arguments for --delete_mxc_before. "
+            "There must be 1 or 2 arguments , but found "
+            f"{len(gs.pa.delete_mxc_before)} arguments."
+        )
+        gs.err_count += 1
+        return
+    size = 0
+    if len(gs.pa.delete_mxc_before) == 2:
+        size = gs.pa.delete_mxc_before[1]
+    before_str = gs.pa.delete_mxc_before[0]
+    millisec = int(
+        datetime.datetime.strptime(before_str, "%d.%m.%Y %H:%M:%S").timestamp()
+        * 1000
+    )
+
+    gs.log.debug(
+        f"Preparing to delete objects older than {before_str} "
+        f"(Unix time {millisec}) and larger than {size}."
+    )
+    if gs.pa.access_token:
+        at = gs.pa.access_token
+        gs.log.debug("Using access token from --access-token argument.")
+    else:
+        at = credentials["access_token"]
+        gs.log.debug("Using access token from credentials file.")
+    srv_full = credentials["homeserver"]  # https://example.matrix.org
+    srv_host = urlparse(srv_full).hostname  # example.matrix.org
+    rest = (
+        srv_full
+        + "/_synapse/admin/v1/media/"
+        + srv_host
+        + "/delete?before_ts="
+        + str(millisec)
+        + "&size_gt="
+        + str(size)
+        + "&access_token="
+        + at
+    )
+    gs.log.debug(f"Issuing REST Matrix API call: POST {rest}")
+    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
+    async with ClientSession(connector=connector) as session:  # aiohttp
+        async with session.post(rest) as resp:
+            status = resp.status  # int, 200 success
+            txt = await resp.text()  # str in dict format
+    if status != 200:
+        # txt is str like this:
+        # {"errcode":"M_FORBIDDEN","error":"You are not a server admin"}
+        gs.log.error(
+            f"Failed to delete objects before '{before_str}' from server "
+            f"'{srv_full}'. Failed with error code {status} and "
+            f"error text {txt}."
+        )
+        gs.err_count += 1
+    else:
+        gs.log.debug(
+            f"Objects older than {before_str} and larger than {size} "
+            "were successfully deleted from server "
+            f"{srv_full}. Response is: \n{txt}."
+        )
 
 
 async def action_download(client: AsyncClient, credentials: dict) -> None:
@@ -4281,6 +4419,7 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
                 f"download of URI '{mxc}' to local file '{filename}' "
                 f"failed with response {resp}"
             )
+            gs.err_count += 1
         else:
             if filename == "":
                 filename = "mxc-" + MXC_ID_PLACEHOLDER
@@ -4321,6 +4460,7 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
     resp = await client.joined_rooms()
     if isinstance(resp, JoinedRoomsError):
         gs.log.error(f"joined_rooms failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
         print(*resp.rooms, sep="\n")  # one per line
@@ -4336,6 +4476,7 @@ async def action_joined_members(
             "No membership action(s) were performed because no rooms "
             "were specified. Use --joined-members option and specify rooms."
         )
+        gs.warn_count += 1
         return
 
     # print(credentials["user_id"])  ## who am i, whoami
@@ -4348,6 +4489,7 @@ async def action_joined_members(
                 "get all rooms as specified by '*'. "
                 "The member listing will be incomplete or missing."
             )
+            gs.err_count += 1
             # since we can't get all rooms leave room list as is
             rooms = filter(lambda val: val != "*", rooms)  # remove all *
         else:
@@ -4360,6 +4502,7 @@ async def action_joined_members(
         resp = await client.joined_members(room)
         if isinstance(resp, JoinedMembersError):
             gs.log.error(f"joined_members failed with {resp}")
+            gs.err_count += 1
         else:
             gs.log.debug(f"joined_members successful with {resp}")
             print(resp.room_id)
@@ -4393,6 +4536,7 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
     resp = await client.devices()
     if isinstance(resp, DevicesError):
         gs.log.error(f"devices failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"devices successful with {resp}")
         print(*resp.devices, sep="\n")  # one per line
@@ -4405,6 +4549,7 @@ async def action_discovery_info(
     resp = await client.discovery_info()
     if isinstance(resp, DiscoveryInfoError):
         gs.log.error(f"discovery_info failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"discovery_info successful with {resp}")
         print(resp)
@@ -4415,6 +4560,7 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
     resp = await client.login_info()
     if isinstance(resp, LoginInfoError):
         gs.log.error(f"login_info failed with {resp}")
+        gs.err_count += 1
     else:
         gs.log.debug(f"login_info successful with {resp}")
         print(*resp.flows, sep="\n")  # one per line
@@ -4432,110 +4578,125 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
     #   "__homeserver__/_matrix/client/r0/rooms/__encoded_full_room_id__/\
     #   send/m.room.message?access_token=YOURTOKENHERE"
     # curl -XGET -d "" '__homeserver__/_matrix/client/versions'
-    method = gs.pa.rest[0]
-    if not method or method.upper().strip() not in [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS",
-    ]:
+    if not len(gs.pa.rest) % 3 == 0:
         gs.log.error(
-            f"Incorrect REST method {method}. "
-            'Must be on of: "GET", "POST", "PUT", "DELETE", "OPTIONS".'
+            "Incorrect number of arguments for --rest. Arguments must be "
+            f"triples, i.e. multiples of 3, but found {len(gs.pa.rest)} "
+            "arguments."
         )
+        gs.err_count += 1
         return
-    method = method.upper().strip()
-    data = gs.pa.rest[1]
-    if not data:
-        data = ""
-    url = gs.pa.rest[2]
-    if not url or url.strip() == "":
-        gs.log.error(f"Incorrect REST URL {url}. Must not be empty.")
-    if gs.pa.access_token:
-        at = gs.pa.access_token
-        gs.log.debug("Using access token from --access-token argument.")
-    else:
-        at = credentials["access_token"]
-        gs.log.debug("Using access token from credentials file.")
-    for ph in [
-        HOMESERVER_PLACEHOLDER,
-        HOSTNAME_PLACEHOLDER,
-        ACCESS_TOKEN_PLACEHOLDER,
-        USER_ID_PLACEHOLDER,
-        DEVICE_ID_PLACEHOLDER,
-        ROOM_ID_PLACEHOLDER,
-    ]:
-        if ph == HOMESERVER_PLACEHOLDER:
-            data = data.replace(ph, credentials["homeserver"])
-            url = url.replace(ph, credentials["homeserver"])
-        elif ph == HOSTNAME_PLACEHOLDER:
-            hostname = urlparse(credentials["homeserver"]).hostname
-            data = data.replace(ph, hostname)
-            url = url.replace(ph, hostname)
-        elif ph == ACCESS_TOKEN_PLACEHOLDER:
-            data = data.replace(ph, at)
-            url = url.replace(ph, at)
-        elif ph == USER_ID_PLACEHOLDER:
-            data = data.replace(ph, credentials["user_id"])
-            url = url.replace(ph, credentials["user_id"])
-        elif ph == DEVICE_ID_PLACEHOLDER:
-            data = data.replace(ph, credentials["device_id"])
-            url = url.replace(ph, credentials["device_id"])
-        elif ph == ROOM_ID_PLACEHOLDER:
-            room_id = quote(credentials["room_id"])
-            data = data.replace(ph, room_id)
-            url = url.replace(ph, room_id)
-    url = url.strip()
-    # if data != "" and (
-    #     method == "GET" or method == "DELETE" or method == "OPTIONS"
-    # ):
-    #     gs.log.error(
-    #         f'Incorrect REST data "{data}" for method {method}. '
-    #         'Data must be empty for: "GET", "DELETE", "OPTIONS".'
-    #     )
-    #     return
-    gs.log.debug(
-        f"Preparing to invoke REST API call: method={method} "
-        f"data={data}, url={url}."
-    )
-    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
-    async with ClientSession(connector=connector) as session:  # aiohttp
-        if method == "GET":
-            async with session.get(url, data=data) as resp:
-                status = resp.status  # int, 200 success
-                txt = await resp.text()  # str in dict format
-        elif method == "POST":
-            async with session.post(url, data=data) as resp:
-                status = resp.status  # int, 200 success
-                txt = await resp.text()  # str in dict format
-        elif method == "PUT":
-            async with session.put(url, data=data) as resp:
-                status = resp.status  # int, 200 success
-                txt = await resp.text()  # str in dict format
-        elif method == "DELETE":
-            async with session.delete(url, data=data) as resp:
-                status = resp.status  # int, 200 success
-                txt = await resp.text()  # str in dict format
-        elif method == "OPTIONS":
-            async with session.options(url, data=data) as resp:
-                status = resp.status  # int, 200 success
-                txt = await resp.text()  # str in dict format
-    if status != 200:
-        # txt is str like this:
-        # {"errcode":"M_FORBIDDEN","error":"You are not a server admin"}
-        gs.log.error(
-            f"REST API call failed. Failed with error code {status} and "
-            f"error text {txt}. Input was: method={method} "
-            f"data={data}, url={url}."
-        )
-    else:
+    for ii in range(len(gs.pa.rest) // 3):
+        method = gs.pa.rest[ii * 3 + 0]
+        data = gs.pa.rest[ii * 3 + 1]
+        url = gs.pa.rest[ii * 3 + 2]
+        if not method or method.upper().strip() not in [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS",
+        ]:
+            gs.log.error(
+                f"Incorrect REST method {method}. "
+                'Must be one of: "GET", "POST", "PUT", "DELETE", "OPTIONS".'
+            )
+            gs.err_count += 1
+            continue
+        method = method.upper().strip()
+        if not data:
+            data = ""
+        if not url or url.strip() == "":
+            gs.log.error(f"Incorrect REST URL {url}. Must not be empty.")
+            gs.err_count += 1
+            continue
+        if gs.pa.access_token:
+            at = gs.pa.access_token
+            gs.log.debug("Using access token from --access-token argument.")
+        else:
+            at = credentials["access_token"]
+            gs.log.debug("Using access token from credentials file.")
+        for ph in [
+            HOMESERVER_PLACEHOLDER,
+            HOSTNAME_PLACEHOLDER,
+            ACCESS_TOKEN_PLACEHOLDER,
+            USER_ID_PLACEHOLDER,
+            DEVICE_ID_PLACEHOLDER,
+            ROOM_ID_PLACEHOLDER,
+        ]:
+            if ph == HOMESERVER_PLACEHOLDER:
+                data = data.replace(ph, credentials["homeserver"])
+                url = url.replace(ph, credentials["homeserver"])
+            elif ph == HOSTNAME_PLACEHOLDER:
+                hostname = urlparse(credentials["homeserver"]).hostname
+                data = data.replace(ph, hostname)
+                url = url.replace(ph, hostname)
+            elif ph == ACCESS_TOKEN_PLACEHOLDER:
+                data = data.replace(ph, at)
+                url = url.replace(ph, at)
+            elif ph == USER_ID_PLACEHOLDER:
+                data = data.replace(ph, credentials["user_id"])
+                url = url.replace(ph, credentials["user_id"])
+            elif ph == DEVICE_ID_PLACEHOLDER:
+                data = data.replace(ph, credentials["device_id"])
+                url = url.replace(ph, credentials["device_id"])
+            elif ph == ROOM_ID_PLACEHOLDER:
+                room_id = quote(credentials["room_id"])
+                data = data.replace(ph, room_id)
+                url = url.replace(ph, room_id)
+        url = url.strip()
+        if data != "" and (
+            method == "GET" or method == "DELETE" or method == "OPTIONS"
+        ):
+            gs.log.warning(
+                f'Found REST data "{data}" for method {method}. '
+                'There is usually no data for: "GET", "DELETE", "OPTIONS". '
+                "Most likely this is not what you want. "
+            )
+            gs.warn_count += 1
+            continue
         gs.log.debug(
-            f"REST API call was successful. "
-            f"Response is: {txt}. Input was: method={method} "
+            f"Preparing to invoke REST API call: method={method} "
             f"data={data}, url={url}."
         )
-        print(f"{txt}")
+        connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
+        async with ClientSession(connector=connector) as session:  # aiohttp
+            if method == "GET":
+                async with session.get(url, data=data) as resp:
+                    status = resp.status  # int, 200 success
+                    txt = await resp.text()  # str in dict format
+            elif method == "POST":
+                async with session.post(url, data=data) as resp:
+                    status = resp.status  # int, 200 success
+                    txt = await resp.text()  # str in dict format
+            elif method == "PUT":
+                async with session.put(url, data=data) as resp:
+                    status = resp.status  # int, 200 success
+                    txt = await resp.text()  # str in dict format
+            elif method == "DELETE":
+                async with session.delete(url, data=data) as resp:
+                    status = resp.status  # int, 200 success
+                    txt = await resp.text()  # str in dict format
+            elif method == "OPTIONS":
+                async with session.options(url, data=data) as resp:
+                    status = resp.status  # int, 200 success
+                    txt = await resp.text()  # str in dict format
+        if status != 200:
+            # txt is str like this:
+            # {"errcode":"M_FORBIDDEN","error":"You are not a server admin"}
+            gs.log.error(
+                f"REST API call failed. Failed with error code {status} and "
+                f"error text {txt}. Input was: method={method} "
+                f"data={data}, url={url}."
+            )
+            gs.err_count += 1
+        else:
+            gs.log.debug(
+                f"REST API call was successful. "
+                f"Response is: {txt}. Input was: method={method} "
+                f"data={data}, url={url}."
+            )
+            print(f"{txt}")
 
 
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
@@ -4599,6 +4760,8 @@ async def main_roomsetget_action() -> None:
             await action_upload(client, credentials)
         if gs.pa.delete_mxc:
             await action_delete_mxc(client, credentials)
+        if gs.pa.delete_mxc_before:
+            await action_delete_mxc_before(client, credentials)
         if gs.pa.rest:
             await action_rest(client, credentials)
         # get_action
@@ -4853,6 +5016,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.set_presence
         or gs.pa.upload
         or gs.pa.delete_mxc
+        or gs.pa.delete_mxc_before
         or gs.pa.rest
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
@@ -4914,10 +5078,8 @@ def initial_check_of_args() -> None:  # noqa: C901
     # Secondly, the checks
     if gs.pa.config:
         t = (
-            "This feature is not implemented yet. "
-            "Please help me implement it. If you feel motivated "
-            "please write code and submit a Pull Request. "
-            "Your contribution is appreciated. Thnx!"
+            "This feature is not implemented yet and will most likely "
+            "not be implemented. See Issue #34 on Github."
         )
     elif (
         gs.pa.listen == FOREVER or gs.pa.listen == ONCE or gs.pa.listen == ALL
@@ -5523,14 +5685,13 @@ def main(
     )
     # -c is already used for --credentials
     ap.add_argument(
-        "-j",
         "--config",
         required=False,
         type=str,
         help="Location of a config file. By default, no "
         "config file is used. "
         "If this option is provided, the provided file name "
-        "will be used to read configuration from. ",
+        "will be used to read configuration from. Not implemented.",
     )
     # -p is already used for --split
     ap.add_argument(
@@ -5850,6 +6011,36 @@ def main(
         "See tests/test-upload.sh for an example.",
     )
     ap.add_argument(
+        "--delete-mxc-before",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Delete objects (e.g. files) from the content "
+        "repository that are older than a given timestamp. "
+        "It is the timestamp of last access, not the timestamp when "
+        "the file was created. "
+        "Additionally you can specify a size in bytes to indicate "
+        "that only files older than timestamp and larger than size "
+        "will be deleted. "
+        "You must provide a timestamp of the following format: "
+        "'DD.MM.YYYY HH:MM:SS' like '20.01.2022 19:38:42' for January 20, "
+        "2022, 7pm 38min 42sec. "
+        "Files that are still used in image data (e.g user profile, "
+        "room avatar) will not be deleted from the server database. "
+        "In order to delete objects "
+        "one must have server admin permissions. Having only room admin "
+        "permissions is not sufficient and it will fail. "
+        "Read "
+        "https://matrix-org.github.io/synapse/"
+        "latest/usage/administration/admin_api/ "
+        "for learning how to set server admin permissions on the "
+        "server. Alternatively, and optionally, one can specify "
+        "an access token which has server admin permissions with the "
+        "--access-token argument. "
+        "See tests/test-upload.sh for an example.",
+    )
+    ap.add_argument(
         # no single char flag
         "--joined-rooms",
         required=False,
@@ -5910,7 +6101,7 @@ def main(
         "--rest",
         required=False,
         action="extend",
-        nargs=3,
+        nargs="+",
         type=str,
         help="Use the Matrix Client REST API. Matrix has several extensive "
         "REST APIs. With the --rest argument you can invoke a Matrix REST "
@@ -5920,7 +6111,9 @@ def main(
         "https://spec.matrix.org/latest/client-server-api/, "
         "https://matrix-org.github.io/synapse/latest/usage/administration/"
         "admin_api/, etc. "
-        "Exactly 3 arguments must be given with --rest. "
+        "Each REST call requires exactly 3 arguments. "
+        "So, the total number of arguments used with --rest must be a "
+        "multiple of 3. The argument triples are: "
         "(a) the method, a string of GET, POST, PUT, DELETE, or OPTIONS. "
         "(b) a string containing the data (if any) in JSON format. "
         "(c) a string containing the URL. All strings must be UTF-8. "
@@ -6051,7 +6244,8 @@ def main(
         help="Set a custom access token for use by certain actions. "
         "It is an optional argument. "
         "By default --access-token is ignored and not used. "
-        "It is used only by the --delete-mxc and --rest actions.",
+        "It is used only by the --delete-mxc, --delete-mxc-before "
+        "and --rest actions.",
     )
     ap.add_argument(
         # no single char flag
@@ -6102,6 +6296,7 @@ def main(
         gs.log.debug(f"Debug is turned on. debug count={gs.pa.debug}")
         if gs.pa.log_level and len(gs.pa.log_level) > 0:
             gs.log.warning("Debug option -d overwrote option --log-level.")
+            gs.warn_count += 1
 
     SEP = bytes(gs.pa.separator, "utf-8").decode("unicode_escape")
     gs.log.debug(
@@ -6114,6 +6309,7 @@ def main(
         check_arg_files_readable()
     except Exception as e:
         gs.log.error(e)
+        gs.err_count += 1
         raise MatrixCommanderError(
             f"{PROG_WITHOUT_EXT} forces an early abort. "
             "To avoid partial execution, no action has been performed at all. "
@@ -6229,12 +6425,36 @@ if __name__ == "__main__":
             gs.log.info(f"{e}{tb}")
         else:
             gs.log.error(f"{e}{tb}")
+        if gs.err_count > 0 or gs.warn_count > 0:
+            gs.log.info(
+                f"{gs.err_count} "
+                f"error{'' if gs.err_count == 1 else 's'} and "
+                f"{gs.warn_count} "
+                f"warning{'' if gs.warn_count == 1 else 's'} "
+                "occurred."
+            )
         sys.exit(1)
     except Exception as e:
         tb = ""
         if gs.pa.debug > 0:
             tb = f"\nHere is the traceback.\n{traceback.format_exc()}"
         gs.log.error(f"{e}{tb}")
+        if gs.err_count > 0 or gs.warn_count > 0:
+            gs.log.info(
+                f"{gs.err_count} "
+                f"error{'' if gs.err_count == 1 else 's'} and "
+                f"{gs.warn_count} "
+                f"warning{'' if gs.warn_count == 1 else 's'} "
+                "occurred."
+            )
         sys.exit(1)
-    sys.exit(0)
+    if gs.err_count > 0 or gs.warn_count > 0:
+        gs.log.info(
+            f"{gs.err_count} "
+            f"error{'' if gs.err_count == 1 else 's'} and "
+            f"{gs.warn_count} "
+            f"warning{'' if gs.warn_count == 1 else 's'} "
+            "occurred."
+        )
+    sys.exit(gs.err_count)  # 0 for success
 # EOF
