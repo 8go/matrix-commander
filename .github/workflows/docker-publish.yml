@@ -3,7 +3,19 @@ name: Publish Docker image
 env:
   DOCKERHUB_IMAGE: matrix-commander
 
-on: push
+# on: push
+# on: pull_request
+# on:
+#   push:
+#     branches:
+#       - master
+
+# Adding "git push origin <tag>" made it trigger the workflow twice.
+# Hence made it so that only pushing tags triggers the workflow
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   buildx:
