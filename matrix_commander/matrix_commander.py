@@ -50,6 +50,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--delete-mxc` to delete objects from content repository
 - new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
+- new otions `--set-avatar` and `--get-avatar`
 
 # Summary, TLDR
 
@@ -453,6 +454,11 @@ $ # for more examples of --upload, --download, --delete-mxc,
 $ # --delete-mxc-before, --mxc-to-http, see file tests/test-upload.sh
 $ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
 $ # for more examples of --rest see file tests/test-rest.sh
+$ matrix-commander --get-avatar # get its own avatar MXC URI
+$ # get avatar MXC URIs of other users
+$ matrix-commander --get-avatar '@user1:example.com' '@user2:example.com'
+$ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
+$ # for more examples of --set_avatar see tests/test-setget.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -569,9 +575,10 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--rest REST [REST ...]] [--whoami] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--file-name FILE_NAME [FILE_NAME ...]]
+                           [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
+                           [--get-avatar [GET_AVATAR ...]] [--whoami]
+                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
+                           [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--version]
@@ -1052,7 +1059,7 @@ options:
                         the URL. All strings must be UTF-8. There are a few
                         placeholders. They are: __homeserver__ (like
                         https://matrix.example.org), __hostname__ (like
-                        matrix.example.org), _access_token__, __user_id__
+                        matrix.example.org), __access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
                         __room_id__. If a placeholder is found it is replaced
                         with the value from the local credentials file. An
@@ -1062,6 +1069,18 @@ options:
                         Optionally, --access-token can be used to overwrite
                         the access token from credentials (if needed). See
                         tests/test-rest.sh for an example.
+  --set-avatar SET_AVATAR
+                        Set the avatar MXC resource used by matrix-commander.
+                        Provide one MXC URI that looks like this
+                        'mxc://example.com/SomeStrangeUriKey'..
+  --get-avatar [GET_AVATAR ...]
+                        Get the avatar MXC resource used by matrix-commander,
+                        or one or multiple other users. Specify zero or more
+                        user ids. If no user id is specified, the avatar of
+                        {PROG_WITHOUT_EXT} will be fetched. If one or more
+                        user ids are given, the avatars of these users will be
+                        fetched. As response both MXC URI as well as URL will
+                        be printed.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1132,7 +1151,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.31.0 2022-06-06. Enjoy, star on Github and
+You are running version 2.32.0 2022-06-07. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1244,12 +1263,12 @@ from nio import (AsyncClient, AsyncClientConfig, DevicesError,
                  LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
                  MessageDirection, PresenceGetError, PresenceSetError,
                  ProfileGetAvatarResponse, ProfileGetDisplayNameError,
-                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
-                 RoomAliasEvent, RoomBanError, RoomCreateError,
-                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
-                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
-                 RoomForgetError, RoomInviteError, RoomKickError,
-                 RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
+                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
+                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
+                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
                  RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
                  RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
                  RoomMessageNotice, RoomMessagesError, RoomMessageText,
@@ -1267,8 +1286,8 @@ except ImportError:
     HAVE_NOTIFY = False
 
 # version number
-VERSION = "2022-06-06"
-VERSIONNR = "2.31.0"
+VERSION = "2022-06-07"
+VERSIONNR = "2.32.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1335,19 +1354,12 @@ DEVICE_ID_PLACEHOLDER = "__device_id__"
 ROOM_ID_PLACEHOLDER = "__room_id__"
 
 
-class MatrixCommanderError(RuntimeError):
-    def __init__(
-        self,
-        errmsg: str,
-        traceback: bool = False,  # is traceback printing desired?
-        level: str = "error",
-    ):
-        self.errmsg = errmsg
-        self.traceback = traceback
-        self.level = level  # debug, info, warning, error
+class MatrixCommanderError(Exception):
+    pass
 
-    def __str__(self):
-        return self.errmsg
+
+class MatrixCommanderWarning(Warning):
+    pass
 
 
 class GlobalState:
@@ -1825,9 +1837,11 @@ def notify(title: str, content: str, image_url: str):
         notify2.init(PROG_WITHOUT_EXT)
         notify2.Notification(title, content, avatar_file).show()
         gs.log.debug(f"Showed notification for {title}.")
-    except Exception:
-        gs.log.debug(f"Showing notification for {title} failed.")
-        print(traceback.format_exc())
+    except Exception as e:
+        gs.log.debug(
+            f"Showing notification for {title} failed. Exception: {e}"
+            f"\nHere is the traceback:\n{traceback.format_exc()}"
+        )
         pass
 
 
@@ -2617,7 +2631,7 @@ async def send_event(client, rooms, event):  # noqa: C901
         gs.log.info(
             "No rooms are given. This should not happen. "
             "Maybe your DM rooms specified via --user were not found. "
-            "This file is being droppend and NOT sent."
+            "This file is being dropped and NOT sent."
         )
         return
 
@@ -2633,7 +2647,7 @@ async def send_event(client, rooms, event):  # noqa: C901
 
     if not jsondata.strip():
         gs.log.debug(
-            "Event is empty. This event is being droppend and NOT sent."
+            "Event is empty. This event is being dropped and NOT sent."
         )
         return
 
@@ -2642,11 +2656,11 @@ async def send_event(client, rooms, event):  # noqa: C901
         message_type = content_json["type"]
         content = content_json["content"]
     except Exception:
-        gs.log.warning(
+        gs.log.error(
             "Event is not a valid JSON object or not of Matrix JSON format. "
-            "This event is being droppend and NOT sent."
+            "This event is being dropped and NOT sent."
         )
-        gs.warn_count += 1
+        gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
 
@@ -2714,7 +2728,7 @@ async def send_file(client, rooms, file):  # noqa: C901
         gs.log.info(
             "No rooms are given. This should not happen. "
             "Maybe your DM rooms specified via --user were not found. "
-            "This file is being droppend and NOT sent."
+            "This file is being dropped and NOT sent."
         )
         return
 
@@ -2740,7 +2754,7 @@ async def send_file(client, rooms, file):  # noqa: C901
         gs.log.debug(
             f"File {file} is not a file. Doesn't exist or "
             "is a directory. "
-            "This file is being droppend and NOT sent."
+            "This file is being dropped and NOT sent."
         )
         return
 
@@ -2750,7 +2764,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     #    gs.log.debug(f"File {file} is not a permitted file type. Should be "
     #                 ".pdf, .txt, .doc, .xls, .mobi or .mp3 ... "
     #                 f"[{os.path.splitext(file)[1].lower()}]"
-    #                 "This file is being droppend and NOT sent.")
+    #                 "This file is being dropped and NOT sent.")
     #    return
 
     # 'application/pdf' "plain/text" "audio/ogg"
@@ -2761,7 +2775,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     #    gs.log.debug(f"File {file} does not have an accepted mime type. "
     #                 "Should be something like application/pdf. "
     #                 f"Found mime type {mime_type}. "
-    #                 "This file is being droppend and NOT sent.")
+    #                 "This file is being dropped and NOT sent.")
     #    return
 
     # first do an upload of file, see upload() documentation
@@ -2881,7 +2895,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         gs.log.warning(
             "No rooms are given. This should not happen. "
             "Maybe your DM rooms specified via --user were not found. "
-            "This image is being droppend and NOT sent."
+            "This image is being dropped and NOT sent."
         )
         gs.warn_count += 1
         return
@@ -2944,7 +2958,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             f"Image file {image} does not have an image mime type. "
             "Should be something like image/jpeg. "
             f"Found mime type {mime_type}. "
-            "This image is being droppend and NOT sent."
+            "This image is being dropped and NOT sent."
         )
         gs.warn_count += 1
         return
@@ -3049,7 +3063,7 @@ async def send_message(client, rooms, message):  # noqa: C901
         gs.log.info(
             "No rooms are given. This should not happen. "
             "Maybe your DM rooms specified via --user were not found. "
-            "This text message is being droppend and NOT sent."
+            "This text message is being dropped and NOT sent."
         )
         return
     # remove leading AND trailing newlines to beautify
@@ -3058,7 +3072,7 @@ async def send_message(client, rooms, message):  # noqa: C901
     if message == "" or message.strip() == "":
         gs.log.debug(
             "The message is empty. "
-            "This message is being droppend and NOT sent."
+            "This message is being dropped and NOT sent."
         )
         return
 
@@ -3375,11 +3389,8 @@ async def create_credentials_file(  # noqa: C901
     )
     if confirm.lower() != "yes" and confirm.lower() != "y":
         print("")  # add newline to stdout to separate any log info
-        raise MatrixCommanderError(
-            "Aborting due to user request.",
-            traceback=False,
-            level="info",
-        )
+        gs.log.info("Aborting due to user request.")
+        return
     homeserver = "https://matrix.example.org"
     homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
     if not homeserver:
@@ -3480,41 +3491,37 @@ async def create_credentials_file(  # noqa: C901
             try:
                 subprocess.check_output(cmd)
             except Exception:
-                raise MatrixCommanderError(
+                gs.log.error(
                     "Browser could not be launched. "
                     "Hence SSO (Single Sign-On) login could not be "
                     "completed. Sorry. If you think the browser and "
                     "SSO should work then try again. If you do not have "
                     "a browser or don't want SSO or want to login with a "
                     "password instead, then use the '--no-sso' option in "
-                    "the command line.",
-                    traceback=False,
-                    level="error",
+                    "the command line."
                 )
+                raise
 
             # wait and shutdown server
             try:
                 await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
             except asyncio.TimeoutError:
-                raise MatrixCommanderError(
+                gs.log.error(
                     f"The program {PROG_WITH_EXT} failed. "
                     "No response was received from SSO provider. "
-                    "Sorry.",
-                    traceback=False,
-                    level="error",
+                    "There was a timeout. Sorry."
                 )
-
+                raise
         finally:
             await runner.cleanup()
 
     elif not password:
+        gs.err_count += 1
         raise MatrixCommanderError(
             "No supported login method found for homeserver. "
             "Neither SSO nor password are accepted login "
-            "methods of the server.",
-            traceback=False,
-            level="error",
-        )
+            "methods of the server."
+        ) from None
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
@@ -3541,9 +3548,6 @@ async def create_credentials_file(  # noqa: C901
         proxy=gs.pa.proxy,
     )
     try:
-
-        txt = ""
-        level = ""
         if sso:
             resp = await client.login(
                 token=login_token, device_name=device_name
@@ -3574,7 +3578,7 @@ async def create_credentials_file(  # noqa: C901
                 If you plan on having many credential files, consider
                 moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
             txt = textwrap.fill(textwrap.dedent(txt).strip(), width=79)
-            level = "info"
+            gs.log.info(txt)
         else:
             txt = f"The program {PROG_WITH_EXT} failed. "
             "Most likely wrong credentials were entered. "
@@ -3582,13 +3586,10 @@ async def create_credentials_file(  # noqa: C901
             f'homeserver="{homeserver}"; user="{user_id}"; '
             f'room_id="{room_id}"; '
             f"failed to log in: {resp}"
-            level = "error"
+            gs.err_count += 1
+            raise MatrixCommanderError(txt)
     finally:
         await client.close()
-    if level == "error":
-        raise MatrixCommanderError(txt, traceback=True, level=level)
-    elif level == "info":
-        raise MatrixCommanderError(txt, traceback=False, level=level)
 
 
 def login_using_credentials_file(
@@ -3823,15 +3824,18 @@ async def listen_tail(  # noqa: C901
     try:
         resp_s = await client.sync(timeout=10000, full_state=True)
     except ClientConnectorError:
-        gs.log.info("sync() failed. Do you have connectivity to internet?")
+        gs.log.warning("sync() failed. Do you have connectivity to internet?")
+        gs.warn_count += 1
         gs.log.debug(traceback.format_exc())
         return
     except Exception:
-        gs.log.info("sync() failed.")
+        gs.log.warning("sync() failed.")
+        gs.warn_count += 1
         gs.log.debug(traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
-        gs.log.debug(f"sync failed with resp = {resp_s}")
+        gs.log.warning(f"sync failed with resp = {resp_s}")
+        gs.warn_count += 1
         return
     # this prints a summary of all new messages currently waiting in the queue
     gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
@@ -3969,15 +3973,18 @@ async def listen_all(  # noqa: C901
     try:
         resp_s = await client.sync(timeout=10000, full_state=True)
     except ClientConnectorError:
-        gs.log.info("sync() failed. Do you have connectivity to internet?")
+        gs.log.warning("sync() failed. Do you have connectivity to internet?")
+        gs.warn_count += 1
         gs.log.debug(traceback.format_exc())
         return
     except Exception:
-        gs.log.info("sync() failed.")
+        gs.log.warning("sync() failed.")
+        gs.warn_count += 1
         gs.log.debug(traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
-        gs.log.debug(f"sync failed with resp = {resp_s}")
+        gs.log.warning(f"sync failed with resp = {resp_s}")
+        gs.warn_count += 1
         return
     # this prints a summary of all new messages currently waiting in the queue
     gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
@@ -4041,15 +4048,14 @@ async def main_listen() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
+        gs.err_count += 1
         raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can listen.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
+            Aborting due to missing or not-found credentials file."""
+        ) from None
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -4699,6 +4705,49 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
             print(f"{txt}")
 
 
+async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
+    """Get avatar(s) of itself or users while already logged in."""
+    if gs.pa.get_avatar == []:
+        gs.pa.get_avatar.append(credentials["user_id"])  # whoami
+    gs.log.debug(f"Getting avatars for these users: {gs.pa.get_avatar}")
+    for user_id in gs.pa.get_avatar:
+        user_id = user_id.strip()
+        resp = await client.get_avatar(user_id)
+        if isinstance(resp, ProfileGetAvatarResponse):
+            gs.log.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
+            avatar_mxc = resp.avatar_url
+            avatar_url = None
+            if avatar_mxc:  # could be None if no avatar
+                avatar_url = await client.mxc_to_http(avatar_mxc)
+            gs.log.debug(
+                f"avatar_mxc is {avatar_mxc}. " f"avatar_url is {avatar_url}"
+            )
+            print(f"{avatar_mxc}{SEP}{avatar_url}")
+        else:
+            gs.log.error(
+                f"Failed getting avatar for user {user_id} "
+                f"from server. {resp}"
+            )
+
+
+async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
+    """Set avatar of itself while already logged in."""
+    user_id = credentials["user_id"]  # whoami
+    avatar_mxc = gs.pa.set_avatar
+    gs.log.debug(f"Setting avatar for user {user_id} to URI {avatar_mxc}.")
+    resp = await client.set_avatar(avatar_mxc)
+    if isinstance(resp, ProfileSetAvatarResponse):
+        gs.log.debug(f"ProfileSetAvatarResponse. Response is: {resp}")
+        gs.log.info(
+            f"Successfully set avatar for user {user_id} "
+            f"to URI {avatar_mxc}."
+        )
+    else:
+        gs.log.error(
+            f"Failed setting avatar for user {user_id} " f"on server. {resp}"
+        )
+
+
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
@@ -4711,16 +4760,15 @@ async def main_roomsetget_action() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
+        gs.err_count += 1
         raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can
             perform any other actions.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
+            Aborting due to missing or not-found credentials file."""
+        ) from None
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -4764,6 +4812,8 @@ async def main_roomsetget_action() -> None:
             await action_delete_mxc_before(client, credentials)
         if gs.pa.rest:
             await action_rest(client, credentials)
+        if gs.pa.set_avatar:
+            await action_set_avatar(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -4783,6 +4833,8 @@ async def main_roomsetget_action() -> None:
             await action_discovery_info(client, credentials)
         if gs.pa.login_info:
             await action_login_info(client, credentials)
+        if gs.pa.get_avatar is not None:  # empty list must invoke function
+            await action_get_avatar(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -4797,15 +4849,14 @@ async def main_verify() -> None:
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
     if not os.path.isfile(credentials_file):
+        gs.err_count += 1
         raise MatrixCommanderError(
             f"""Credentials file was not found.
             Did you start {PROG_WITHOUT_EXT} in the wrong directory?
             Did you specify the credentials options incorrectly?
             Credentials file must be created first before one can verify.
-            Aborting due to missing or not-found credentials file.""",
-            traceback=False,
-            level="error",
-        )
+            Aborting due to missing or not-found credentials file."""
+        ) from None
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -4840,6 +4891,7 @@ async def main_send() -> None:
     if not os.path.isfile(credentials_file):
         gs.log.debug("Credentials file does not exist.")
         await create_credentials_file(credentials_file, store_dir)
+        return
     gs.log.debug("Credentials file does exist.")
     try:
         client, credentials = login_using_credentials_file(
@@ -4957,20 +5009,16 @@ def initial_check_of_log_args() -> None:
     """
     if not gs.pa.log_level:
         return  # all OK
-    t = ""
     for i in range(len(gs.pa.log_level)):
         up = gs.pa.log_level[i].upper()
         gs.pa.log_level[i] = up
         if up not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-            t = (
+            gs.err_count += 1
+            raise MatrixCommanderError(
                 '--log-level only allows values "DEBUG", "INFO", "WARNING", '
                 '"ERROR", or "CRITICAL". --log-level argument incorrect. '
                 f"({up})"
-            )
-    if t == "":
-        return  # all OK
-    else:
-        raise MatrixCommanderError(t)
+            ) from None
 
 
 # according to pylama: function too complex: C901 # noqa: C901
@@ -5018,6 +5066,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.delete_mxc
         or gs.pa.delete_mxc_before
         or gs.pa.rest
+        or gs.pa.set_avatar
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5027,6 +5076,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.devices
         or gs.pa.discovery_info
         or gs.pa.login_info
+        or gs.pa.get_avatar is not None  # empty list must invoke function
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -5210,36 +5260,24 @@ def initial_check_of_args() -> None:  # noqa: C901
     else:
         gs.log.debug("All arguments are valid. All checks passed.")
         return  # all OK
-    raise MatrixCommanderError(t, traceback=False)
+    gs.err_count += 1
+    raise MatrixCommanderError(t) from None
 
 
 # according to linter: function is too complex, C901
-def main(
+def main_inner(
     argv: Union[None, list] = None
 ) -> None:  # noqa: C901 # ignore mccabe if-too-complex
     """Run the program.
 
-    main() is an entry point allowing other Python programs to
-    easily call matrix-commander.
+    Function signature identical to main().
+    Please see main().
 
-    Arguments:
-    ---------
-    argv : list of arguments as in sys.argv; first element is the
-        program name, further elements are the arguments; every
-        element must be of type "str".
-        argv is optional and can be None.
-        If argv is set then these arguments will be used as arguments for
-        matrix-commander. If argv is not set (None or empty list), then
-        sys.argv will be used as arguments for matrix-commander.
-
-    Example input argv: ["matrix-commander"]
-        ["matrix-commander" "--version"]
-        ["matrix-commander" "--message" "Hello" --image "pic.jpg"]
-
-    Returns nothing.
+    Returns None. Returns nothing.
 
     Raises exception if an error is detected. Many exceptions are
         possible. One of them is: MatrixCommanderError.
+        Sets global state to communicate errors.
 
     """
     if argv:
@@ -6120,7 +6158,7 @@ def main(
         "There are a few placeholders. They are: "
         "__homeserver__ (like https://matrix.example.org), "
         "__hostname__ (like matrix.example.org), "
-        "_access_token__, __user_id__ (like @mc:matrix.example.com), "
+        "__access_token__, __user_id__ (like @mc:matrix.example.com), "
         "__device_id__, and __room_id__. If a placeholder is found it is "
         "replaced with the value from the local credentials file. "
         "An example would be: "
@@ -6129,6 +6167,28 @@ def main(
         "Optionally, --access-token can be used to overwrite the "
         "access token from credentials (if needed). "
         "See tests/test-rest.sh for an example.",
+    )
+    ap.add_argument(
+        "--set-avatar",
+        required=False,
+        type=str,
+        # defaults to None if not used, is str if used
+        help=f"Set the avatar MXC resource used by {PROG_WITHOUT_EXT}. "
+        "Provide one MXC URI that looks like this "
+        "'mxc://example.com/SomeStrangeUriKey'..",
+    )
+    ap.add_argument(
+        "--get-avatar",
+        required=False,
+        action="extend",
+        nargs="*",  # None if not used, [] is used without extra args
+        type=str,
+        help=f"Get the avatar MXC resource used by {PROG_WITHOUT_EXT}, or "
+        "one or multiple other users. Specify zero or more user ids. "
+        "If no user id is specified, the avatar of {PROG_WITHOUT_EXT} will "
+        "be fetched. If one or more user ids are given, the avatars of "
+        "these users will be fetched. As response both MXC URI as well as URL "
+        "will be printed.",
     )
     ap.add_argument(
         # no single char flag
@@ -6309,13 +6369,12 @@ def main(
         check_arg_files_readable()
     except Exception as e:
         gs.log.error(e)
-        gs.err_count += 1
         raise MatrixCommanderError(
             f"{PROG_WITHOUT_EXT} forces an early abort. "
             "To avoid partial execution, no action has been performed at all. "
             "Nothing has been sent. Fix your arguments and run the command "
             "again."
-        )
+        ) from None
 
     if gs.pa.version:
         version()  # continue execution
@@ -6343,23 +6402,23 @@ def main(
             # type SSLContext
             gs.ssl = ssl.create_default_context(cafile=gs.pa.ssl_certificate)
         except FileNotFoundError:
+            gs.err_count += 1
             raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" was '
-                "not found.",
-                traceback=False,
-            )
+                "not found."
+            ) from None
         except PermissionError:
+            gs.err_count += 1
             raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" does '
-                "not have read permissions.",
-                traceback=False,
-            )
+                "not have read permissions."
+            ) from None
         except ssl.SSLError:
+            gs.err_count += 1
             raise MatrixCommanderError(
                 f'SSL certificate file "{gs.pa.ssl_certificate}" has '
-                "invalid content. Does not seem to be a certificate.",
-                traceback=False,
-            )
+                "invalid content. Does not seem to be a certificate."
+            ) from None
     elif gs.pa.no_ssl:
         gs.log.debug(
             "SSL will be not be used. The SSL certificate validation "
@@ -6389,72 +6448,74 @@ def main(
             asyncio.run(main_send())
         # the next can be reached on success or failure
         gs.log.debug(f"The program {PROG_WITH_EXT} left the event loop.")
-    except TimeoutError:
-        cleanup()
+    except TimeoutError as e:
+        gs.err_count += 1
         raise MatrixCommanderError(
             f"The program {PROG_WITH_EXT} ran into a timeout. "
             "Most likely connectivity to internet was lost. "
             "If this happens frequently consider running this "
-            "program as a service so it will restart automatically. Sorry.",
-            True,
-        )
-    except MatrixCommanderError as e:
-        cleanup()
-        raise MatrixCommanderError(
-            f"{e}", traceback=e.traceback, level=e.level
-        )
-    except Exception as e:
-        cleanup()
-        raise MatrixCommanderError(
-            f"The program {PROG_WITH_EXT} failed. Sorry.\n{e}",
-            traceback=True,
-        )
+            "program as a service so it will restart automatically. Sorry."
+        ) from e
+    except MatrixCommanderError:
+        raise
     except KeyboardInterrupt:
         gs.log.debug("Keyboard interrupt received.")
-    cleanup()
+    except Exception:
+        gs.err_count += 1
+        gs.log.error(f"The program {PROG_WITH_EXT} failed. Sorry.")
+        raise
+    finally:
+        cleanup()
 
 
-if __name__ == "__main__":
+def main(argv: Union[None, list] = None) -> int:
+    """Run the program.
+
+    main() is an entry point allowing other Python programs to
+    easily call matrix-commander.
+
+    Arguments:
+    ---------
+    argv : list of arguments as in sys.argv; first element is the
+        program name, further elements are the arguments; every
+        element must be of type "str".
+        argv is optional and can be None.
+        If argv is set then these arguments will be used as arguments for
+        matrix-commander. If argv is not set (None or empty list), then
+        sys.argv will be used as arguments for matrix-commander.
+
+    Example input argv: ["matrix-commander"]
+        ["matrix-commander" "--version"]
+        ["matrix-commander" "--message" "Hello" --image "pic.jpg"]
+
+    Returns int. 0 for success. Positive integer for failure.
+        Returns the total number of errors encountered.
+
+    Tries to avoid raising exceptions.
+
+    """
     try:
-        main()
-    except MatrixCommanderError as e:
-        tb = ""
-        if e.traceback:
-            tb = f"\nHere is the traceback.\n{traceback.format_exc()}"
-        if e.level == "info":
-            gs.log.info(f"{e}{tb}")
-        else:
-            gs.log.error(f"{e}{tb}")
-        if gs.err_count > 0 or gs.warn_count > 0:
-            gs.log.info(
-                f"{gs.err_count} "
-                f"error{'' if gs.err_count == 1 else 's'} and "
-                f"{gs.warn_count} "
-                f"warning{'' if gs.warn_count == 1 else 's'} "
-                "occurred."
-            )
-        sys.exit(1)
-    except Exception as e:
+        main_inner(argv)
+    except (Exception, MatrixCommanderError, MatrixCommanderWarning) as e:
+        if e != MatrixCommanderError and e != MatrixCommanderWarning:
+            gs.err_count += 1
         tb = ""
         if gs.pa.debug > 0:
             tb = f"\nHere is the traceback.\n{traceback.format_exc()}"
-        gs.log.error(f"{e}{tb}")
-        if gs.err_count > 0 or gs.warn_count > 0:
-            gs.log.info(
-                f"{gs.err_count} "
-                f"error{'' if gs.err_count == 1 else 's'} and "
-                f"{gs.warn_count} "
-                f"warning{'' if gs.warn_count == 1 else 's'} "
-                "occurred."
-            )
-        sys.exit(1)
+        if e == MatrixCommanderWarning:
+            gs.log.warning(f"{e}{tb}")
+        else:
+            gs.log.error(f"{e}{tb}")
     if gs.err_count > 0 or gs.warn_count > 0:
         gs.log.info(
             f"{gs.err_count} "
             f"error{'' if gs.err_count == 1 else 's'} and "
             f"{gs.warn_count} "
-            f"warning{'' if gs.warn_count == 1 else 's'} "
-            "occurred."
+            f"warning{'' if gs.warn_count == 1 else 's'} occurred."
         )
-    sys.exit(gs.err_count)  # 0 for success
+    return gs.err_count  # 0 for success
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 # EOF

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# just in case PATH is not set correctly
+PATH=".:./matrix_commander:../matrix_commander:$PATH"
+
 # One may set similar values in the terminal before calling the script.
 # export MC_EVENT="\$...some.long.event.id.starting.with.$"
 # export MC_OPTIONS="-d --room \!...some.room.id:matrix.example.org "

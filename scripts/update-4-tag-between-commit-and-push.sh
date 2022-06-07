@@ -1,0 +1,1 @@
+git tag $(cat VERSION)

@@ -105,7 +105,7 @@ function test4() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS"
-        echo "Let's look at the image."
+        echo "Let's look at the text file."
         cat "$TMPFILE" # look at the text file
     else
         echo "FAILURE"

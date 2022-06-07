@@ -43,6 +43,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--delete-mxc` to delete objects from content repository
 - new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
+- new otions `--set-avatar` and `--get-avatar`
 
 # Summary, TLDR
 
@@ -446,6 +447,11 @@ $ # for more examples of --upload, --download, --delete-mxc,
 $ # --delete-mxc-before, --mxc-to-http, see file tests/test-upload.sh
 $ matrix-commander  --rest GET "" '__homeserver__/_matrix/client/versions'
 $ # for more examples of --rest see file tests/test-rest.sh
+$ matrix-commander --get-avatar # get its own avatar MXC URI
+$ # get avatar MXC URIs of other users
+$ matrix-commander --get-avatar '@user1:example.com' '@user2:example.com'
+$ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
+$ # for more examples of --set_avatar see tests/test-setget.sh
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -562,9 +568,10 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
-                           [--rest REST [REST ...]] [--whoami] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
-                           [--file-name FILE_NAME [FILE_NAME ...]]
+                           [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
+                           [--get-avatar [GET_AVATAR ...]] [--whoami]
+                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
+                           [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--version]
@@ -1045,7 +1052,7 @@ options:
                         the URL. All strings must be UTF-8. There are a few
                         placeholders. They are: __homeserver__ (like
                         https://matrix.example.org), __hostname__ (like
-                        matrix.example.org), _access_token__, __user_id__
+                        matrix.example.org), __access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
                         __room_id__. If a placeholder is found it is replaced
                         with the value from the local credentials file. An
@@ -1055,6 +1062,18 @@ options:
                         Optionally, --access-token can be used to overwrite
                         the access token from credentials (if needed). See
                         tests/test-rest.sh for an example.
+  --set-avatar SET_AVATAR
+                        Set the avatar MXC resource used by matrix-commander.
+                        Provide one MXC URI that looks like this
+                        'mxc://example.com/SomeStrangeUriKey'..
+  --get-avatar [GET_AVATAR ...]
+                        Get the avatar MXC resource used by matrix-commander,
+                        or one or multiple other users. Specify zero or more
+                        user ids. If no user id is specified, the avatar of
+                        {PROG_WITHOUT_EXT} will be fetched. If one or more
+                        user ids are given, the avatars of these users will be
+                        fetched. As response both MXC URI as well as URL will
+                        be printed.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1125,7 +1144,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.31.0 2022-06-06. Enjoy, star on Github and
+You are running version 2.32.0 2022-06-07. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
