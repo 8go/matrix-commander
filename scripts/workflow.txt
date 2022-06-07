@@ -19,13 +19,18 @@ git add dist/
 git status
 
 git commit
-scripts/update-4-tag-between-commit-and-push.sh
-git push
+git commit -a
+git commit -m "release: v$(echo VERSION)" # lazy alternative
+scripts/update-4-tag.sh # git tag v$(echo VERSION)
+
+git push && git push origin v"$(cat VERSION)"
 # that kicks off the Docker actions workflow on Github
 # that kicks off the PiPy actions workflow on Github
 
+# Note: a PR does not trigger Github Actions workflows
+
 # double-check if everything is in order
-git tag # list tags
-git log --pretty=oneline # now it shows tag in commit hash
+git tag --list -n | head -n 7 # list tags
+git log --pretty=oneline | head -n 7 # now it shows tag in commit hash
 
 # watch Actions on Github
