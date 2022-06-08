@@ -11,6 +11,20 @@ https://github.com/poljar/matrix-nio)
 
 ![MC> logo](logos/matrix-commander-logo.svg)
 
+<p>
+<a href="https://matrix.org/docs/projects/client/matrix-commander">
+<img src="https://matrix.org/docs/projects/images//made-for-matrix.png"
+alt="made for Matrix" height="100"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://pypi.org/project/matrix-commander/">
+<img src="https://pypi.org/static/images/logo-large.6bdbb439.svg"
+alt="get it on PyPi" height="100"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://hub.docker.com/r/matrixcommander/matrix-commander">
+<img src="https://www.unixtutorial.org/images/software/docker-hub.png"
+alt="get it on Docker Hub" height="100"></a>
+</p>
+
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
 - `matrix-commander` now available on
@@ -1172,7 +1186,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.33.0 2022-06-08. Enjoy, star on Github and
+You are running version 2.33.1 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1243,7 +1257,6 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
-
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1277,74 +1290,27 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-)
+from nio import (AsyncClient, AsyncClientConfig, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 EncryptionError, JoinedMembersError, JoinedRoomsError,
+                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
+                 MessageDirection, PresenceGetError, PresenceSetError,
+                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
+                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
+                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
+                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
+                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
+                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
+                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
+                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1356,7 +1322,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-08"
-VERSIONNR = "2.33.0"
+VERSIONNR = "2.33.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"

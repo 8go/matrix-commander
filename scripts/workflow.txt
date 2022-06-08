@@ -16,7 +16,7 @@ scripts/create-pypi-package.sh # maybe skip this for minor versions
 
 git status
 # don't forget to add the new PyPi dist/* files
-git add dist/
+git add dist/ # must do this! commit -a will not include them
 git status
 
 git commit # or git commit -a

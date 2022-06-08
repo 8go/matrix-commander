@@ -4,6 +4,20 @@ https://github.com/poljar/matrix-nio)
 
 ![MC> logo](logos/matrix-commander-logo.svg)
 
+<p>
+<a href="https://matrix.org/docs/projects/client/matrix-commander">
+<img src="https://matrix.org/docs/projects/images//made-for-matrix.png"
+alt="made for Matrix" height="100"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://pypi.org/project/matrix-commander/">
+<img src="https://pypi.org/static/images/logo-large.6bdbb439.svg"
+alt="get it on PyPi" height="100"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://hub.docker.com/r/matrixcommander/matrix-commander">
+<img src="https://www.unixtutorial.org/images/software/docker-hub.png"
+alt="get it on Docker Hub" height="100"></a>
+</p>
+
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
 - `matrix-commander` now available on
@@ -1165,7 +1179,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.33.0 2022-06-08. Enjoy, star on Github and
+You are running version 2.33.1 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
