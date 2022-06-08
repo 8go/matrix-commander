@@ -66,6 +66,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new option `--rest` to invoke the full Matrix REST API
 - new otions `--set-avatar` and `--get-avatar`
 - new otions `--import-keys` and `--export_keys`
+- new option `--get-openid-token` to provide to other websites for login
 
 # Summary, TLDR
 
@@ -476,6 +477,9 @@ $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
+$ matrix-commander --get-openid-token # get its own OpenId token
+$ # get OpenID tokens for other users
+$ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -595,9 +599,11 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
-                           [--export-keys EXPORT_KEYS EXPORT_KEYS] [--whoami]
-                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
-                           [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
+                           [--export-keys EXPORT_KEYS EXPORT_KEYS]
+                           [--get-openid-token [GET_OPENID_TOKEN ...]]
+                           [--whoami] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--version]
@@ -1116,6 +1122,17 @@ options:
                         the file will be encrypted with. Note that this does
                         not save other information such as the private
                         identity keys of the device.
+  --get-openid-token [GET_OPENID_TOKEN ...]
+                        Get an OpenID token for matrix-commander, or for one
+                        or multiple other users. It prints an OpenID token
+                        object that the requester may supply to another
+                        service to verify their identity in Matrix. See
+                        http://www.openid.net/. Specify zero or more user ids.
+                        If no user id is specified, an OpenID for
+                        {PROG_WITHOUT_EXT} will be fetched. If one or more
+                        user ids are given, the OpenID of these users will be
+                        fetched. As response the user id(s) and OpenID(s) will
+                        be printed.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1181,12 +1198,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc, --delete-mxc-before and --rest actions.
+                        --delete-mxc, --delete-mxc-before, and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.33.1 2022-06-08. Enjoy, star on Github and
+You are running version 2.34.0 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1257,6 +1274,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
+
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1290,27 +1308,74 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, JoinedMembersError, JoinedRoomsError,
-                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
-                 MessageDirection, PresenceGetError, PresenceSetError,
-                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
-                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
-                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
-                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
-                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
-                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
-                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
-                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
-                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
-                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    EncryptionError,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileSetAvatarResponse,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomReadMarkersError,
+    RoomResolveAliasError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+)
 from PIL import Image
 
 try:
@@ -1320,9 +1385,16 @@ try:
 except ImportError:
     HAVE_NOTIFY = False
 
+try:
+    from nio import GetOpenIDTokenError
+
+    HAVE_OPENID = True
+except ImportError:
+    HAVE_OPENID = False
+
 # version number
 VERSION = "2022-06-08"
-VERSIONNR = "2.33.1"
+VERSIONNR = "2.34.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4814,6 +4886,44 @@ async def action_export_keys(client: AsyncClient, credentials: dict) -> None:
     gs.log.info(f"Successfully exported keys to file {file}.")
 
 
+async def action_get_openid_token(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get OpenId token(s) for itself or users while already logged in."""
+    if not HAVE_OPENID:
+        nio_version = pkg_resources.get_distribution("matrix-nio").version
+        gs.log.error(
+            f"You are running matrix-nio version {nio_version}. "
+            f"This feature is only available on versions larger than 0.19.0. "
+            "Update if necessary. "
+            "Wait for version 0.19.1 or 0.20 to be released. "
+            "Or use unreleased code from master branch on Github."
+        )
+        gs.err_count += 1
+        return
+    if gs.pa.get_openid_token == []:
+        gs.pa.get_openid_token.append(credentials["user_id"])  # whoami
+    gs.log.debug(f"Getting OpenIDs for these users: {gs.pa.get_openid_token}")
+    for user_id in gs.pa.get_openid_token:
+        user_id = user_id.strip()
+        resp = await client.get_openid_token(user_id)
+        if isinstance(resp, GetOpenIDTokenError):
+            gs.log.error(
+                f"Failed to get OpenId for user {user_id}. Response: {resp}"
+            )
+            gs.err_count += 1
+        else:
+            gs.log.debug(f"get_openid_token successful. Response is: {resp}")
+            gs.log.info(
+                f"Successfully obtained OpenId token "
+                f"{resp.access_token} for user {user_id}."
+            )
+            print(
+                f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
+                f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
+            )
+
+
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
@@ -4905,6 +5015,8 @@ async def main_roomsetget_action() -> None:
             await action_get_avatar(client, credentials)
         if gs.pa.export_keys:
             await action_export_keys(client, credentials)
+        if gs.pa.get_openid_token is not None:  # empty list must invoke func
+            await action_get_openid_token(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5149,6 +5261,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.login_info
         or gs.pa.get_avatar is not None  # empty list must invoke function
         or gs.pa.export_keys
+        or gs.pa.get_openid_token
+        is not None  # empty list must invoke function
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -6289,6 +6403,22 @@ def main_inner(
         "identity keys of the device.",
     )
     ap.add_argument(
+        "--get-openid-token",
+        required=False,
+        action="extend",
+        nargs="*",  # None if not used, [] is used without extra args
+        type=str,
+        help=f"Get an OpenID token for {PROG_WITHOUT_EXT}, or for "
+        "one or multiple other users. It prints an OpenID token object "
+        "that the requester may supply to another service to verify their "
+        "identity in Matrix. See http://www.openid.net/. "
+        "Specify zero or more user ids. "
+        "If no user id is specified, an OpenID for {PROG_WITHOUT_EXT} will "
+        "be fetched. If one or more user ids are given, the OpenID of "
+        "these users will be fetched. As response the user id(s) and "
+        "OpenID(s) will be printed.",
+    )
+    ap.add_argument(
         # no single char flag
         "--whoami",
         required=False,
@@ -6402,7 +6532,7 @@ def main_inner(
         help="Set a custom access token for use by certain actions. "
         "It is an optional argument. "
         "By default --access-token is ignored and not used. "
-        "It is used only by the --delete-mxc, --delete-mxc-before "
+        "It is used only by the --delete-mxc, --delete-mxc-before, "
         "and --rest actions.",
     )
     ap.add_argument(

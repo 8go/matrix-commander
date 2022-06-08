@@ -59,6 +59,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new option `--rest` to invoke the full Matrix REST API
 - new otions `--set-avatar` and `--get-avatar`
 - new otions `--import-keys` and `--export_keys`
+- new option `--get-openid-token` to provide to other websites for login
 
 # Summary, TLDR
 
@@ -469,6 +470,9 @@ $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
+$ matrix-commander --get-openid-token # get its own OpenId token
+$ # get OpenID tokens for other users
+$ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -588,9 +592,11 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
-                           [--export-keys EXPORT_KEYS EXPORT_KEYS] [--whoami]
-                           [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
-                           [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
+                           [--export-keys EXPORT_KEYS EXPORT_KEYS]
+                           [--get-openid-token [GET_OPENID_TOKEN ...]]
+                           [--whoami] [--no-ssl]
+                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--version]
@@ -1109,6 +1115,17 @@ options:
                         the file will be encrypted with. Note that this does
                         not save other information such as the private
                         identity keys of the device.
+  --get-openid-token [GET_OPENID_TOKEN ...]
+                        Get an OpenID token for matrix-commander, or for one
+                        or multiple other users. It prints an OpenID token
+                        object that the requester may supply to another
+                        service to verify their identity in Matrix. See
+                        http://www.openid.net/. Specify zero or more user ids.
+                        If no user id is specified, an OpenID for
+                        {PROG_WITHOUT_EXT} will be fetched. If one or more
+                        user ids are given, the OpenID of these users will be
+                        fetched. As response the user id(s) and OpenID(s) will
+                        be printed.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1174,12 +1191,12 @@ options:
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
-                        --delete-mxc, --delete-mxc-before and --rest actions.
+                        --delete-mxc, --delete-mxc-before, and --rest actions.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.33.1 2022-06-08. Enjoy, star on Github and
+You are running version 2.34.0 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
