@@ -11,11 +11,13 @@ env:
 #       - master
 
 # Adding "git push origin <tag>" made it trigger the workflow twice.
-# Hence made it so that only pushing tags triggers the workflow
+# Hence made it so that only pushing tags triggers the workflow.
+# And only if the tag is a version ending in ".0". 
+# Minor versions like "v2.40.1" will be skipped.
 on:
   push:
     tags:
-      - '*'
+      - 'v.*\.0'
 
 jobs:
   buildx:
