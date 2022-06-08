@@ -17,7 +17,7 @@ env:
 on:
   push:
     tags:
-      - 'v.*\.0'
+      - 'v*.0'
 
 jobs:
   buildx:
