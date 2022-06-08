@@ -12,7 +12,7 @@ scripts/update-2-help.py
 scripts/update-3-readme.py
 # produce PyPi distribution
 # maybe cancel upload to PyPi if Github Actions workflow is preferred
-scripts/create-pypi-package.sh
+scripts/create-pypi-package.sh # maybe skip this for minor versions
 
 git status
 # don't forget to add the new PyPi dist/* files
@@ -20,10 +20,10 @@ git add dist/
 git status
 
 git commit # or git commit -a
-git commit -m "release: v$(echo VERSION)" # doing a 2nd commit with version #
+# alternatively: git commit -m "release: v$(echo VERSION)" # being lazy
 scripts/update-4-tag.sh # git tag v$(echo VERSION)
 
-git push # first push
+git push # 1st push, since there is no tag, no trigger on workflows
 git push origin v"$(cat VERSION)" # 2nd push, pushing tag
 # only pushing a tag kicks off the workflow and only if not a minor version
 # tag push of major version kicks off the Docker actions workflow on Github

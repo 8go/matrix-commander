@@ -60,6 +60,7 @@ if [ "$COUNT" == "1" ]; then
         Z=$((Z + 1))
     else
         M=$((M + 1))
+        Z="0"
     fi
     NEWVERSIONNR="${A}.${M}.${Z}"
     echo $NEWVERSIONNR >"$VERSION_FILE"

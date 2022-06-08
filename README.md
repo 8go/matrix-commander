@@ -44,6 +44,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
 - new otions `--set-avatar` and `--get-avatar`
+- new otions `--import-keys` and `--export_keys`
 
 # Summary, TLDR
 
@@ -452,6 +453,8 @@ $ # get avatar MXC URIs of other users
 $ matrix-commander --get-avatar '@user1:example.com' '@user2:example.com'
 $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
+$ matrix-commander --export-keys mykeys "my passphrase" # export keys
+$ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -569,7 +572,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
-                           [--get-avatar [GET_AVATAR ...]] [--whoami]
+                           [--get-avatar [GET_AVATAR ...]]
+                           [--import-keys IMPORT_KEYS IMPORT_KEYS]
+                           [--export-keys EXPORT_KEYS EXPORT_KEYS] [--whoami]
                            [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
                            [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -1065,7 +1070,7 @@ options:
   --set-avatar SET_AVATAR
                         Set the avatar MXC resource used by matrix-commander.
                         Provide one MXC URI that looks like this
-                        'mxc://example.com/SomeStrangeUriKey'..
+                        'mxc://example.com/SomeStrangeUriKey'.
   --get-avatar [GET_AVATAR ...]
                         Get the avatar MXC resource used by matrix-commander,
                         or one or multiple other users. Specify zero or more
@@ -1074,6 +1079,22 @@ options:
                         user ids are given, the avatars of these users will be
                         fetched. As response both MXC URI as well as URL will
                         be printed.
+  --import-keys IMPORT_KEYS IMPORT_KEYS
+                        Import Megolm decryption keys from a file. This is an
+                        optional argument. If used it must be followed by two
+                        values. (a) a file name from which the keys will be
+                        read. (b) a passphrase with which the file can be
+                        decrypted with. The keys will be added to the current
+                        instance as well as written to the database. See also
+                        --export-keys.
+  --export-keys EXPORT_KEYS EXPORT_KEYS
+                        Export all the Megolm decryption keys of this device.
+                        This is an optional argument. If used it must be
+                        followed by two values. (a) a file name to which the
+                        keys will be written to. (b) a passphrase with which
+                        the file will be encrypted with. Note that this does
+                        not save other information such as the private
+                        identity keys of the device.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1144,7 +1165,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.32.1 2022-06-08. Enjoy, star on Github and
+You are running version 2.33.0 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

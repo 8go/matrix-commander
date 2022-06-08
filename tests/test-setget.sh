@@ -118,6 +118,30 @@ function test3() {
     done
 }
 
+function test4() {
+    echo "=== Test 4: exporting keys to file ==="
+    TMPFILE="test.keys.tmp"
+    matrix-commander --export-keys "$TMPFILE" "bad-passphrase-3582" $MC_OPTIONS
+    echo "Here is the file with the exported keys:"
+    ls -l "$TMPFILE"
+}
+
+function test5() {
+    echo "=== Test 5: importing keys from file ==="
+    TMPFILEBK="test.keys.bad.tmp"
+    echo "bad key file" >"$TMPFILEBK"
+    echo "This should fail because of bad keys file."
+    matrix-commander --import-keys "$TMPFILEBK" "bad-passphrase-3582" $MC_OPTIONS
+    echo "This should fail because of wrong passphrase."
+    matrix-commander --import-keys "$TMPFILE" "wrong-passphrase" $MC_OPTIONS
+    echo "This should work."
+    # slow, many keys usually
+    matrix-commander --import-keys "$TMPFILE" "bad-passphrase-3582" $MC_OPTIONS
+    rm -f "$TMPFILE" "$TMPFILEBK"
+}
+
 test1
 test2
 test3
+test4
+test5

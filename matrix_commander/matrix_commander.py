@@ -51,6 +51,7 @@ https://github.com/poljar/matrix-nio)
 - new option `--delete-mxc-before` to delete old objects from content repo
 - new option `--rest` to invoke the full Matrix REST API
 - new otions `--set-avatar` and `--get-avatar`
+- new otions `--import-keys` and `--export_keys`
 
 # Summary, TLDR
 
@@ -459,6 +460,8 @@ $ # get avatar MXC URIs of other users
 $ matrix-commander --get-avatar '@user1:example.com' '@user2:example.com'
 $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
+$ matrix-commander --export-keys mykeys "my passphrase" # export keys
+$ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -576,7 +579,9 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
-                           [--get-avatar [GET_AVATAR ...]] [--whoami]
+                           [--get-avatar [GET_AVATAR ...]]
+                           [--import-keys IMPORT_KEYS IMPORT_KEYS]
+                           [--export-keys EXPORT_KEYS EXPORT_KEYS] [--whoami]
                            [--no-ssl] [--ssl-certificate SSL_CERTIFICATE]
                            [--no-sso] [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
@@ -1072,7 +1077,7 @@ options:
   --set-avatar SET_AVATAR
                         Set the avatar MXC resource used by matrix-commander.
                         Provide one MXC URI that looks like this
-                        'mxc://example.com/SomeStrangeUriKey'..
+                        'mxc://example.com/SomeStrangeUriKey'.
   --get-avatar [GET_AVATAR ...]
                         Get the avatar MXC resource used by matrix-commander,
                         or one or multiple other users. Specify zero or more
@@ -1081,6 +1086,22 @@ options:
                         user ids are given, the avatars of these users will be
                         fetched. As response both MXC URI as well as URL will
                         be printed.
+  --import-keys IMPORT_KEYS IMPORT_KEYS
+                        Import Megolm decryption keys from a file. This is an
+                        optional argument. If used it must be followed by two
+                        values. (a) a file name from which the keys will be
+                        read. (b) a passphrase with which the file can be
+                        decrypted with. The keys will be added to the current
+                        instance as well as written to the database. See also
+                        --export-keys.
+  --export-keys EXPORT_KEYS EXPORT_KEYS
+                        Export all the Megolm decryption keys of this device.
+                        This is an optional argument. If used it must be
+                        followed by two values. (a) a file name to which the
+                        keys will be written to. (b) a passphrase with which
+                        the file will be encrypted with. Note that this does
+                        not save other information such as the private
+                        identity keys of the device.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1151,7 +1172,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.32.1 2022-06-08. Enjoy, star on Github and
+You are running version 2.33.0 2022-06-08. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1222,6 +1243,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 """
 
 import argparse
+
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1255,27 +1277,74 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 JoinedMembersError, JoinedRoomsError, JoinError,
-                 KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
-                 MessageDirection, PresenceGetError, PresenceSetError,
-                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
-                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
-                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
-                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
-                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
-                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
-                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
-                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
-                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
-                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    EncryptionError,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileSetAvatarResponse,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomReadMarkersError,
+    RoomResolveAliasError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+)
 from PIL import Image
 
 try:
@@ -1287,7 +1356,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-08"
-VERSIONNR = "2.32.1"
+VERSIONNR = "2.33.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4748,6 +4817,37 @@ async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
         )
 
 
+async def action_import_keys(client: AsyncClient, credentials: dict) -> None:
+    """Import Megaolm keys from file while already logged in."""
+    file = gs.pa.import_keys[0]
+    passphrase = gs.pa.import_keys[1]
+    gs.log.debug(f"Importing keys from file {file} using a passphrase.")
+    resp = await client.import_keys(file, passphrase)
+    if isinstance(resp, EncryptionError):
+        gs.log.error(
+            f"Failed to decrypt keys file. File {file} is invalid or "
+            f"couldn’t be decrypted. {resp}"
+        )
+        gs.err_count += 1
+    else:
+        gs.log.debug(f"import_keys successful. Response is: {resp}")
+        gs.log.info(f"Successfully imported keys from file {file}.")
+
+
+async def action_export_keys(client: AsyncClient, credentials: dict) -> None:
+    """Export Megaolm keys from file while already logged in."""
+    file = gs.pa.export_keys[0]
+    passphrase = gs.pa.export_keys[1]
+    gs.log.debug(f"Exporting keys to file {file} using a passphrase.")
+    try:
+        resp = await client.export_keys(file, passphrase)
+    except Exception:
+        gs.log.error(f"Failed to export keys to file {file}.")
+        raise
+    gs.log.debug(f"export_keys successful. Response is: {resp}")
+    gs.log.info(f"Successfully exported keys to file {file}.")
+
+
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
@@ -4814,6 +4914,8 @@ async def main_roomsetget_action() -> None:
             await action_rest(client, credentials)
         if gs.pa.set_avatar:
             await action_set_avatar(client, credentials)
+        if gs.pa.import_keys:
+            await action_import_keys(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -4835,6 +4937,8 @@ async def main_roomsetget_action() -> None:
             await action_login_info(client, credentials)
         if gs.pa.get_avatar is not None:  # empty list must invoke function
             await action_get_avatar(client, credentials)
+        if gs.pa.export_keys:
+            await action_export_keys(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5067,6 +5171,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.delete_mxc_before
         or gs.pa.rest
         or gs.pa.set_avatar
+        or gs.pa.import_keys
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5077,6 +5182,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.discovery_info
         or gs.pa.login_info
         or gs.pa.get_avatar is not None  # empty list must invoke function
+        or gs.pa.export_keys
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -6175,7 +6281,7 @@ def main_inner(
         # defaults to None if not used, is str if used
         help=f"Set the avatar MXC resource used by {PROG_WITHOUT_EXT}. "
         "Provide one MXC URI that looks like this "
-        "'mxc://example.com/SomeStrangeUriKey'..",
+        "'mxc://example.com/SomeStrangeUriKey'.",
     )
     ap.add_argument(
         "--get-avatar",
@@ -6189,6 +6295,32 @@ def main_inner(
         "be fetched. If one or more user ids are given, the avatars of "
         "these users will be fetched. As response both MXC URI as well as URL "
         "will be printed.",
+    )
+    ap.add_argument(
+        "--import-keys",
+        required=False,
+        action="extend",
+        nargs=2,  # filename for import, passphrase
+        type=str,
+        help="Import Megolm decryption keys from a file. "
+        "This is an optional argument. If used it must be followed by "
+        "two values. (a) a file name from which the keys will be read. "
+        "(b) a passphrase with which the file can be decrypted with. "
+        "The keys will be added to the current instance as well as "
+        "written to the database. See also --export-keys.",
+    )
+    ap.add_argument(
+        "--export-keys",
+        required=False,
+        action="extend",
+        nargs=2,  # filename for export, passphrase
+        type=str,
+        help="Export all the Megolm decryption keys of this device. "
+        "This is an optional argument. If used it must be followed by "
+        "two values. (a) a file name to which the keys will be written to. "
+        "(b) a passphrase with which the file will be encrypted with. "
+        "Note that this does not save other information such as the private "
+        "identity keys of the device.",
     )
     ap.add_argument(
         # no single char flag
