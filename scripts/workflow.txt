@@ -7,6 +7,7 @@ run test scripts in tests/test*sh and tests/test*py
 
 scripts/lintmc.sh
 scripts/update-1-version.sh
+# alternatively: scripts/update-1-version.sh --minor # this skips Action workflow
 scripts/update-2-help.py
 scripts/update-3-readme.py
 # produce PyPi distribution
@@ -18,19 +19,19 @@ git status
 git add dist/
 git status
 
-git commit
-git commit -a
-git commit -m "release: v$(echo VERSION)" # lazy alternative
+git commit # or git commit -a
+git commit -m "release: v$(echo VERSION)" # doing a 2nd commit with version #
 scripts/update-4-tag.sh # git tag v$(echo VERSION)
 
-git push && git push origin v"$(cat VERSION)"
-# that kicks off the Docker actions workflow on Github
-# that kicks off the PiPy actions workflow on Github
-
+git push # first push
+git push origin v"$(cat VERSION)" # 2nd push, pushing tag
+# only pushing a tag kicks off the workflow and only if not a minor version
+# tag push of major version kicks off the Docker actions workflow on Github
+# tag push of major version kicks off the PiPy actions workflow on Github
 # Note: a PR does not trigger Github Actions workflows
 
 # double-check if everything is in order
 git tag --list -n | head -n 7 # list tags
 git log --pretty=oneline | head -n 7 # now it shows tag in commit hash
 
-# watch Actions on Github
+# watch Actions on Github, iff any

@@ -2,6 +2,7 @@
 
 FN="matrix_commander/matrix_commander.py"
 VERSION_FILE="VERSION"
+MINOR="0"
 
 if ! [ -f "$FN" ]; then
     FN="../$FN"
@@ -15,6 +16,11 @@ fi
 if ! [ -f "$FN" ]; then
     echo "ERROR: File \"$FN\" not found."
     exit 1
+fi
+
+if [ "${1,,}" == "-m" ] || [ "${1,,}" == "--minor" ]; then
+    echo "Doing only a MINOR version increment."
+    MINOR="1"
 fi
 
 PREFIX="VERSION = "
@@ -50,7 +56,11 @@ if [ "$COUNT" == "1" ]; then
     A=$(echo $NR | cut -d'.' -f1)
     M=$(echo $NR | cut -d'.' -f2)
     Z=$(echo $NR | cut -d'.' -f3)
-    M=$((M + 1))
+    if [ "$MINOR" == "1" ]; then
+        Z=$((Z + 1))
+    else
+        M=$((M + 1))
+    fi
     NEWVERSIONNR="${A}.${M}.${Z}"
     echo $NEWVERSIONNR >"$VERSION_FILE"
     NEWVERSION="$PREFIX\"${A}.${M}.${Z}\""
