@@ -9,11 +9,14 @@ r"""matrix_commander.py.
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![MC> logo](logos/matrix-commander-logo.svg)
+<p>
+<img
+src="https://raw.githubusercontent.com/8go/matrix-commander/master/logos/mc.svg"
+alt="MC> logo" height="150">
 
 <p>
 <a href="https://matrix.org/docs/projects/client/matrix-commander">
-<img src="https://matrix.org/docs/projects/images//made-for-matrix.png"
+<img src="https://matrix.org/docs/projects/images/made-for-matrix.png"
 alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
@@ -1203,7 +1206,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.34.0 2022-06-08. Enjoy, star on Github and
+You are running version 2.34.1 2022-06-09. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1267,14 +1270,13 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, @pataquets, etc.
+    @opk12, @pataquets, @KizzyCode, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 
 """
 
 import argparse
-
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 import ast
@@ -1308,74 +1310,27 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomReadMarkersError,
-    RoomResolveAliasError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-)
+from nio import (AsyncClient, AsyncClientConfig, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 EncryptionError, JoinedMembersError, JoinedRoomsError,
+                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
+                 MessageDirection, PresenceGetError, PresenceSetError,
+                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
+                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
+                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
+                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
+                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
+                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
+                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
+                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto)
 from PIL import Image
 
 try:
@@ -1393,8 +1348,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-08"
-VERSIONNR = "2.34.0"
+VERSION = "2022-06-09"
+VERSIONNR = "2.34.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4506,7 +4461,7 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
                 "(i.e. plain-text). No decryption will be attempted."
             )
         mxc = download
-        # version incompatibility between matrix-nio 0.18.7 and 0.19.0
+        # version incompatibility between matrix-nio 0.19.0 and 0.19.1+
         # https://mtrx.sytes.net/OIukKBUUpPsPXkEGBxuKVIEo
         # server_name = "mtrx.sytes.net"
         # media_id = "OIukKBUUpPsPXkEGBxuKVIEo"
@@ -4522,8 +4477,8 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
             f"Converted mxc {mxc} to server_name {server_name} and "
             f"media_id {media_id}."
         )
-        # v0.18.7: resp = await client.download(mxc=mxc, filename=filename)
-        # v0.19.0+
+        # v0.19.1+: resp = await client.download(mxc=mxc, filename=filename)
+        # v0.19.0:
         resp = await client.download(
             server_name=server_name, media_id=media_id, filename=filename
         )

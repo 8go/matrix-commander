@@ -2,11 +2,14 @@
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
 
-![MC> logo](logos/matrix-commander-logo.svg)
+<p>
+<img
+src="https://raw.githubusercontent.com/8go/matrix-commander/master/logos/mc.svg"
+alt="MC> logo" height="150">
 
 <p>
 <a href="https://matrix.org/docs/projects/client/matrix-commander">
-<img src="https://matrix.org/docs/projects/images//made-for-matrix.png"
+<img src="https://matrix.org/docs/projects/images/made-for-matrix.png"
 alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
@@ -1196,7 +1199,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.34.0 2022-06-08. Enjoy, star on Github and
+You are running version 2.34.1 2022-06-09. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1260,7 +1263,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, @pataquets, etc.
+    @opk12, @pataquets, @KizzyCode, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 
