@@ -63,6 +63,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new otions `--set-avatar` and `--get-avatar`
 - new otions `--import-keys` and `--export_keys`
 - new option `--get-openid-token` to provide to other websites for login
+- new option `--delete-device`
 
 # Summary, TLDR
 
@@ -476,6 +477,9 @@ $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
 $ # get OpenID tokens for other users
 $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
+$ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
+$ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
+    --user '@user1:example.com' --password 'user1-password'
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -597,12 +601,14 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
+                           [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
-                           [--access-token ACCESS_TOKEN] [--version]
+                           [--access-token ACCESS_TOKEN] [--password PASSWORD]
+                           [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
 program will configure itself. On further runs this program implements a
@@ -718,38 +724,40 @@ options:
                         Specify one or multiple users. This option is
                         meaningful in combination with a) room actions like
                         --room-invite, --room-ban, --room-unban, etc. and b)
-                        send actions like -m, -i, -f, etc. as well as c) some
-                        listen actions --listen. In case of a) this option
-                        --user specifies the users to be used with room
-                        commands (like invite, ban, etc.). In case of b) the
-                        option --user can be used as an alternative to
-                        specifying a room as destination for text (-m), images
-                        (-i), etc. For send actions '--user' is providing the
-                        functionality of 'DM (direct messaging)'. For c) this
-                        option allows an alternative to specifying a room as
-                        destination for some --listen actions. What is a DM?
-                        matrix-commander tries to find a room that contains
-                        only the sender and the receiver, hence DM. These
-                        rooms have nothing special other the fact that they
-                        only have 2 members and them being the sender and
-                        recipient respectively. If such a room is found, the
-                        first one found will be used as destination. If no
-                        such room is found, the send fails and the user should
-                        do a --room-create and --room-invite first. If
-                        multiple such rooms exist, one of them will be used
-                        (arbitrarily). For sending and listening, specifying a
-                        room directly is always faster and more efficient than
-                        specifying a user. So, if you know the room, it is
-                        preferred to use --room instead of --user. For b) and
-                        c) --user can be specified in 3 ways: 1) full user id
-                        as in '@user:example.org', 2) partial user id as in
-                        '@user' when the user is on the same homeserver
-                        (example.org will be automatically appended), or 3) a
-                        display name. Be careful, when using display names as
-                        they might not be unique, and you could be sending to
-                        the wrong person. To see possible display names use
-                        the --joined-members '*' option which will show you
-                        the display names in the middle column.
+                        send actions like -m, -i, -f, etc. c) some listen
+                        actions --listen, as well as d) actions like --delete-
+                        device. In case of a) this option --user specifies the
+                        users to be used with room commands (like invite, ban,
+                        etc.). In case of b) the option --user can be used as
+                        an alternative to specifying a room as destination for
+                        text (-m), images (-i), etc. For send actions '--user'
+                        is providing the functionality of 'DM (direct
+                        messaging)'. For c) this option allows an alternative
+                        to specifying a room as destination for some --listen
+                        actions. For d) this gives the otion to delete the
+                        device of a different user. What is a DM? matrix-
+                        commander tries to find a room that contains only the
+                        sender and the receiver, hence DM. These rooms have
+                        nothing special other the fact that they only have 2
+                        members and them being the sender and recipient
+                        respectively. If such a room is found, the first one
+                        found will be used as destination. If no such room is
+                        found, the send fails and the user should do a --room-
+                        create and --room-invite first. If multiple such rooms
+                        exist, one of them will be used (arbitrarily). For
+                        sending and listening, specifying a room directly is
+                        always faster and more efficient than specifying a
+                        user. So, if you know the room, it is preferred to use
+                        --room instead of --user. For b) and c) --user can be
+                        specified in 3 ways: 1) full user id as in
+                        '@user:example.org', 2) partial user id as in '@user'
+                        when the user is on the same homeserver (example.org
+                        will be automatically appended), or 3) a display name.
+                        Be careful, when using display names as they might not
+                        be unique, and you could be sending to the wrong
+                        person. To see possible display names use the
+                        --joined-members '*' option which will show you the
+                        display names in the middle column.
   --name NAME [NAME ...]
                         Specify one or multiple names. This option is only
                         meaningful in combination with option --room-create.
@@ -1098,8 +1106,8 @@ options:
                         Get the avatar MXC resource used by matrix-commander,
                         or one or multiple other users. Specify zero or more
                         user ids. If no user id is specified, the avatar of
-                        {PROG_WITHOUT_EXT} will be fetched. If one or more
-                        user ids are given, the avatars of these users will be
+                        matrix-commander will be fetched. If one or more user
+                        ids are given, the avatars of these users will be
                         fetched. As response both MXC URI as well as URL will
                         be printed.
   --import-keys IMPORT_KEYS IMPORT_KEYS
@@ -1129,6 +1137,18 @@ options:
                         user ids are given, the OpenID of these users will be
                         fetched. As response the user id(s) and OpenID(s) will
                         be printed.
+  --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
+                        Delete one or multiple devices. By default devices
+                        belonging to matrix-commander will be deleted. If the
+                        devices belong to a different user, use the --user
+                        argument to specify the user, i.e. owner. Only exactly
+                        one user can be specified with the optional --user
+                        argument. Device deletion requires the user password.
+                        It must be specified with the --password argument. If
+                        the server uses only HTTP (and not HTTPS), then the
+                        password can be visible to attackers. Hence, if the
+                        server does not support HTTPS this operation is
+                        discouraged.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1195,11 +1215,14 @@ options:
                         It is an optional argument. By default --access-token
                         is ignored and not used. It is used only by the
                         --delete-mxc, --delete-mxc-before, and --rest actions.
+  --password PASSWORD   Use the password specified in certain actions. It is
+                        an optional argument. By default --password is ignored
+                        and not used. It is used only by the --delete-device.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.34.1 2022-06-09. Enjoy, star on Github and
+You are running version 2.35.0 2022-06-09. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
