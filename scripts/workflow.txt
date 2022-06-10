@@ -23,8 +23,11 @@ git commit # or git commit -a
 # alternatively: git commit -m "release: v$(echo VERSION)" # being lazy
 scripts/update-4-tag.sh # git tag v$(echo VERSION)
 
-git push # 1st push, since there is no tag, no trigger on workflows
-git push origin v"$(cat VERSION)" # 2nd push, pushing tag
+# git push && git push origin v"$(cat VERSION)"
+# # git push # 1st push, since there is no tag, no trigger on workflows
+# # git push origin v"$(cat VERSION)" # 2nd push, pushing tag
+# instead of 2 separate pushes, one can use annotated tags and ----follow-tags
+git push --follow-tags
 # only pushing a tag kicks off the workflow and only if not a minor version
 # tag push of major version kicks off the Docker actions workflow on Github
 # tag push of major version kicks off the PiPy actions workflow on Github
@@ -33,5 +36,6 @@ git push origin v"$(cat VERSION)" # 2nd push, pushing tag
 # double-check if everything is in order
 git tag --list -n | head -n 7 # list tags
 git log --pretty=oneline -n 7 # now it shows tag in commit hash
+git status
 
 # watch Actions on Github, iff any

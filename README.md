@@ -64,6 +64,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new otions `--import-keys` and `--export_keys`
 - new option `--get-openid-token` to provide to other websites for login
 - new option `--delete-device`
+- new option `--room-redact` to delete messages, images and other events
 
 # Summary, TLDR
 
@@ -480,6 +481,12 @@ $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
 $ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
     --user '@user1:example.com' --password 'user1-password'
+$ # delete a message with event id 'someEventId'
+# matrix-commander --room-redact '!someroomId1:example.com' 'someEventId'
+$ # delete 2 images from 2 rooms
+$ matrix-commander --room-redact \
+    '\!someroomId1:example.com' '\$someEventId1' 'Image deleted, obsolete info'
+    '\!someroomId2:example.com' '\$someEventId2' 'Image deleted, outdated'
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -602,6 +609,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
+                           [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
@@ -620,12 +628,12 @@ events can be sent as well. For receiving there are three main options: listen
 forever, listen once and quit, and get the last N messages and quit. Emoji
 verification is built-in which can be used to verify devices. End-to-end
 encryption is enabled by default and cannot be turned off. ─── Bundling
-several actions together into a single call to {PROG_WITHOUT_EXT} is faster
-than calling {PROG_WITHOUT_EXT} multiple times with only one action. If there
-are both 'set' and 'get' actions present in the arguments, then the 'set'
-actions will be performed before the 'get' actions. ─── For even more
-explications and examples also read the documentation provided in the on-line
-Github README.md file or the README.md in your local installation.
+several actions together into a single call to matrix-commander is faster than
+calling matrix-commander multiple times with only one action. If there are
+both 'set' and 'get' actions present in the arguments, then the 'set' actions
+will be performed before the 'get' actions. ─── For even more explications and
+examples also read the documentation provided in the on-line Github README.md
+file or the README.md in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -976,10 +984,10 @@ options:
                         name of itself. Send, listen and verify operations are
                         allowed when getting display name(s).
   --set-presence SET_PRESENCE
-                        Set presence of {PROG_WITHOUT_EXT} to the given value.
+                        Set presence of matrix-commander to the given value.
                         Must be one of these values: “online”, “offline”,
                         “unavailable”. Otherwise an error will be produced.
-  --get-presence        Get presence of {PROG_WITHOUT_EXT} (itself), or of one
+  --get-presence        Get presence of matrix-commander (itself), or of one
                         or multiple users. Specify user(s) with the --user
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
@@ -1132,11 +1140,10 @@ options:
                         object that the requester may supply to another
                         service to verify their identity in Matrix. See
                         http://www.openid.net/. Specify zero or more user ids.
-                        If no user id is specified, an OpenID for
-                        {PROG_WITHOUT_EXT} will be fetched. If one or more
-                        user ids are given, the OpenID of these users will be
-                        fetched. As response the user id(s) and OpenID(s) will
-                        be printed.
+                        If no user id is specified, an OpenID for matrix-
+                        commander will be fetched. If one or more user ids are
+                        given, the OpenID of these users will be fetched. As
+                        response the user id(s) and OpenID(s) will be printed.
   --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
@@ -1149,6 +1156,33 @@ options:
                         password can be visible to attackers. Hence, if the
                         server does not support HTTPS this operation is
                         discouraged.
+  --room-redact ROOM_REDACT [ROOM_REDACT ...], --room-delete-content ROOM_REDACT [ROOM_REDACT ...]
+                        Strip information out of one or several events, e.g.
+                        messages. Redact is used in the meaning of 'strip,
+                        wipe, black-out', not in the meaning of 'edit'. This
+                        action removes, deletes the content of an event while
+                        not removing the event. You can wipe text from a
+                        previous message, etc. Typical Matrix clients like
+                        Element will delete messages, images and other objects
+                        from the GUI once they have been redacted. So, --room-
+                        redact is a way to delete a message, images, etc. The
+                        content is wiped, the GUI deletes the message, but the
+                        server keeps the event history. Note, while this
+                        deletes from the client (GUI, e.g. Element), it does
+                        not delete from the database on the server. So, this
+                        call is not a way to clean up the server database.
+                        Each redact (wipe, strip, delete) operation requires
+                        exactly 3 arguments. The argument triples are: (a) the
+                        room id. (b) the id of the event to be redacted. (c) a
+                        string containing the reason for the redaction. Use ''
+                        if you do not want to give a reason. So, the total
+                        number of arguments used with --room-redact must be a
+                        multiple of 3, but we also accept 2 in which case only
+                        one redaction will be done without specifying a
+                        reason. Room ids start with the dollar sign ($).
+                        Depending on your shell, you might have to escape the
+                        '$' to '\$'. --room-delete-content is an alias for
+                        --room-redact. They can be used interchangeably.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1222,7 +1256,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.35.0 2022-06-09. Enjoy, star on Github and
+You are running version 2.36.0 2022-06-10. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

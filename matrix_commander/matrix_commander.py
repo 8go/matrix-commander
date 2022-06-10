@@ -71,6 +71,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new otions `--import-keys` and `--export_keys`
 - new option `--get-openid-token` to provide to other websites for login
 - new option `--delete-device`
+- new option `--room-redact` to delete messages, images and other events
 
 # Summary, TLDR
 
@@ -487,6 +488,12 @@ $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
 $ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
     --user '@user1:example.com' --password 'user1-password'
+$ # delete a message with event id 'someEventId'
+# matrix-commander --room-redact '!someroomId1:example.com' 'someEventId'
+$ # delete 2 images from 2 rooms
+$ matrix-commander --room-redact \
+    '\!someroomId1:example.com' '\$someEventId1' 'Image deleted, obsolete info'
+    '\!someroomId2:example.com' '\$someEventId2' 'Image deleted, outdated'
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
@@ -609,6 +616,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
+                           [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
                            [--file-name FILE_NAME [FILE_NAME ...]]
@@ -627,12 +635,12 @@ events can be sent as well. For receiving there are three main options: listen
 forever, listen once and quit, and get the last N messages and quit. Emoji
 verification is built-in which can be used to verify devices. End-to-end
 encryption is enabled by default and cannot be turned off. ─── Bundling
-several actions together into a single call to {PROG_WITHOUT_EXT} is faster
-than calling {PROG_WITHOUT_EXT} multiple times with only one action. If there
-are both 'set' and 'get' actions present in the arguments, then the 'set'
-actions will be performed before the 'get' actions. ─── For even more
-explications and examples also read the documentation provided in the on-line
-Github README.md file or the README.md in your local installation.
+several actions together into a single call to matrix-commander is faster than
+calling matrix-commander multiple times with only one action. If there are
+both 'set' and 'get' actions present in the arguments, then the 'set' actions
+will be performed before the 'get' actions. ─── For even more explications and
+examples also read the documentation provided in the on-line Github README.md
+file or the README.md in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -983,10 +991,10 @@ options:
                         name of itself. Send, listen and verify operations are
                         allowed when getting display name(s).
   --set-presence SET_PRESENCE
-                        Set presence of {PROG_WITHOUT_EXT} to the given value.
+                        Set presence of matrix-commander to the given value.
                         Must be one of these values: “online”, “offline”,
                         “unavailable”. Otherwise an error will be produced.
-  --get-presence        Get presence of {PROG_WITHOUT_EXT} (itself), or of one
+  --get-presence        Get presence of matrix-commander (itself), or of one
                         or multiple users. Specify user(s) with the --user
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
@@ -1139,11 +1147,10 @@ options:
                         object that the requester may supply to another
                         service to verify their identity in Matrix. See
                         http://www.openid.net/. Specify zero or more user ids.
-                        If no user id is specified, an OpenID for
-                        {PROG_WITHOUT_EXT} will be fetched. If one or more
-                        user ids are given, the OpenID of these users will be
-                        fetched. As response the user id(s) and OpenID(s) will
-                        be printed.
+                        If no user id is specified, an OpenID for matrix-
+                        commander will be fetched. If one or more user ids are
+                        given, the OpenID of these users will be fetched. As
+                        response the user id(s) and OpenID(s) will be printed.
   --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
@@ -1156,6 +1163,33 @@ options:
                         password can be visible to attackers. Hence, if the
                         server does not support HTTPS this operation is
                         discouraged.
+  --room-redact ROOM_REDACT [ROOM_REDACT ...], --room-delete-content ROOM_REDACT [ROOM_REDACT ...]
+                        Strip information out of one or several events, e.g.
+                        messages. Redact is used in the meaning of 'strip,
+                        wipe, black-out', not in the meaning of 'edit'. This
+                        action removes, deletes the content of an event while
+                        not removing the event. You can wipe text from a
+                        previous message, etc. Typical Matrix clients like
+                        Element will delete messages, images and other objects
+                        from the GUI once they have been redacted. So, --room-
+                        redact is a way to delete a message, images, etc. The
+                        content is wiped, the GUI deletes the message, but the
+                        server keeps the event history. Note, while this
+                        deletes from the client (GUI, e.g. Element), it does
+                        not delete from the database on the server. So, this
+                        call is not a way to clean up the server database.
+                        Each redact (wipe, strip, delete) operation requires
+                        exactly 3 arguments. The argument triples are: (a) the
+                        room id. (b) the id of the event to be redacted. (c) a
+                        string containing the reason for the redaction. Use ''
+                        if you do not want to give a reason. So, the total
+                        number of arguments used with --room-redact must be a
+                        multiple of 3, but we also accept 2 in which case only
+                        one redaction will be done without specifying a
+                        reason. Room ids start with the dollar sign ($).
+                        Depending on your shell, you might have to escape the
+                        '$' to '\$'. --room-delete-content is an alias for
+                        --room-redact. They can be used interchangeably.
   --whoami              Print the user id used by matrix-commander (itself).
                         One can get this information also by looking at the
                         credentials file.
@@ -1229,7 +1263,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.35.0 2022-06-09. Enjoy, star on Github and
+You are running version 2.36.0 2022-06-10. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1352,9 +1386,10 @@ from nio import (AsyncClient, AsyncClientConfig, DeleteDevicesAuthResponse,
                  RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
                  RoomMessageNotice, RoomMessagesError, RoomMessageText,
                  RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomResolveAliasError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto)
+                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
+                 RoomUnbanError, SyncError, SyncResponse, ToDeviceError,
+                 UnknownEvent, UpdateDeviceError, UploadError, UploadResponse,
+                 crypto)
 from PIL import Image
 
 try:
@@ -1372,8 +1407,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-09"
-VERSIONNR = "2.35.0"
+VERSION = "2022-06-10"
+VERSIONNR = "2.36.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3953,7 +3988,7 @@ async def listen_tail(  # noqa: C901
             room_id, start=resp_s.next_batch, limit=limit
         )
         if isinstance(resp, RoomMessagesError):
-            gs.log.debug("room_messages failed with resp = {resp}")
+            gs.log.debug(f"room_messages failed with resp = {resp}")
             continue  # skip this room
         gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
         gs.log.debug(f"room_messages room_id = {resp.room_id}.")
@@ -4019,7 +4054,7 @@ async def read_all_events_in_direction(
             room_id, current_start_token, limit=500, direction=direction
         )
         if isinstance(resp, RoomMessagesError):
-            gs.log.debug("room_messages failed with resp = {resp}")
+            gs.log.debug(f"room_messages failed with resp = {resp}")
             break  # skip to end of function
         gs.log.debug(f"Received {len(resp.chunk)} events.")
         gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
@@ -4905,11 +4940,13 @@ async def action_get_openid_token(
 
 async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
     """Delete device(s) for itself or other user while already logged in.
+
     For documentation read:
     https://matrix-nio.readthedocs.io/en/latest/nio.html#asyncclient
     https://matrix.org/docs/spec/client_server/r0.6.0#authentication-types
+
     There are several ways to authenticate, some of these ways may or may not
-    be supported by the server.
+    be supported by the server. So, this is server specific.
     The "m.login.token" option seems useful at first glance, but note that
     this is NOT an access token, but a login token received from somewhere
     else. So, in reality the "m.login.token" option is not useful.
@@ -4919,6 +4956,11 @@ async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
       "txn_id": "<client generated nonce>",
       "session": "<session ID>"
     }
+
+    The "m.login.sso" option would be useful, but I haven't implemented it
+    yet. It would be a bit similar as to the code in create_credentials_file().
+
+    The most common option is "m.login.password". This option is implemented.
     """
     if not gs.pa.password:
         gs.log.error(
@@ -4942,7 +4984,8 @@ async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
             )
             gs.warn_count += 1
     devices = gs.pa.delete_device
-    # this automatically escapes the " letters in the password, etc.
+    # this automatically escapes the " letters in the password,
+    # and takes care of spaces, etc.
     auth = {
         "type": "m.login.password",
         "identifier": {"type": "m.id.user", "user": user_id},
@@ -4978,6 +5021,45 @@ async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
         gs.log.info(
             f"Successfully deleted devices {devices} for user {user_id}."
         )
+
+
+async def action_room_redact(client: AsyncClient, credentials: dict) -> None:
+    """Redact event(s) of room(s) while already logged in."""
+    if len(gs.pa.room_redact) == 2:
+        gs.pa.room_redact.append("")
+    if not len(gs.pa.room_redact) % 3 == 0:
+        gs.log.error(
+            "Incorrect number of arguments for --room-redact. Arguments must "
+            f"be triples, i.e. multiples of 3, but found "
+            f"{len(gs.pa.room_redact)} arguments. 2 is also allowed."
+        )
+        gs.err_count += 1
+        return
+    for ii in range(len(gs.pa.room_redact) // 3):
+        room_id = gs.pa.room_redact[ii * 3 + 0]
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        event_id = gs.pa.room_redact[ii * 3 + 1]
+        reason = gs.pa.room_redact[ii * 3 + 2].strip()
+        if reason == "":
+            reason = None
+        gs.log.debug(
+            f"Preparing to redact event {event_id} in room {room_id} "
+            f"providing reason '{reason}'."
+        )
+        resp = await client.room_redact(room_id, event_id, reason=reason)
+        if isinstance(resp, RoomRedactError):
+            gs.log.error(
+                f"Failed to redact event {event_id} in room {room_id} "
+                f"with reason '{reason}'. "
+                f"Response: {resp}"
+            )
+            gs.err_count += 1
+        else:
+            gs.log.debug(f"room_redact successful. Response is: {resp}")
+            gs.log.info(
+                f"Successfully redacted event {event_id} in room {room_id} "
+                f"providing reason '{reason}'."
+            )
 
 
 async def action_whoami(client: AsyncClient, credentials: dict) -> None:
@@ -5050,6 +5132,8 @@ async def main_roomsetget_action() -> None:
             await action_import_keys(client, credentials)
         if gs.pa.delete_device:
             await action_delete_device(client, credentials)
+        if gs.pa.room_redact:
+            await action_room_redact(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -5309,6 +5393,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.set_avatar
         or gs.pa.import_keys
         or gs.pa.delete_device
+        or gs.pa.room_redact
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5550,7 +5635,7 @@ def main_inner(
             "to verify devices. End-to-end encryption is enabled by default "
             "and cannot be turned off.  ─── "
             "Bundling several actions together into a single call to "
-            "{PROG_WITHOUT_EXT} is faster than calling {PROG_WITHOUT_EXT} "
+            f"{PROG_WITHOUT_EXT} is faster than calling {PROG_WITHOUT_EXT} "
             "multiple times with only one action. If there are both 'set' "
             "and 'get' actions present in the arguments, then the 'set' "
             "actions will be performed before the 'get' actions. ─── "
@@ -6216,7 +6301,7 @@ def main_inner(
         required=False,
         type=str,
         # defaults to None if not used, is str if used
-        help="Set presence of {PROG_WITHOUT_EXT} to the given value. "
+        help=f"Set presence of {PROG_WITHOUT_EXT} to the given value. "
         "Must be one of these values: “online”, “offline”, “unavailable”. "
         "Otherwise an error will be produced.",
     )
@@ -6225,7 +6310,7 @@ def main_inner(
         required=False,
         action="store_true",
         # defaults to False if not used
-        help="Get presence of {PROG_WITHOUT_EXT} (itself), "
+        help=f"Get presence of {PROG_WITHOUT_EXT} (itself), "
         "or of one or multiple users. Specify user(s) with the "
         "--user option. If no user is specified get the presence of "
         "itself. "
@@ -6476,7 +6561,7 @@ def main_inner(
         "that the requester may supply to another service to verify their "
         "identity in Matrix. See http://www.openid.net/. "
         "Specify zero or more user ids. "
-        "If no user id is specified, an OpenID for {PROG_WITHOUT_EXT} will "
+        f"If no user id is specified, an OpenID for {PROG_WITHOUT_EXT} will "
         "be fetched. If one or more user ids are given, the OpenID of "
         "these users will be fetched. As response the user id(s) and "
         "OpenID(s) will be printed.",
@@ -6496,6 +6581,40 @@ def main_inner(
         "with the --password argument. If the server uses only HTTP (and "
         "not HTTPS), then the password can be visible to attackers. Hence, "
         "if the server does not support HTTPS this operation is discouraged.",
+    )
+    ap.add_argument(
+        "--room-redact",
+        "--room-delete-content",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Strip information out of one or several events, e.g. messages. "
+        "Redact is used in the meaning of 'strip, wipe, black-out', not "
+        "in the meaning of 'edit'. This action removes, deletes the content "
+        "of an event while not removing the event. You can wipe text from a "
+        "previous message, etc. Typical Matrix clients like Element will "
+        "delete messages, images and other objects from the GUI once they "
+        "have been redacted. "
+        "So, --room-redact is a way to delete a message, images, etc. "
+        "The content is "
+        "wiped, the GUI deletes the message, but the server keeps the event "
+        "history. Note, while this deletes from the client (GUI, e.g. "
+        "Element), it does not delete from the database on the server. "
+        "So, this call is not a way to clean up the server database. "
+        "Each redact (wipe, strip, delete) operation requires exactly 3 "
+        "arguments. "
+        "The argument triples are: "
+        "(a) the room id. "
+        "(b) the id of the event to be redacted. "
+        "(c) a string containing the reason for the redaction. Use '' if you "
+        "do not want to give a reason. "
+        "So, the total number of arguments used with --room-redact must be a "
+        "multiple of 3, but we also accept 2 in which case only one "
+        "redaction will be done without specifying a reason. "
+        "Room ids start with the dollar sign ($). Depending on your shell, "
+        "you might have to escape the '$' to '\\$'. --room-delete-content is "
+        "an alias for --room-redact. They can be used interchangeably.",
     )
     ap.add_argument(
         # no single char flag
