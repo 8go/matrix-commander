@@ -952,8 +952,16 @@ options:
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
-  --print-event-id      If set and listening, then the program will print also
-                        the event id for each message or other event.
+  --print-event-id      If set and listening, then 'matrix-commander' will
+                        print also the event id for each received message or
+                        other received event. If set and sending, then
+                        'matrix-commander' will print the event id of the sent
+                        message or the sent object (audio, file, event) to
+                        stdout. Other information like room id and reference
+                        to what was sent will be printed too. For sending this
+                        is useful, if after sending the user wishes to perform
+                        further operations on the sent object, e.g.
+                        redacting/deleting it after an expiration time, etc.
   --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
@@ -1263,7 +1271,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.36.0 2022-06-10. Enjoy, star on Github and
+You are running version 2.37.0 2022-06-13. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1407,8 +1415,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-10"
-VERSIONNR = "2.36.0"
+VERSION = "2022-06-13"
+VERSIONNR = "2.37.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2787,10 +2795,21 @@ async def send_event(client, rooms, event):  # noqa: C901
 
     try:
         for room_id in rooms:
-            await client.room_send(
+            resp = await client.room_send(
                 room_id, message_type=message_type, content=content
             )
-            gs.log.info(f'This event was sent: "{event}" to room "{room_id}".')
+            gs.log.info(
+                f'This event was sent: "{event}" to room "{resp.room_id}" '
+                f'as event "{resp.event_id}".'
+            )
+            if gs.pa.print_event_id:
+                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}")
+            gs.log.debug(
+                f'This event was sent: "{event}" ({content}) '
+                f'to room "{room_id}". '
+                f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
+                f"full response: {resp}. "
+            )
     except Exception:
         gs.log.error(f"Event send of file {event} failed. Sorry.")
         gs.err_count += 1
@@ -2956,10 +2975,20 @@ async def send_file(client, rooms, file):  # noqa: C901
 
     try:
         for room_id in rooms:
-            await client.room_send(
+            resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
-            gs.log.info(f'This file was sent: "{file}" to room "{room_id}".')
+            gs.log.info(
+                f'This file was sent: "{file}" to room "{resp.room_id}" '
+                f'as event "{resp.event_id}".'
+            )
+            if gs.pa.print_event_id:
+                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}")
+            gs.log.debug(
+                f'This file was sent: "{file}" to room "{room_id}". '
+                f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
+                f"full response: {resp}. "
+            )
     except Exception:
         gs.log.error(f"File send of file {file} failed. Sorry.")
         gs.err_count += 1
@@ -3151,11 +3180,21 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     try:
         for room_id in rooms:
-            await client.room_send(
+            resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
             gs.log.info(
-                f'This image file was sent: "{image}" to room "{room_id}".'
+                f'This image file was sent: "{image}" '
+                f'to room "{resp.room_id}" '
+                f'as event "{resp.event_id}".'
+            )
+            if gs.pa.print_event_id:
+                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}")
+            gs.log.debug(
+                f'This image file was sent: "{image}" '
+                f'to room "{room_id}". '
+                f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
+                f"full response: {resp}. "
             )
     except Exception:
         gs.log.error(f"Image send of file {image} failed. Sorry.")
@@ -3238,14 +3277,22 @@ async def send_message(client, rooms, message):  # noqa: C901
                     f'Mapping room alias "{resp.room_alias}" to '
                     f'room id "{resp.room_id}".'
                 )
-            await client.room_send(
+            resp = await client.room_send(
                 room_id,
                 message_type="m.room.message",
                 content=content,
                 ignore_unverified_devices=True,
             )
             gs.log.info(
-                f'This message was sent: "{message}" to room "{room_id}".'
+                f'This message was sent: "{message}" to room "{resp.room_id}" '
+                f'as event "{resp.event_id}".'
+            )
+            if gs.pa.print_event_id:
+                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}")
+            gs.log.debug(
+                f'This message was sent: "{message}" to room "{room_id}". '
+                f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
+                f"full response: {resp}. "
             )
     except Exception:
         gs.log.error("Message send failed. Sorry.")
@@ -5058,7 +5105,7 @@ async def action_room_redact(client: AsyncClient, credentials: dict) -> None:
             gs.log.debug(f"room_redact successful. Response is: {resp}")
             gs.log.info(
                 f"Successfully redacted event {event_id} in room {room_id} "
-                f"providing reason '{reason}'."
+                f"providing reason '{'' if reason is None else reason}'."
             )
 
 
@@ -6212,8 +6259,15 @@ def main_inner(
         required=False,
         action="store_true",
         help="If set and listening, "
-        "then the program will print also the event id for "
-        "each message or other event.",
+        f"then '{PROG_WITHOUT_EXT}' will print also the event id for "
+        "each received message or other received event. If set and "
+        f"sending, then '{PROG_WITHOUT_EXT}' will print the event id "
+        "of the sent message or the sent object (audio, file, event) to "
+        "stdout. Other information like room id and reference to what was "
+        "sent will be printed too. For sending this is useful, "
+        "if after sending the user "
+        "wishes to perform further operations on the sent object, "
+        "e.g. redacting/deleting it after an expiration time, etc.",
     )
     ap.add_argument(
         # starting with version 2.19 "-u" has been moved to --user!

@@ -945,8 +945,16 @@ options:
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
-  --print-event-id      If set and listening, then the program will print also
-                        the event id for each message or other event.
+  --print-event-id      If set and listening, then 'matrix-commander' will
+                        print also the event id for each received message or
+                        other received event. If set and sending, then
+                        'matrix-commander' will print the event id of the sent
+                        message or the sent object (audio, file, event) to
+                        stdout. Other information like room id and reference
+                        to what was sent will be printed too. For sending this
+                        is useful, if after sending the user wishes to perform
+                        further operations on the sent object, e.g.
+                        redacting/deleting it after an expiration time, etc.
   --download-media [DOWNLOAD_MEDIA]
                         If set and listening, then program will download
                         received media files (e.g. image, audio, video, text,
@@ -1256,7 +1264,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.36.0 2022-06-10. Enjoy, star on Github and
+You are running version 2.37.0 2022-06-13. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
