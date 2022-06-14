@@ -65,6 +65,8 @@ alt="get it on Docker Hub" height="100"></a>
 - new option `--get-openid-token` to provide to other websites for login
 - new option `--delete-device`
 - new option `--room-redact` to delete messages, images and other events
+- new option `--content-repository-config` to print content repo info
+- new option `--get-profile` to print user profile
 
 # Summary, TLDR
 
@@ -473,6 +475,8 @@ $ # get avatar MXC URIs of other users
 $ matrix-commander --get-avatar '@user1:example.com' '@user2:example.com'
 $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
+$ matrix-commander --get-profile # get its own user profile
+$ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
@@ -544,6 +548,7 @@ $ matrix-commander --mxc-to-http mxc://example.com/abc... # get HTTP
 $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
+$ matrix-commander --content-repository-config # list config of content repo
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -603,8 +608,10 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
                            [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
                            [--devices] [--discovery-info] [--login-info]
+                           [--content-repository-config]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
+                           [--get-profile [GET_PROFILE ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
@@ -1086,6 +1093,9 @@ options:
                         error might be reported.
   --login-info          Print login methods supported by the homeserver. It
                         prints one login method per line.
+  --content-repository-config
+                        Print the content repository configuration, currently
+                        just the upload size limit in bytes.
   --rest REST [REST ...]
                         Use the Matrix Client REST API. Matrix has several
                         extensive REST APIs. With the --rest argument you can
@@ -1125,6 +1135,16 @@ options:
                         matrix-commander will be fetched. If one or more user
                         ids are given, the avatars of these users will be
                         fetched. As response both MXC URI as well as URL will
+                        be printed.
+  --get-profile [GET_PROFILE ...]
+                        Get the user profile used by matrix-commander, or one
+                        or multiple other users. Specify zero or more user
+                        ids. If no user id is specified, the user profile of
+                        matrix-commander will be fetched. If one or more user
+                        ids are given, the user profiles of these users will
+                        be fetched. As response display name and avatar MXC
+                        URI as well as possible additional profile information
+                        (if present) will be printed. One line per user will
                         be printed.
   --import-keys IMPORT_KEYS IMPORT_KEYS
                         Import Megolm decryption keys from a file. This is an
@@ -1264,7 +1284,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.0 2022-06-13. Enjoy, star on Github and
+You are running version 2.37.1 2022-06-14. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

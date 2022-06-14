@@ -48,7 +48,7 @@ function test1() {
 function test2() {
     echo "=== Test 2: getting the avatars of 2 users ==="
     user1=$(matrix-commander --whoami) # get some user_id
-    user2=user1                        # now we have 2 user ids
+    user2=$user1                       # now we have 2 user ids
     TMPFILE="test.png.tmp"
     rm -f "$TMPFILE"
     N=2
@@ -59,13 +59,13 @@ function test2() {
         mxc_url=$(echo "$mxc_urls" | head -n $ii | tail -n 1)
         mxc="${mxc_url%    *}"  # before "    "
         url="${mxc_url##*    }" # after "    "
-        echo "mxc is \"$mxc\""
-        echo "url is \"$url\""
+        echo "    mxc is \"$mxc\""
+        echo "    url is \"$url\""
         wget "$url" -O "$TMPFILE"
-        echo "Downloaded the avatar to \"$TMPFILE\"."
+        echo "    Downloaded the avatar to \"$TMPFILE\"."
         ls -l "$TMPFILE"
         type eog >/dev/null 2>&1 && {
-            echo "Let's look at the avatar."
+            echo "    Let's look at the avatar."
             eog "$TMPFILE" >/dev/null 2>&1
         }
         rm -f "$TMPFILE"
@@ -88,32 +88,32 @@ function test3() {
         mxc_url=$(echo "$mxc_urls" | head -n $ii | tail -n 1)
         mxc="${mxc_url%    *}"  # before "    "
         url="${mxc_url##*    }" # after "    "
-        echo "mxc is \"$mxc\""
-        echo "url is \"$url\""
+        echo "    mxc is \"$mxc\""
+        echo "    url is \"$url\""
         wget "$url" -O "$TMPFILE"
-        echo "Downloaded the avatar to \"$TMPFILE\"."
+        echo "    Downloaded the avatar to \"$TMPFILE\"."
         ls -l "$TMPFILE"
         type eog >/dev/null 2>&1 && {
-            echo "Let's look at the avatar."
+            echo "    Let's look at the avatar."
             eog "$TMPFILE" >/dev/null 2>&1
         }
         convert "$TMPFILE" -colorspace Gray "$TMPFILEBW"
         type eog >/dev/null 2>&1 && {
-            echo "Let's look at the new black-and-white avatar."
+            echo "    Let's look at the new black-and-white avatar."
             eog "$TMPFILEBW" >/dev/null 2>&1
         }
         # avatars must not be encrypted, use --plain
         mxc_key=$(matrix-commander --upload "$TMPFILEBW" --plain)
         mxcbw="${mxc_key%    *}" # before "    "
-        echo "Uploaded the new black-and-white avatar to URI \"$mxcbw\"."
+        echo "    Uploaded the new black-and-white avatar to URI \"$mxcbw\"."
         matrix-commander --set-avatar $mxcbw $MC_OPTIONS
-        echo "Setted the new avatar. Have a look at your client."
+        echo "    Setted the new avatar. Have a look at your client."
         read -t 30 -p "Like the new avatar?"
         matrix-commander --set-avatar $mxc $MC_OPTIONS
-        echo "Setted the avatar to as it was before. Have a look at your client."
+        echo "    Setted the avatar to as it was before. Have a look at your client."
         read -t 30 -p "Prefer the old avatar?"
         echo "" # add linebreak after timeout
-        echo "Done. We set it back to the original."
+        echo "    Done. We set it back to the original."
         rm -f "$TMPFILE" "$TMPFILEBW"
     done
 }
@@ -140,8 +140,55 @@ function test5() {
     rm -f "$TMPFILE" "$TMPFILEBK"
 }
 
+function test6() {
+    echo "=== Test 6: getting its own user profile ==="
+    N=1
+    dispname_mxc_url_others=$(matrix-commander --get-profile $MC_OPTIONS)
+    echo "$dispname_mxc_url_others" # lines with 4 pieces of information
+    for ii in $(seq $N); do
+        echo "Handling user profile $ii"
+        dispname_mxc_url_other=$(echo "$dispname_mxc_url_others" | head -n $ii | tail -n 1)
+        # shellcheck disable=SC2207
+        out=($(grep -Eo '    |.+' <<<"$dispname_mxc_url_other")) # split by "    "
+        dispname="${out[0]}"                                     # before first "    "
+        mxc="${out[1]}"                                          # after first "    " and before 2nd "    "
+        url="${out[2]}"
+        other="${out[3]}"
+        echo "    displayname is \"$dispname\""
+        echo "    mxc is \"$mxc\""
+        echo "    url is \"$url\""
+        echo "    other info is \"$other\""
+    done
+}
+
+function test7() {
+    echo "=== Test 7: getting the user profiles of 2 users ==="
+    user1=$(matrix-commander --whoami) # get some user_id
+    user2=$user1                       # now we have 2 user ids
+    N=2
+    dispname_mxc_url_others=$(matrix-commander --get-profile "$user1" "$user2" $MC_OPTIONS)
+    echo "$dispname_mxc_url_others" # lines with 4 pieces of information
+    for ii in $(seq $N); do
+        echo "Handling user profile $ii"
+        dispname_mxc_url_other=$(echo "$dispname_mxc_url_others" | head -n $ii | tail -n 1)
+        # dispname="$(sed -n "s/\(.*\)    \(mxc[^ ]*\)    \(http[^ ]*\)    \(.*\)/\1/p")"
+        # shellcheck disable=SC2207
+        out=($(grep -Eo '    |.+' <<<"$dispname_mxc_url_other")) # split by "    "
+        dispname="${out[0]}"                                     # before first "    "
+        mxc="${out[1]}"                                          # after first "    " and before 2nd "    "
+        url="${out[2]}"
+        other="${out[3]}"
+        echo "    displayname is \"$dispname\""
+        echo "    mxc is \"$mxc\""
+        echo "    url is \"$url\""
+        echo "    other info is \"$other\""
+    done
+}
+
 test1
 test2
 test3
 test4
 test5
+test6
+test7
