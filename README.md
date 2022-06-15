@@ -67,6 +67,11 @@ alt="get it on Docker Hub" height="100"></a>
 - new option `--room-redact` to delete messages, images and other events
 - new option `--content-repository-config` to print content repo info
 - new option `--get-profile` to print user profile
+- incompatibility: new dependency `xdg`. Please install `xdg` if necessary.
+  Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
+  Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
+  See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
+  
 
 # Summary, TLDR
 
@@ -326,6 +331,8 @@ well as ban, unban and kick other users from rooms.
       - pip3 install --user --upgrade notify2 # optional
     - python3 package urllib must be installed to support media download
       - pip3 install --user --upgrade urllib
+    - python3 package xdg must be installed to support `XDG_*` environment vars
+      - pip3 install --user --upgrade xdg
     - `matrix_commander/matrix_commander.py` file must be installed, and should
       have execution permissions
       - chmod 755 matrix_commander.py
@@ -1284,7 +1291,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.1 2022-06-14. Enjoy, star on Github and
+You are running version 2.37.2 2022-06-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

@@ -10,3 +10,4 @@ notify2
 Pillow
 python_magic
 uuid
+xdg
