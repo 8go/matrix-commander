@@ -78,7 +78,8 @@ alt="get it on Docker Hub" height="100"></a>
   Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
   Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
-  
+- new option `--has-permission` (see also Issue #324 in matrix-nio)
+
 
 # Summary, TLDR
 
@@ -491,6 +492,7 @@ $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
 $ matrix-commander --get-profile # get its own user profile
 $ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
+$ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
@@ -626,6 +628,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
                            [--get-profile [GET_PROFILE ...]]
+                           [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
@@ -1160,6 +1163,17 @@ options:
                         URI as well as possible additional profile information
                         (if present) will be printed. One line per user will
                         be printed.
+  --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
+                        Inquire if user used by matrix-commander has
+                        permission for one or multiple actions in one or
+                        multiple rooms. Each inquiry requires 2 parameters:
+                        the room id and the permission type. One or multiple
+                        of these parameter pairs may be specified. For each
+                        parameter pair there will be one line printed to
+                        stdout. Values for the permission type are 'ban',
+                        'invite', 'kick', 'notifications', 'redact', etc. See
+                        https://spec.matrix.org/v1.2/client-server-
+                        api/#mroompower_levels.
   --import-keys IMPORT_KEYS IMPORT_KEYS
                         Import Megolm decryption keys from a file. This is an
                         optional argument. If used it must be followed by two
@@ -1298,7 +1312,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.2 2022-06-15. Enjoy, star on Github and
+You are running version 2.37.3 2022-06-16. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1405,19 +1419,19 @@ from markdown import markdown
 from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
                  DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, JoinedMembersError, JoinedRoomsError,
-                 JoinError, KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginInfoError, LoginResponse, MatrixRoom,
-                 MessageDirection, PresenceGetError, PresenceSetError,
-                 ProfileGetAvatarResponse, ProfileGetDisplayNameError,
-                 ProfileGetError, ProfileSetAvatarResponse,
-                 ProfileSetDisplayNameError, RedactedEvent, RedactionEvent,
-                 RoomAliasEvent, RoomBanError, RoomCreateError,
-                 RoomEncryptedAudio, RoomEncryptedFile, RoomEncryptedImage,
-                 RoomEncryptedMedia, RoomEncryptedVideo, RoomEncryptionEvent,
-                 RoomForgetError, RoomInviteError, RoomKickError,
-                 RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 EncryptionError, ErrorResponse, JoinedMembersError,
+                 JoinedRoomsError, JoinError, KeyVerificationCancel,
+                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
+                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
+                 LoginResponse, MatrixRoom, MessageDirection, PresenceGetError,
+                 PresenceSetError, ProfileGetAvatarResponse,
+                 ProfileGetDisplayNameError, ProfileGetError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
+                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
+                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
+                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
                  RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
                  RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
                  RoomMessageNotice, RoomMessagesError, RoomMessageText,
@@ -1444,8 +1458,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-15"
-VERSIONNR = "2.37.2"
+VERSION = "2022-06-16"
+VERSIONNR = "2.37.3"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4975,6 +4989,49 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
             )
 
 
+async def action_has_permission(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Inquire about permissions in rooms while already logged in."""
+    if not len(gs.pa.has_permission) % 2 == 0:
+        gs.log.error(
+            "Incorrect number of arguments for --has-permission. Arguments "
+            f"must be pairs, i.e. multiples of 2, but found "
+            f"{len(gs.pa.has_permission)} arguments."
+        )
+        gs.err_count += 1
+        return
+    user_id = credentials["user_id"]  # whoami
+    for ii in range(len(gs.pa.has_permission) // 2):
+        room_id = gs.pa.has_permission[ii * 2 + 0]
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        permission_type = gs.pa.has_permission[ii * 2 + 1].strip()
+        gs.log.debug(
+            "Preparing to ask about permission for permission type "
+            f"'{permission_type}' in room {room_id}."
+        )
+        try:
+            resp = await client.has_permission(room_id, permission_type)
+        except Exception as e:
+            resp = ErrorResponse(
+                f"has_permission() failed with '{e}'. "
+                f"Is the room id {room_id} correct?"
+            )
+        if isinstance(resp, ErrorResponse):
+            gs.log.error(
+                "Failed to ask about permission for permission type "
+                f"'{permission_type}' in room {room_id}. {resp}"
+            )
+            gs.err_count += 1
+            print(f"Error{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
+        else:
+            gs.log.debug(
+                f"has_permission {user_id} for permission type "
+                f"'{permission_type}' in room {room_id}: {resp}"
+            )
+            print(f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
+
+
 async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
     """Set avatar of itself while already logged in."""
     user_id = credentials["user_id"]  # whoami
@@ -5283,6 +5340,8 @@ async def main_roomsetget_action() -> None:
             await action_get_avatar(client, credentials)
         if gs.pa.get_profile is not None:  # empty list must invoke function
             await action_get_profile(client, credentials)
+        if gs.pa.has_permission:
+            await action_has_permission(client, credentials)
         if gs.pa.export_keys:
             await action_export_keys(client, credentials)
         if gs.pa.get_openid_token is not None:  # empty list must invoke func
@@ -5534,6 +5593,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.content_repository_config
         or gs.pa.get_avatar is not None  # empty list must invoke function
         or gs.pa.get_profile is not None  # empty list must invoke function
+        or gs.pa.has_permission
         or gs.pa.export_keys
         or gs.pa.get_openid_token
         is not None  # empty list must invoke function
@@ -6683,6 +6743,23 @@ def main_inner(
         "display name and avatar MXC URI as well as possible additional "
         "profile information (if present) "
         "will be printed. One line per user will be printed.",
+    )
+    ap.add_argument(
+        "--has-permission",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help=f"Inquire if user used by {PROG_WITHOUT_EXT} has "
+        "permission for one or multiple actions in one or multiple rooms. "
+        "Each inquiry requires 2 parameters: the room id and the permission "
+        "type. One or multiple of these parameter pairs may be specified. "
+        "For each parameter pair there will be one line printed to stdout. "
+        "Values for the permission type are 'ban', "
+        "'invite', 'kick', 'notifications', 'redact', etc. "
+        "See https://spec.matrix.org/v1.2/client-server-api/#mroompower_levels"
+        ".",
+        # 'events', 'events_default', 'state_default': valid permission types?
     )
     ap.add_argument(
         "--import-keys",

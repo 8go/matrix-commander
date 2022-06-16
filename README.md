@@ -71,7 +71,8 @@ alt="get it on Docker Hub" height="100"></a>
   Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
   Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
-  
+- new option `--has-permission` (see also Issue #324 in matrix-nio)
+
 
 # Summary, TLDR
 
@@ -484,6 +485,7 @@ $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
 $ matrix-commander --get-profile # get its own user profile
 $ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
+$ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
@@ -619,6 +621,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
                            [--get-profile [GET_PROFILE ...]]
+                           [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
@@ -1153,6 +1156,17 @@ options:
                         URI as well as possible additional profile information
                         (if present) will be printed. One line per user will
                         be printed.
+  --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
+                        Inquire if user used by matrix-commander has
+                        permission for one or multiple actions in one or
+                        multiple rooms. Each inquiry requires 2 parameters:
+                        the room id and the permission type. One or multiple
+                        of these parameter pairs may be specified. For each
+                        parameter pair there will be one line printed to
+                        stdout. Values for the permission type are 'ban',
+                        'invite', 'kick', 'notifications', 'redact', etc. See
+                        https://spec.matrix.org/v1.2/client-server-
+                        api/#mroompower_levels.
   --import-keys IMPORT_KEYS IMPORT_KEYS
                         Import Megolm decryption keys from a file. This is an
                         optional argument. If used it must be followed by two
@@ -1291,7 +1305,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.2 2022-06-15. Enjoy, star on Github and
+You are running version 2.37.3 2022-06-16. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
