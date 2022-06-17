@@ -79,6 +79,7 @@ alt="get it on Docker Hub" height="100"></a>
   Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
+- new option `--room-get-visibility` to find out if room is private or public
 
 
 # Summary, TLDR
@@ -498,6 +499,9 @@ $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
 $ # get OpenID tokens for other users
 $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
+$ matrix-commander --room-get-visibility # get my default room visibility
+$ matrix-commander --room-get-visibility \
+    '\!someroomId1:example.com' '\!someroomId2:example.com'
 $ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
 $ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
     --user '@user1:example.com' --password 'user1-password'
@@ -632,6 +636,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
+                           [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
@@ -1200,6 +1205,14 @@ options:
                         commander will be fetched. If one or more user ids are
                         given, the OpenID of these users will be fetched. As
                         response the user id(s) and OpenID(s) will be printed.
+  --room-get-visibility [ROOM_GET_VISIBILITY ...]
+                        Get the visibility of one or more rooms. Provide zero
+                        or more room ids as arguments. In no argument is
+                        given, then the default room of matrix-commander (as
+                        found in credentials file) will be used. For each room
+                        the visibility will be printed. Currently, this is
+                        either the string 'private' or 'public'.As response
+                        one line per room will be printed to stdout.
   --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
@@ -1312,7 +1325,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.3 2022-06-16. Enjoy, star on Github and
+You are running version 2.37.4 2022-06-17. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1430,8 +1443,9 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
                  RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
                  RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
-                 RoomEncryptionEvent, RoomForgetError, RoomInviteError,
-                 RoomKickError, RoomLeaveError, RoomMemberEvent, RoomMessage,
+                 RoomEncryptionEvent, RoomForgetError,
+                 RoomGetVisibilityResponse, RoomInviteError, RoomKickError,
+                 RoomLeaveError, RoomMemberEvent, RoomMessage,
                  RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
                  RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
                  RoomMessageNotice, RoomMessagesError, RoomMessageText,
@@ -1458,8 +1472,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-16"
-VERSIONNR = "2.37.3"
+VERSION = "2022-06-17"
+VERSIONNR = "2.37.4"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5046,8 +5060,9 @@ async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
         )
     else:
         gs.log.error(
-            f"Failed setting avatar for user {user_id} " f"on server. {resp}"
+            f"Failed setting avatar for user {user_id} on server. {resp}"
         )
+        gs.err_count += 1
 
 
 async def action_import_keys(client: AsyncClient, credentials: dict) -> None:
@@ -5117,6 +5132,29 @@ async def action_get_openid_token(
                 f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
                 f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
             )
+
+
+async def action_room_get_visibility(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get visibility of room(s) while already logged in."""
+    if gs.pa.room_get_visibility == []:
+        gs.pa.room_get_visibility.append(credentials["room_id"])  # def. room
+    for room_id in gs.pa.room_get_visibility:
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        gs.log.debug(f"Getting visibility for room {room_id}.")
+        resp = await client.room_get_visibility(room_id)
+        if isinstance(resp, RoomGetVisibilityResponse):
+            gs.log.info(
+                f"Successfully got visibility for room {resp.room_id}: "
+                f"{resp.visibility}."
+            )
+            print(f"{resp.visibility}{SEP}{room_id}")
+        else:
+            gs.log.error(
+                f"Failed getting visibility for room {room_id}. {resp}"
+            )
+            gs.err_count += 1
 
 
 async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
@@ -5346,6 +5384,8 @@ async def main_roomsetget_action() -> None:
             await action_export_keys(client, credentials)
         if gs.pa.get_openid_token is not None:  # empty list must invoke func
             await action_get_openid_token(client, credentials)
+        if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
+            await action_room_get_visibility(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5595,8 +5635,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.get_profile is not None  # empty list must invoke function
         or gs.pa.has_permission
         or gs.pa.export_keys
-        or gs.pa.get_openid_token
-        is not None  # empty list must invoke function
+        or gs.pa.get_openid_token is not None  # empty list must invoke func
+        or gs.pa.room_get_visibility is not None  # empty list must invoke func
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -6802,6 +6842,20 @@ def main_inner(
         "be fetched. If one or more user ids are given, the OpenID of "
         "these users will be fetched. As response the user id(s) and "
         "OpenID(s) will be printed.",
+    )
+    ap.add_argument(
+        "--room-get-visibility",
+        required=False,
+        action="extend",
+        nargs="*",  # None if not used, [] is used without extra args
+        type=str,
+        help="Get the visibility of one or more rooms. "
+        "Provide zero or more room ids as arguments. "
+        "In no argument is given, then the default room of "
+        f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
+        "For each room the visibility will be printed. Currently, this "
+        "is either the string 'private' or 'public'."
+        "As response one line per room will be printed to stdout.",
     )
     ap.add_argument(
         "--delete-device",

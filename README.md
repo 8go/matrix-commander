@@ -72,6 +72,7 @@ alt="get it on Docker Hub" height="100"></a>
   Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
+- new option `--room-get-visibility` to find out if room is private or public
 
 
 # Summary, TLDR
@@ -491,6 +492,9 @@ $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
 $ # get OpenID tokens for other users
 $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
+$ matrix-commander --room-get-visibility # get my default room visibility
+$ matrix-commander --room-get-visibility \
+    '\!someroomId1:example.com' '\!someroomId2:example.com'
 $ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
 $ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
     --user '@user1:example.com' --password 'user1-password'
@@ -625,6 +629,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
+                           [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
@@ -1193,6 +1198,14 @@ options:
                         commander will be fetched. If one or more user ids are
                         given, the OpenID of these users will be fetched. As
                         response the user id(s) and OpenID(s) will be printed.
+  --room-get-visibility [ROOM_GET_VISIBILITY ...]
+                        Get the visibility of one or more rooms. Provide zero
+                        or more room ids as arguments. In no argument is
+                        given, then the default room of matrix-commander (as
+                        found in credentials file) will be used. For each room
+                        the visibility will be printed. Currently, this is
+                        either the string 'private' or 'public'.As response
+                        one line per room will be printed to stdout.
   --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
@@ -1305,7 +1318,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.3 2022-06-16. Enjoy, star on Github and
+You are running version 2.37.4 2022-06-17. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
