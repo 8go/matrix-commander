@@ -80,6 +80,7 @@ alt="get it on Docker Hub" height="100"></a>
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
 - new option `--room-get-visibility` to find out if room is private or public
+- new option `--room-get-state` to print state of room(s)
 
 
 # Summary, TLDR
@@ -499,8 +500,11 @@ $ matrix-commander --import-keys mykeys "my passphrase" # import keys
 $ matrix-commander --get-openid-token # get its own OpenId token
 $ # get OpenID tokens for other users
 $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
-$ matrix-commander --room-get-visibility # get my default room visibility
+$ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
+    '\!someroomId1:example.com' '\!someroomId2:example.com'
+$ matrix-commander --room-get-state # get state of default room
+$ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
 $ matrix-commander --delete-device "QBUAZIFURK" --password 'mc-password'
 $ matrix-commander --delete-device "QBUAZIFURK" "AUIECTSRND" \
@@ -637,6 +641,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
+                           [--room-get-state [ROOM_GET_STATE ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
@@ -1211,8 +1216,23 @@ options:
                         given, then the default room of matrix-commander (as
                         found in credentials file) will be used. For each room
                         the visibility will be printed. Currently, this is
-                        either the string 'private' or 'public'.As response
+                        either the string 'private' or 'public'. As response
                         one line per room will be printed to stdout.
+  --room-get-state [ROOM_GET_STATE ...]
+                        Get the state of one or more rooms. Provide zero or
+                        more room ids as arguments. In no argument is given,
+                        then the default room of matrix-commander (as found in
+                        credentials file) will be used. For each room the
+                        state will be printed. The state is a long list of
+                        events including events like 'm.room.create',
+                        'm.room.encryption', 'm.room.guest_access',
+                        'm.room.history_visibility', 'm.room.join_rules',
+                        'm.room.member', 'm.room.power_levels', etc. As
+                        response one line per room will be printed to stdout.
+                        The line can be very long as the list of events can be
+                        very large. To get output into a human readable form
+                        pipe output through sed and jq as shown in an example
+                        in tests/test-setget.sh.
   --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
@@ -1325,7 +1345,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.4 2022-06-17. Enjoy, star on Github and
+You are running version 2.37.5 2022-06-18. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1443,7 +1463,7 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
                  RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
                  RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
-                 RoomEncryptionEvent, RoomForgetError,
+                 RoomEncryptionEvent, RoomForgetError, RoomGetStateResponse,
                  RoomGetVisibilityResponse, RoomInviteError, RoomKickError,
                  RoomLeaveError, RoomMemberEvent, RoomMessage,
                  RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
@@ -1472,8 +1492,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-17"
-VERSIONNR = "2.37.4"
+VERSION = "2022-06-18"
+VERSIONNR = "2.37.5"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5155,6 +5175,31 @@ async def action_room_get_visibility(
                 f"Failed getting visibility for room {room_id}. {resp}"
             )
             gs.err_count += 1
+            errmsg = "Error: " + str(resp.status_code) + " " + resp.message
+            print(f"{errmsg}{SEP}{room_id}")
+
+
+async def action_room_get_state(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get state of room(s) while already logged in."""
+    if gs.pa.room_get_state == []:
+        gs.pa.room_get_state.append(credentials["room_id"])  # default room
+    for room_id in gs.pa.room_get_state:
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        gs.log.debug(f"Getting visibility for room {room_id}.")
+        resp = await client.room_get_state(room_id)
+        if isinstance(resp, RoomGetStateResponse):
+            gs.log.info(
+                f"Successfully got state for room {resp.room_id}: "
+                f"{resp.events}."
+            )
+            print(f"{resp.events}{SEP}{room_id}")
+        else:
+            gs.log.error(f"Failed getting state for room {room_id}. {resp}")
+            gs.err_count += 1
+            errmsg = "Error: " + str(resp.status_code) + " " + resp.message
+            print(f"{errmsg}{SEP}{room_id}")
 
 
 async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
@@ -5386,6 +5431,8 @@ async def main_roomsetget_action() -> None:
             await action_get_openid_token(client, credentials)
         if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
             await action_room_get_visibility(client, credentials)
+        if gs.pa.room_get_state is not None:  # empty list must invoke func
+            await action_room_get_state(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5637,6 +5684,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.export_keys
         or gs.pa.get_openid_token is not None  # empty list must invoke func
         or gs.pa.room_get_visibility is not None  # empty list must invoke func
+        or gs.pa.room_get_state is not None  # empty list must invoke func
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -6854,8 +6902,28 @@ def main_inner(
         "In no argument is given, then the default room of "
         f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
         "For each room the visibility will be printed. Currently, this "
-        "is either the string 'private' or 'public'."
+        "is either the string 'private' or 'public'. "
         "As response one line per room will be printed to stdout.",
+    )
+    ap.add_argument(
+        "--room-get-state",
+        required=False,
+        action="extend",
+        nargs="*",  # None if not used, [] is used without extra args
+        type=str,
+        help="Get the state of one or more rooms. "
+        "Provide zero or more room ids as arguments. "
+        "In no argument is given, then the default room of "
+        f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
+        "For each room the state will be printed. The state is a long "
+        "list of events including events like 'm.room.create', "
+        "'m.room.encryption', 'm.room.guest_access', "
+        "'m.room.history_visibility', 'm.room.join_rules', "
+        "'m.room.member', 'm.room.power_levels', etc. "
+        "As response one line per room will be printed to stdout. "
+        "The line can be very long as the list of events can be very large. "
+        "To get output into a human readable form pipe output through sed "
+        "and jq as shown in an example in tests/test-setget.sh.",
     )
     ap.add_argument(
         "--delete-device",

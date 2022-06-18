@@ -185,6 +185,24 @@ function test7() {
     done
 }
 
+function test8() {
+    echo "=== Test 8: getting the state of default room ==="
+    matrix-commander --room-get-state $MC_OPTIONS \
+        2>/dev/null |                               # remove debug info
+        grep -v -e "^Error" |                       # remove error lines
+        sed -n "s/\(\[.*\]\)\(    \![^ ]*\)/\1/p" | # remove room id at EOL
+        sed "s/'/\"/g" |                            # substitute all 's as ' is not valid in JSON
+        jq                                          # beautify
+}
+
+function test9() {
+    echo "=== Test 9: getting the visibility of default room ==="
+    visi_room=$(matrix-commander --room-get-visibility $MC_OPTIONS)
+    visibility="${visi_room%    *}" # before "    "
+    roomid="${visi_room##*    }"    # after "    "
+    echo "    Visibility of room \"$roomid\" is \"$visibility\"."
+}
+
 test1
 test2
 test3
@@ -192,3 +210,5 @@ test4
 test5
 test6
 test7
+test8
+test9
