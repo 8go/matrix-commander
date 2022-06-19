@@ -74,7 +74,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new option `--room-redact` to delete messages, images and other events
 - new option `--content-repository-config` to print content repo info
 - new option `--get-profile` to print user profile
-- incompatibility: new dependency `xdg`. Please install `xdg` if necessary.
+- incompatibility: new dependency `pyxdg`. Please install `pyxdg` if necessary.
   Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
   Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
@@ -341,8 +341,13 @@ well as ban, unban and kick other users from rooms.
       - pip3 install --user --upgrade notify2 # optional
     - python3 package urllib must be installed to support media download
       - pip3 install --user --upgrade urllib
-    - python3 package xdg must be installed to support `XDG_*` environment vars
-      - pip3 install --user --upgrade xdg
+    - python3 package pyxdg must be installed to support `XDG_*` env vars.
+      Be careful. Multiple packages install in the same directory `xdg` and
+      overwrite each other. These packages can be conflicting. Specifically,
+      packages `pyxdg` and `xdg` collide. If you already have `xdg` installed
+      you cannot just simply install `pyxdg`; in this case you should opt
+      for a separate Python environment.
+      - pip3 install --user --upgrade pyxdg
     - `matrix_commander/matrix_commander.py` file must be installed, and should
       have execution permissions
       - chmod 755 matrix_commander.py
@@ -1345,7 +1350,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.5 2022-06-18. Enjoy, star on Github and
+You are running version 2.37.6 2022-06-19. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1415,9 +1420,10 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 """
 
-import argparse
 # automatically sorted by isort,
 # then formatted by black --line-length 79
+
+import argparse
 import ast
 import asyncio
 import datetime
@@ -1475,7 +1481,7 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  UnknownEvent, UpdateDeviceError, UploadError, UploadResponse,
                  crypto)
 from PIL import Image
-from xdg import xdg_config_home, xdg_data_home
+from xdg import BaseDirectory
 
 try:
     import notify2
@@ -1492,8 +1498,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-18"
-VERSIONNR = "2.37.5"
+VERSION = "2022-06-19"
+VERSIONNR = "2.37.6"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1504,7 +1510,7 @@ PROG_WITH_EXT = os.path.basename(__file__).replace("_", "-")
 CREDENTIALS_FILE_DEFAULT = "credentials.json"  # login credentials JSON file
 # e.g. ~/.config/matrix-commander/
 CREDENTIALS_DIR_LASTRESORT = os.path.expanduser(
-    str(xdg_config_home()) + "/"  # "~/.config/"
+    BaseDirectory.xdg_config_home + "/"  # "~/.config/"
 ) + os.path.splitext(os.path.basename(__file__))[0].replace("_", "-")
 # directory to be used by end-to-end encrypted protocol for persistent storage
 STORE_DIR_DEFAULT = "./store/"
@@ -1514,7 +1520,9 @@ STORE_DIR_DEFAULT = "./store/"
 # e.g. ~/.local/share/matrix-commander/store/ as actual persistent store dir
 STORE_PATH_LASTRESORT = os.path.normpath(
     (
-        os.path.expanduser(str(xdg_data_home()) + "/")  # "~/.local/share/"
+        os.path.expanduser(
+            BaseDirectory.xdg_data_home + "/"
+        )  # ~/.local/share/
         + os.path.splitext(os.path.basename(__file__))[0].replace("_", "-")
     )
 )

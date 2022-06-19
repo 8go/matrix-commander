@@ -9,5 +9,5 @@ matrix-nio[e2e]>=0.14.1
 notify2
 Pillow
 python_magic
+pyxdg
 uuid
-xdg
