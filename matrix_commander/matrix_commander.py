@@ -80,7 +80,7 @@ alt="get it on Docker Hub" height="100"></a>
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
 - new option `--room-get-visibility` to find out if room is private or public
-- new option `--room-get-state` to print state of room(s)
+- new option `--room-set-alias` to add an alias to a room
 
 
 # Summary, TLDR
@@ -508,6 +508,9 @@ $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
+$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org' \
+    '\!someroomId1:example.com'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
@@ -644,6 +647,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
+                           [--room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
                            [--room-get-state [ROOM_GET_STATE ...]]
@@ -1118,7 +1122,8 @@ options:
                         something like this
                         'mxc://example.com/SomeStrangeUriKey'. See tests/test-
                         upload.sh for an example.
-  --devices             Print the list of devices. All device of this account
+  --devices, --get-devices
+                        Print the list of devices. All device of this account
                         will be printed, one device per line.
   --discovery-info      Print discovery information about current homeserver.
                         Note that not all homeservers support discovery and an
@@ -1205,6 +1210,22 @@ options:
                         the file will be encrypted with. Note that this does
                         not save other information such as the private
                         identity keys of the device.
+  --room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...], --room-put-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]
+                        Add an alias to a room, or aliases to multiple rooms.
+                        Provide pairs of arguments. In each pair, the first
+                        argument must be the alias you want to assign to the
+                        room given via room id in the second argument of the
+                        pair. E.g. the 4 arguments 'a1 r1 a2 r2' would assign
+                        the alias 'a1' to room 'r1' and the alias 'a2' to room
+                        'r2'. If you just have one single pair then the second
+                        argument is optional. If just a single value is given
+                        (an alias) then this alias is assigned to the default
+                        room of matrix-commander (as found in credentials
+                        file). In short, you can have just a single argument
+                        or an even number of arguments forming pairs. You can
+                        have multiple room aliases per room. So, you may add
+                        multiple aliases to the same room. An alias looks like
+                        this: '#someRoomAlias:matrix.example.org'.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1217,7 +1238,7 @@ options:
                         response the user id(s) and OpenID(s) will be printed.
   --room-get-visibility [ROOM_GET_VISIBILITY ...]
                         Get the visibility of one or more rooms. Provide zero
-                        or more room ids as arguments. In no argument is
+                        or more room ids as arguments. If no argument is
                         given, then the default room of matrix-commander (as
                         found in credentials file) will be used. For each room
                         the visibility will be printed. Currently, this is
@@ -1225,7 +1246,7 @@ options:
                         one line per room will be printed to stdout.
   --room-get-state [ROOM_GET_STATE ...]
                         Get the state of one or more rooms. Provide zero or
-                        more room ids as arguments. In no argument is given,
+                        more room ids as arguments. If no argument is given,
                         then the default room of matrix-commander (as found in
                         credentials file) will be used. For each room the
                         state will be printed. The state is a long list of
@@ -1350,7 +1371,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.6 2022-06-19. Enjoy, star on Github and
+You are running version 2.37.7 2022-06-22. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1476,10 +1497,10 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
                  RoomMessageNotice, RoomMessagesError, RoomMessageText,
                  RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
-                 RoomUnbanError, SyncError, SyncResponse, ToDeviceError,
-                 UnknownEvent, UpdateDeviceError, UploadError, UploadResponse,
-                 crypto)
+                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
+                 RoomResolveAliasError, RoomUnbanError, SyncError,
+                 SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
+                 UploadError, UploadResponse, crypto)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1498,8 +1519,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-19"
-VERSIONNR = "2.37.6"
+VERSION = "2022-06-22"
+VERSIONNR = "2.37.7"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2578,7 +2599,7 @@ async def map_roomalias_to_roomid(client, alias) -> str:
     Arguments:
     ---------
     client : nio client
-    alias : can be an alias in the form of '#someRoomALias:example.com'
+    alias : can be an alias in the form of '#someRoomAlias:example.com'
         can also be a room_id in the form of '!someRoomId:example.com'
 
     room_id : room from credentials file
@@ -5038,7 +5059,7 @@ async def action_has_permission(
     if not len(gs.pa.has_permission) % 2 == 0:
         gs.log.error(
             "Incorrect number of arguments for --has-permission. Arguments "
-            f"must be pairs, i.e. multiples of 2, but found "
+            "must be pairs, i.e. multiples of 2, but found "
             f"{len(gs.pa.has_permission)} arguments."
         )
         gs.err_count += 1
@@ -5122,6 +5143,48 @@ async def action_export_keys(client: AsyncClient, credentials: dict) -> None:
         raise
     gs.log.debug(f"export_keys successful. Response is: {resp}")
     gs.log.info(f"Successfully exported keys to file {file}.")
+
+
+async def action_room_set_alias(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Add alias(es) to room(s) while already logged in."""
+    if len(gs.pa.room_set_alias) == 1:  # special case
+        gs.pa.room_set_alias.append(credentials["room_id"])
+    if not len(gs.pa.room_set_alias) % 2 == 0:
+        gs.log.error(
+            "Incorrect number of arguments for --room-set-alias. Arguments "
+            "must be pairs, i.e. multiples of 2, but found "
+            f"{len(gs.pa.room_set_alias)} arguments. 1 is allowed too."
+        )
+        gs.err_count += 1
+        return
+    for ii in range(len(gs.pa.room_set_alias) // 2):
+        alias = gs.pa.room_set_alias[ii * 2 + 0].strip()
+        room_id = gs.pa.room_set_alias[ii * 2 + 1]
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        gs.log.debug(f"Adding alias '{alias}' to room '{room_id}'.")
+        if not alias or (alias[0] != "#") or (" " in alias):
+            # not an exhaustive check, just the top 3 criteria
+            gs.log.error(
+                f"Invalid alias '{alias}'. Aliases must start with '#'. "
+                "Aliases must not have whitespaces, etc."
+            )
+            gs.err_count += 1
+            continue
+        if ":" not in alias:
+            alias = alias + ":" + room_id.split(":")[1]
+        resp = await client.room_put_alias(alias, room_id)
+        if isinstance(resp, RoomPutAliasResponse):
+            gs.log.debug(f"room_put_alias successful. Response is: {resp}")
+            gs.log.info(
+                f"Successfully added alias '{alias}' to room '{room_id}'."
+            )
+        else:
+            gs.log.error(
+                f"Failed to add alias '{alias}' to room '{room_id}': {resp}"
+            )
+            gs.err_count += 1
 
 
 async def action_get_openid_token(
@@ -5406,6 +5469,8 @@ async def main_roomsetget_action() -> None:
             await action_delete_device(client, credentials)
         if gs.pa.room_redact:
             await action_room_redact(client, credentials)
+        if gs.pa.room_set_alias:
+            await action_room_set_alias(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -5676,6 +5741,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.import_keys
         or gs.pa.delete_device
         or gs.pa.room_redact
+        or gs.pa.room_set_alias
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -6739,6 +6805,7 @@ def main_inner(
     ap.add_argument(
         # no single char flag
         "--devices",
+        "--get-devices",  # alias, cause --deviced is very similar to --device
         required=False,
         action="store_true",
         help="Print the list of devices. All device of this "
@@ -6884,6 +6951,27 @@ def main_inner(
         "identity keys of the device.",
     )
     ap.add_argument(
+        "--room-set-alias",
+        "--room-put-alias",  # name used by nio
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Add an alias to a room, or aliases to multiple rooms. "
+        "Provide pairs of arguments. In each pair, the first argument must be "
+        "the alias you want to assign to the room given via room id in the "
+        "second argument of the pair. E.g. the 4 arguments 'a1 r1 a2 r2' "
+        "would assign the alias 'a1' to room 'r1' and the alias 'a2' to room "
+        "'r2'. If you just have one single pair then the second argument is "
+        "optional. If just a single value is given (an alias) then this "
+        "alias is assigned to the default room of "
+        f"{PROG_WITHOUT_EXT} (as found in credentials file). In short, "
+        "you can have just a single argument or an even number of arguments "
+        "forming pairs. You can have multiple room aliases per room. So, "
+        "you may add multiple aliases to the same room. An alias looks like "
+        "this: '#someRoomAlias:matrix.example.org'.",
+    )
+    ap.add_argument(
         "--get-openid-token",
         required=False,
         action="extend",
@@ -6907,7 +6995,7 @@ def main_inner(
         type=str,
         help="Get the visibility of one or more rooms. "
         "Provide zero or more room ids as arguments. "
-        "In no argument is given, then the default room of "
+        "If no argument is given, then the default room of "
         f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
         "For each room the visibility will be printed. Currently, this "
         "is either the string 'private' or 'public'. "
@@ -6921,7 +7009,7 @@ def main_inner(
         type=str,
         help="Get the state of one or more rooms. "
         "Provide zero or more room ids as arguments. "
-        "In no argument is given, then the default room of "
+        "If no argument is given, then the default room of "
         f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
         "For each room the state will be printed. The state is a long "
         "list of events including events like 'm.room.create', "

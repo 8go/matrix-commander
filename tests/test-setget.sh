@@ -203,6 +203,66 @@ function test9() {
     echo "    Visibility of room \"$roomid\" is \"$visibility\"."
 }
 
+function test10() {
+    echo "=== Test 10: adding an alias to the default room ==="
+    matrix-commander --room-set-alias $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE. The program should have failed, but didn't."
+    else
+        echo "SUCCESS. The program failed as expected."
+    fi
+
+}
+
+function test11() {
+    echo "=== Test 11: adding an alias to the default room ==="
+    matrix-commander --room-set-alias a b c $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE. The program should have failed, but didn't."
+    else
+        echo "SUCCESS. The program failed as expected."
+    fi
+
+}
+
+function test12() {
+    echo "=== Test 12: adding an alias to the default room ==="
+    matrix-commander --room-set-alias " spaces not allowed" r "mustStartWith#" r "" r $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE. The program should have failed, but didn't."
+    else
+        echo "SUCCESS. The program failed as expected."
+    fi
+
+}
+
+function test13() {
+    echo "=== Test 13: adding an alias to the default room ==="
+    matrix-commander --room-set-alias "#Testing-room-A" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS. Alias set."
+    else
+        echo "FAILURE. Alias not set."
+    fi
+
+}
+
+function test14() {
+    echo "=== Test 14: adding an alias to the default room ==="
+    matrix-commander --room-set-alias "#Testing-room-B" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS. Alias set."
+    else
+        echo "FAILURE. Alias not set."
+    fi
+
+}
+
 test1
 test2
 test3
@@ -212,3 +272,8 @@ test6
 test7
 test8
 test9
+test10
+test11
+test12
+test13
+test14
