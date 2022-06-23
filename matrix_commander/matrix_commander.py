@@ -80,8 +80,10 @@ alt="get it on Docker Hub" height="100"></a>
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
 - new option `--room-get-visibility` to find out if room is private or public
-- new option `--room-set-alias` to add an alias to a room
-
+- new option `--room-set-alias` to add alias(es) to room(s)
+  (see also Issue #328 in matrix-nio)
+- new option `--room-resolve-alias` to resolve room alias(es)
+- new option `--room-delete-alias` to delete room alias(es)
 
 # Summary, TLDR
 
@@ -511,6 +513,12 @@ $ matrix-commander --room-get-visibility \
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org' \
     '\!someroomId1:example.com'
+$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
+    '#someRoomAlias2:matrix.example.org'
+$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
+    '#someRoomAlias2:matrix.example.org'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
@@ -648,6 +656,8 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]]
+                           [--room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]]
+                           [--room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
                            [--room-get-state [ROOM_GET_STATE ...]]
@@ -1224,8 +1234,37 @@ options:
                         file). In short, you can have just a single argument
                         or an even number of arguments forming pairs. You can
                         have multiple room aliases per room. So, you may add
-                        multiple aliases to the same room. An alias looks like
-                        this: '#someRoomAlias:matrix.example.org'.
+                        multiple aliases to the same room. A room alias looks
+                        like this: '#someRoomAlias:matrix.example.org'. Short
+                        aliases like this '#someRoomAlias' are also accepted.
+                        In case of a short alias, the homeserver will be
+                        automatically appended. Adding the same alias multiple
+                        times to the same room results in an error. --room-
+                        put-alias is eqivalent to --room-set-alias.
+  --room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]
+                        Resolves a room alias to the corresponding room id, or
+                        multiple room aliases to their corresponding room ids.
+                        Provide one or multiple room aliases. A room alias
+                        looks like this: '#someRoomAlias:matrix.example.org'.
+                        Short aliases like this '#someRoomAlias' are also
+                        accepted. In case of a short alias, the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Resolving an alias that does not exist results in an
+                        error. For each room alias one line will be printed to
+                        stdout with the result.
+  --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
+                        Delete one or multiple rooms aliases. Provide one or
+                        multiple room aliases. You can have multiple room
+                        aliases per room. So, you may delete multiple aliases
+                        from the same room or from different rooms. A room
+                        alias looks like this:
+                        '#someRoomAlias:matrix.example.org'. Short aliases
+                        like this '#someRoomAlias' are also accepted. In case
+                        of a short alias, the homeserver from the default room
+                        of matrix-commander (as found in credentials file)
+                        will be automatically appended. Deleting an alias that
+                        does not exist results in an error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1371,7 +1410,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.7 2022-06-22. Enjoy, star on Github and
+You are running version 2.38.0 2022-06-23. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1488,17 +1527,18 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  ProfileGetDisplayNameError, ProfileGetError,
                  ProfileSetAvatarResponse, ProfileSetDisplayNameError,
                  RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomEncryptedAudio, RoomEncryptedFile,
-                 RoomEncryptedImage, RoomEncryptedMedia, RoomEncryptedVideo,
-                 RoomEncryptionEvent, RoomForgetError, RoomGetStateResponse,
-                 RoomGetVisibilityResponse, RoomInviteError, RoomKickError,
-                 RoomLeaveError, RoomMemberEvent, RoomMessage,
-                 RoomMessageAudio, RoomMessageEmote, RoomMessageFile,
-                 RoomMessageFormatted, RoomMessageImage, RoomMessageMedia,
-                 RoomMessageNotice, RoomMessagesError, RoomMessageText,
-                 RoomMessageUnknown, RoomMessageVideo, RoomNameEvent,
-                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
-                 RoomResolveAliasError, RoomUnbanError, SyncError,
+                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
+                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
+                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
+                 RoomGetStateResponse, RoomGetVisibilityResponse,
+                 RoomInviteError, RoomKickError, RoomLeaveError,
+                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
+                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
+                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
+                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
+                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
+                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
+                 RoomResolveAliasResponse, RoomUnbanError, SyncError,
                  SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
                  UploadError, UploadResponse, crypto)
 from PIL import Image
@@ -1519,8 +1559,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-22"
-VERSIONNR = "2.37.7"
+VERSION = "2022-06-23"
+VERSIONNR = "2.38.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5115,7 +5155,7 @@ async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
 
 
 async def action_import_keys(client: AsyncClient, credentials: dict) -> None:
-    """Import Megaolm keys from file while already logged in."""
+    """Import Megolm keys from file while already logged in."""
     file = gs.pa.import_keys[0]
     passphrase = gs.pa.import_keys[1]
     gs.log.debug(f"Importing keys from file {file} using a passphrase.")
@@ -5132,7 +5172,7 @@ async def action_import_keys(client: AsyncClient, credentials: dict) -> None:
 
 
 async def action_export_keys(client: AsyncClient, credentials: dict) -> None:
-    """Export Megaolm keys from file while already logged in."""
+    """Export Megolm keys from file while already logged in."""
     file = gs.pa.export_keys[0]
     passphrase = gs.pa.export_keys[1]
     gs.log.debug(f"Exporting keys to file {file} using a passphrase.")
@@ -5184,6 +5224,65 @@ async def action_room_set_alias(
             gs.log.error(
                 f"Failed to add alias '{alias}' to room '{room_id}': {resp}"
             )
+            gs.err_count += 1
+
+
+async def action_room_resolve_alias(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Resolve room alias(es) while already logged in."""
+    room_id = credentials["room_id"]
+    for alias in gs.pa.room_resolve_alias:
+        alias = alias.strip()
+        gs.log.debug(f"Resolving room alias '{alias}'.")
+        if not alias or (alias[0] != "#") or (" " in alias):
+            # not an exhaustive check, just the top 3 criteria
+            gs.log.error(
+                f"Invalid alias '{alias}'. Aliases must start with '#'. "
+                "Aliases must not have whitespaces, etc."
+            )
+            gs.err_count += 1
+            continue
+        if ":" not in alias:  # short alias, without homeserver
+            alias = alias + ":" + room_id.split(":")[1]
+        resp = await client.room_resolve_alias(alias)
+        if isinstance(resp, RoomResolveAliasResponse):
+            gs.log.debug(f"room_resolve_alias successful. Response is: {resp}")
+            gs.log.info(
+                f"Successfully resolved room alias '{alias}' to "
+                f"{resp.room_id}."
+            )
+            print(f"{resp.room_alias}{SEP}{resp.room_id}{SEP}{resp.servers}")
+        else:
+            gs.log.error(f"Failed to resolve room alias '{alias}': {resp}")
+            gs.err_count += 1
+            print(f"{alias}{SEP}Error{SEP}[]")  # empty server list
+
+
+async def action_room_delete_alias(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Delete room alias(es) while already logged in."""
+    room_id = credentials["room_id"]
+    for alias in gs.pa.room_delete_alias:
+        alias = alias.strip()
+        gs.log.debug(f"Deleting room alias '{alias}'.")
+        if not alias or (alias[0] != "#") or (" " in alias):
+            # not an exhaustive check, just the top 3 criteria
+            gs.log.error(
+                f"Invalid alias '{alias}'. Aliases must start with '#'. "
+                "Aliases must not have whitespaces, etc."
+            )
+            gs.err_count += 1
+            continue
+        if ":" not in alias:  # short alias, without homeserver
+            alias = alias + ":" + room_id.split(":")[1]
+        resp = await client.room_delete_alias(alias)
+        if isinstance(resp, RoomDeleteAliasResponse):
+            gs.log.debug(f"room_delete_alias successful. Response is: {resp}")
+            gs.log.info(f"Successfully deleted room alias '{alias}'.")
+        else:
+            gs.log.error(f"Failed to delete room alias '{alias}': {resp}")
             gs.err_count += 1
 
 
@@ -5471,6 +5570,8 @@ async def main_roomsetget_action() -> None:
             await action_room_redact(client, credentials)
         if gs.pa.room_set_alias:
             await action_room_set_alias(client, credentials)
+        if gs.pa.room_delete_alias:
+            await action_room_delete_alias(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -5506,6 +5607,8 @@ async def main_roomsetget_action() -> None:
             await action_room_get_visibility(client, credentials)
         if gs.pa.room_get_state is not None:  # empty list must invoke func
             await action_room_get_state(client, credentials)
+        if gs.pa.room_resolve_alias:
+            await action_room_resolve_alias(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5742,6 +5845,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.delete_device
         or gs.pa.room_redact
         or gs.pa.room_set_alias
+        or gs.pa.room_delete_alias
         or gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
@@ -5759,6 +5863,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.get_openid_token is not None  # empty list must invoke func
         or gs.pa.room_get_visibility is not None  # empty list must invoke func
         or gs.pa.room_get_state is not None  # empty list must invoke func
+        or gs.pa.room_resolve_alias
         or gs.pa.whoami
     ):
         gs.setget_action = True
@@ -6968,8 +7073,48 @@ def main_inner(
         f"{PROG_WITHOUT_EXT} (as found in credentials file). In short, "
         "you can have just a single argument or an even number of arguments "
         "forming pairs. You can have multiple room aliases per room. So, "
-        "you may add multiple aliases to the same room. An alias looks like "
-        "this: '#someRoomAlias:matrix.example.org'.",
+        "you may add multiple aliases to the same room. A room alias looks "
+        "like "
+        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
+        "'#someRoomAlias' are also accepted. In case of a short alias, the "
+        "homeserver will be automatically appended. Adding the same alias "
+        "multiple times to the same room results in an error. "
+        "--room-put-alias is eqivalent to --room-set-alias.",
+    )
+    ap.add_argument(
+        "--room-resolve-alias",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Resolves a room alias to the corresponding room id, "
+        "or multiple room aliases to their corresponding room ids. "
+        "Provide one or multiple room aliases. "
+        "A room alias looks like "
+        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
+        "'#someRoomAlias' are also accepted. In case of a short alias, the "
+        f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
+        "in credentials file) will be automatically appended. "
+        "Resolving an alias that does not exist results in an error. "
+        "For each room alias one line will be printed to stdout with the "
+        "result.",
+    )
+    ap.add_argument(
+        "--room-delete-alias",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Delete one or multiple rooms aliases. "
+        "Provide one or multiple room aliases. "
+        "You can have multiple room aliases per room. So, "
+        "you may delete multiple aliases from the same room or from different "
+        "rooms. A room alias looks like "
+        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
+        "'#someRoomAlias' are also accepted. In case of a short alias, the "
+        f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
+        "in credentials file) will be automatically appended. "
+        "Deleting an alias that does not exist results in an error.",
     )
     ap.add_argument(
         "--get-openid-token",

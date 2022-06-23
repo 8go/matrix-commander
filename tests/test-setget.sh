@@ -263,6 +263,54 @@ function test14() {
 
 }
 
+function test15() {
+    echo "=== Test 15: resolving a room alias ==="
+    matrix-commander --room-resolve-alias "#doesntexist" "missing#" " spa ce " "#doesntexisteither" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE. The program should have failed, but didn't."
+    else
+        echo "SUCCESS. The program failed as expected."
+    fi
+
+}
+
+function test16() {
+    echo "=== Test 16: resolving a room alias ==="
+    matrix-commander --room-resolve-alias "#Testing-room-A" "#Testing-room-B" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS. Aliases resolved."
+    else
+        echo "FAILURE. Aliases not resolved."
+    fi
+
+}
+
+function test17() {
+    echo "=== Test 17: deleting a room alias ==="
+    matrix-commander --room-delete-alias "#doesntexist" "missing#" " spa ce " "#doesntexisteither" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE. The program should have failed, but didn't."
+    else
+        echo "SUCCESS. The program failed as expected."
+    fi
+
+}
+
+function test18() {
+    echo "=== Test 18: deleting a room alias ==="
+    matrix-commander --room-delete-alias "#Testing-room-A" "#Testing-room-B" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS. Alias deleted."
+    else
+        echo "FAILURE. Alias not deleted."
+    fi
+
+}
+
 test1
 test2
 test3
@@ -277,3 +325,9 @@ test11
 test12
 test13
 test14
+test15
+test16
+test17
+test18
+
+echo "Finsihed test series."

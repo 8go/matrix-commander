@@ -73,8 +73,10 @@ alt="get it on Docker Hub" height="100"></a>
   See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
 - new option `--has-permission` (see also Issue #324 in matrix-nio)
 - new option `--room-get-visibility` to find out if room is private or public
-- new option `--room-set-alias` to add an alias to a room
-
+- new option `--room-set-alias` to add alias(es) to room(s)
+  (see also Issue #328 in matrix-nio)
+- new option `--room-resolve-alias` to resolve room alias(es)
+- new option `--room-delete-alias` to delete room alias(es)
 
 # Summary, TLDR
 
@@ -504,6 +506,12 @@ $ matrix-commander --room-get-visibility \
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org' \
     '\!someroomId1:example.com'
+$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
+    '#someRoomAlias2:matrix.example.org'
+$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
+    '#someRoomAlias2:matrix.example.org'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
@@ -641,6 +649,8 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
                            [--room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]]
+                           [--room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]]
+                           [--room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]]
                            [--get-openid-token [GET_OPENID_TOKEN ...]]
                            [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
                            [--room-get-state [ROOM_GET_STATE ...]]
@@ -1217,8 +1227,37 @@ options:
                         file). In short, you can have just a single argument
                         or an even number of arguments forming pairs. You can
                         have multiple room aliases per room. So, you may add
-                        multiple aliases to the same room. An alias looks like
-                        this: '#someRoomAlias:matrix.example.org'.
+                        multiple aliases to the same room. A room alias looks
+                        like this: '#someRoomAlias:matrix.example.org'. Short
+                        aliases like this '#someRoomAlias' are also accepted.
+                        In case of a short alias, the homeserver will be
+                        automatically appended. Adding the same alias multiple
+                        times to the same room results in an error. --room-
+                        put-alias is eqivalent to --room-set-alias.
+  --room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]
+                        Resolves a room alias to the corresponding room id, or
+                        multiple room aliases to their corresponding room ids.
+                        Provide one or multiple room aliases. A room alias
+                        looks like this: '#someRoomAlias:matrix.example.org'.
+                        Short aliases like this '#someRoomAlias' are also
+                        accepted. In case of a short alias, the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Resolving an alias that does not exist results in an
+                        error. For each room alias one line will be printed to
+                        stdout with the result.
+  --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
+                        Delete one or multiple rooms aliases. Provide one or
+                        multiple room aliases. You can have multiple room
+                        aliases per room. So, you may delete multiple aliases
+                        from the same room or from different rooms. A room
+                        alias looks like this:
+                        '#someRoomAlias:matrix.example.org'. Short aliases
+                        like this '#someRoomAlias' are also accepted. In case
+                        of a short alias, the homeserver from the default room
+                        of matrix-commander (as found in credentials file)
+                        will be automatically appended. Deleting an alias that
+                        does not exist results in an error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1364,7 +1403,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.37.7 2022-06-22. Enjoy, star on Github and
+You are running version 2.38.0 2022-06-23. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
