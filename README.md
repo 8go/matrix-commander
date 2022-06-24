@@ -77,6 +77,9 @@ alt="get it on Docker Hub" height="100"></a>
   (see also Issue #328 in matrix-nio)
 - new option `--room-resolve-alias` to resolve room alias(es)
 - new option `--room-delete-alias` to delete room alias(es)
+- incompatibility: login (authentication) must now be done explicitly
+  with `--login` on the first run of `matrix-commander`
+- new option: `--login`, supports login methods `password` and `sso`
 
 # Summary, TLDR
 
@@ -206,11 +209,16 @@ Please give it a :star: on Github right now so others find it more easily.
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
-This program on the first run creates a credentials.json file.
+On the first run `matrix-commander` must be executed with the
+`--login` argument and the corresponding secondary arguments.
+This creates a credentials.json file.
 The credentials.json file stores: homeserver, user id,
-access token, device id, and room id. On the first run
-it asks some questions, creates the token and device id
-and stores everything in the credentials.json file.
+access token, device id, and default room id. On the first run,
+the --login run, it asks some questions if not everything is
+provided by arguments, creates the token and device id
+and stores everything in the credentials.json file. If desired,
+all arguments can be provided via arguments to that log in can
+be performed fully in batch.
 
 Since the credentials file holds an access token it
 should be protected and secured. One can use different
@@ -245,6 +253,22 @@ and access token found in the credentials file to log
 into the Matrix account. Now this program can be used
 to easily send simple text messages, images, and so forth
 to the just configured room.
+
+# Verification
+
+As second step after the `--login`, it is recommended to perform an
+emoji verification by running `--verify`. Verification is always
+interactive, bacause the emojis need to be confirmed via the keyboard.
+If desired `--login` and `--verify` can be done in the same first run.
+The program can accept verification request and verify other devices
+via emojis. See `--verify` in help for more details.
+
+# Room Operations, Actions on Rooms
+
+The program can create rooms, join, leave and forget rooms.
+It can also send invitations to join rooms to
+others (given that user has the appropriate permissions) as
+well as ban, unban and kick other users from rooms.
 
 # Sending
 
@@ -290,19 +314,6 @@ Messages can be received or listened to various ways:
 When listening to messages you can also choose to download and decrypt
 media. Say, someone is sending a song. The mp3 file can be downloaded
 and automatically decrypted for you.
-
-# Verification
-
-The program can accept verification request and verify other devices
-via emojis. Do do so use the --verify option and the program will
-await incoming verification request and act accordingly.
-
-# Room Operations, Actions on Rooms
-
-The program can create rooms, join, leave and forget rooms.
-It can also send invitations to join rooms to
-others (given that user has the appropriate permissions) as
-well as ban, unban and kick other users from rooms.
 
 # Dependencies and Installation
 
@@ -370,8 +381,8 @@ well as ban, unban and kick other users from rooms.
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
 
 ```
-$ matrix-commander # first run; this will configure everything
-$ matrix-commander --no-sso # alternative first run without Single Sign-On;
+$ matrix-commander --login password # first run; will configure everything
+$ matrix-commander --login sso # alternative first run with Single Sign-On;
 $   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
@@ -504,14 +515,14 @@ $ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org' \
+$ matrix-commander --room-set-alias 'someRoomAlias' \
     '\!someroomId1:example.com'
 $ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
-    '#someRoomAlias2:matrix.example.org'
+    'someRoomAlias2'
 $ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
-    '#someRoomAlias2:matrix.example.org'
+    'someRoomAlias2'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
@@ -612,7 +623,9 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+                           [--login LOGIN] [-v [VERIFY]] [-c CREDENTIALS]
+                           [-s STORE] [-r ROOM [ROOM ...]]
+                           [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -621,16 +634,17 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--room-ban ROOM_BAN [ROOM_BAN ...]]
                            [--room-unban ROOM_UNBAN [ROOM_UNBAN ...]]
                            [--room-kick ROOM_KICK [ROOM_KICK ...]]
-                           [-u USER [USER ...]] [--name NAME [NAME ...]]
+                           [-u USER [USER ...]] [--user-login USER_LOGIN]
+                           [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
                            [--config CONFIG] [--proxy PROXY] [-n]
-                           [--encrypted] [-s STORE] [-l [LISTEN]] [-t [TAIL]]
-                           [-y] [--print-event-id]
+                           [--encrypted] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
+                           [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
                            [--get-display-name] [--set-presence SET_PRESENCE]
                            [--get-presence] [--upload UPLOAD [UPLOAD ...]]
@@ -662,24 +676,27 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
+                           [--homeserver HOMESERVER] [--device DEVICE]
                            [--version]
 
-Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
-program will configure itself. On further runs this program implements a
-simple Matrix CLI client that can send messages, listen to messages, verify
-devices, etc. It can send one or multiple message to one or multiple Matrix
-rooms and/or users. The text messages can be of various formats such as
-"text", "html", "markdown" or "code". Images, audio, arbitrary files, or
-events can be sent as well. For receiving there are three main options: listen
-forever, listen once and quit, and get the last N messages and quit. Emoji
-verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. ─── Bundling
-several actions together into a single call to matrix-commander is faster than
-calling matrix-commander multiple times with only one action. If there are
-both 'set' and 'get' actions present in the arguments, then the 'set' actions
-will be performed before the 'get' actions. ─── For even more explications and
-examples also read the documentation provided in the on-line Github README.md
-file or the README.md in your local installation.
+Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
+to log in, to authenticate. On second run we suggest to use --verify to get
+verified. Emoji verification is built-in which can be used to verify devices.
+On further runs this program implements a simple Matrix CLI client that can
+send messages, listen to messages, verify devices, etc. It can send one or
+multiple message to one or multiple Matrix rooms and/or users. The text
+messages can be of various formats such as "text", "html", "markdown" or
+"code". Images, audio, arbitrary files, or events can be sent as well. For
+receiving there are three main options: listen forever, listen once and quit,
+and get the last N messages and quit. End-to-end encryption is enabled by
+default and cannot be turned off. ─── Bundling several actions together into a
+single call to matrix-commander is faster than calling matrix-commander
+multiple times with only one action. If there are both 'set' and 'get' actions
+present in the arguments, then the 'set' actions will be performed before the
+'get' actions. Then send actions and at the very end listen actions will be
+performed. ─── For even more explications and examples also read the
+documentation provided in the on-line Github README.md file or the README.md
+in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -699,6 +716,43 @@ options:
                         (e.g. "--log-level WARNING ERROR") then log levels of
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
+  --login LOGIN         Login to and authenticate with the Matrix homeserver.
+                        ***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.***
+                        This requires exactly one argument, the login method.
+                        Currently two choices are offered: 'password' and
+                        'sso'. Provide one of these methods. If you have
+                        chosen 'password', you will authenticate through your
+                        account password. You can optionally provide these
+                        additional arguments: --homeserver to specify the
+                        Matrix homeserver, --user-login to specify the log in
+                        user id, --password to specify the password, --device
+                        to specify a device name, --room-default to specify a
+                        default room for sending/listening. If you have chosen
+                        'sso', you will authenticate through Single Sign-On. A
+                        web-browser will be started and you authenticate on
+                        the webpage. You can optionally provide these
+                        additional arguments: --homeserver to specify the
+                        Matrix homeserver, --user-login to specify the log in
+                        user id, --device to specify a device name, --room-
+                        default to specify a default room for
+                        sending/listening. See all the extra arguments for
+                        further explanations.
+  -v [VERIFY], --verify [VERIFY]
+                        Perform verification. By default, no verification is
+                        performed. Possible values are: "emoji". If
+                        verification is desired, run this program in the
+                        foreground (not as a service) and without a pipe.
+                        Verification questions will be printed on stdout and
+                        the user has to respond via the keyboard to accept or
+                        reject verification. Once verification is complete,
+                        stop the program and run it as a service again.
+                        Verification is best done by opening e.g. Element in a
+                        browser, going to a room that you are a member of,
+                        click 'Room Info' icon, click 'People', click the
+                        appropriate user, click red 'Not Trusted' text which
+                        indicated an untrusted device, click 'Interactively
+                        verify by Emoji' button. Confirm on both sides (Yes,
+                        They Match, Got it), Click OK.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -708,16 +762,28 @@ options:
                         to the preconfigured room. If this option is provided,
                         the provided file name will be used as credentials
                         file instead of the default one.
+  -s STORE, --store STORE
+                        Path to directory to be used as "store" for encrypted
+                        messaging. By default, this directory is "./store/".
+                        Since encryption is always enabled, a store is always
+                        needed. If this option is provided, the provided
+                        directory name will be used as persistent storage
+                        directory instead of the default one. Preferably, for
+                        multiple executions of this program use the same store
+                        for the same device. The store directory can be shared
+                        between multiple different devices and users.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
-                        Send to or receive from this room or these rooms.
-                        None, one or multiple rooms can be specified. The
-                        default room is provided in credentials file. If a
-                        room (or multiple ones) is (or are) provided in the
-                        arguments, then it (or they) will be used instead of
-                        the one from the credentials file. The user must have
-                        access to the specified room in order to send messages
-                        there or listen on the room. Messages cannot be sent
-                        to arbitrary rooms. When specifying the room id some
+                        Optionally specify one or multiple rooms via room ids
+                        or room aliases. --room is used by various send
+                        actions and various listen actions. The default room
+                        is provided in the credentials file (specified at
+                        --login with --room-default). If a room (or multiple
+                        ones) is (or are) provided in the --room arguments,
+                        then it (or they) will be used instead of the one from
+                        the credentials file. The user must have access to the
+                        specified room in order to send messages there or
+                        listen on the room. Messages cannot be sent to
+                        arbitrary rooms. When specifying the room id some
                         shells require the exclamation mark to be escaped with
                         a backslash. As an alternative to specifying a room as
                         destination, one can specify a user as a destination
@@ -725,14 +791,31 @@ options:
                         'DM (direct messaging)' for details. Specifying a room
                         is always faster and more efficient than specifying a
                         user. Not all listen operations allow setting a room.
-                        Read more under the --listen options and similar.
+                        Read more under the --listen options and similar. Most
+                        actions also support room aliases instead of room ids.
+                        Some even short room aliases.
+  --room-default ROOM_DEFAULT
+                        Optionally specify a room as the default room for
+                        future actions. If not specified for --login, it will
+                        be queried via the keyboard. --login stores the
+                        specified room as default room in your credentials
+                        file. This option is only used in combination with
+                        --login. A default room is needed. Specify a valid
+                        room either with --room-default or provide it via
+                        keyboard.
   --room-create ROOM_CREATE [ROOM_CREATE ...]
-                        Create this room or these rooms. One or multiple room
-                        aliases can be specified. The room (or multiple ones)
-                        provided in the arguments will be created. The user
-                        must be permitted to create rooms. Combine --room-
-                        create with --name and --topic to add names and topics
-                        to the room(s) to be created.
+                        Create one or multiple rooms. One or multiple room
+                        aliases can be specified. For each alias specified a
+                        room will be created. For each created room one line
+                        with room id and alias will be printed to stdout. If
+                        you are not interested in an alias, provide an empty
+                        string like "".The alias provided must be in canocial
+                        local form, i.e. if you want a final full alias like
+                        '#SomeRoomAlias:matrix.example.comyou must provide the
+                        string 'SomeRoomAlias'. The user must be permitted to
+                        create rooms. Combine --room-create with --name and
+                        --topic to add names and topics to the room(s) to be
+                        created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -789,29 +872,40 @@ options:
                         messaging)'. For c) this option allows an alternative
                         to specifying a room as destination for some --listen
                         actions. For d) this gives the otion to delete the
-                        device of a different user. What is a DM? matrix-
-                        commander tries to find a room that contains only the
-                        sender and the receiver, hence DM. These rooms have
-                        nothing special other the fact that they only have 2
-                        members and them being the sender and recipient
-                        respectively. If such a room is found, the first one
-                        found will be used as destination. If no such room is
-                        found, the send fails and the user should do a --room-
-                        create and --room-invite first. If multiple such rooms
-                        exist, one of them will be used (arbitrarily). For
-                        sending and listening, specifying a room directly is
-                        always faster and more efficient than specifying a
-                        user. So, if you know the room, it is preferred to use
-                        --room instead of --user. For b) and c) --user can be
-                        specified in 3 ways: 1) full user id as in
-                        '@user:example.org', 2) partial user id as in '@user'
-                        when the user is on the same homeserver (example.org
-                        will be automatically appended), or 3) a display name.
-                        Be careful, when using display names as they might not
-                        be unique, and you could be sending to the wrong
-                        person. To see possible display names use the
-                        --joined-members '*' option which will show you the
-                        display names in the middle column.
+                        device of a different user. ----- What is a DM?
+                        matrix-commander tries to find a room that contains
+                        only the sender and the receiver, hence DM. These
+                        rooms have nothing special other the fact that they
+                        only have 2 members and them being the sender and
+                        recipient respectively. If such a room is found, the
+                        first one found will be used as destination. If no
+                        such room is found, the send fails and the user should
+                        do a --room-create and --room-invite first. If
+                        multiple such rooms exist, one of them will be used
+                        (arbitrarily). For sending and listening, specifying a
+                        room directly is always faster and more efficient than
+                        specifying a user. So, if you know the room, it is
+                        preferred to use --room instead of --user. For b) and
+                        c) --user can be specified in 3 ways: 1) full user id
+                        as in '@john:example.org', 2) partial user id as in
+                        '@john' when the user is on the same homeserver
+                        (example.org will be automatically appended), or 3) a
+                        display name as in 'john'. Be careful, when using
+                        display names as they might not be unique, and you
+                        could be sending to the wrong person. To see possible
+                        display names use the --joined-members '*' option
+                        which will show you the display names in the middle
+                        column.
+  --user-login USER_LOGIN
+                        Optional argument to specify the user for --login.
+                        This gives the otion to specify the user id for login.
+                        For '--login sso' the --user-login is not needed as
+                        user id can be obtained from server via SSO. For '--
+                        login password', if not provided it will be queried
+                        via keyboard. A full user id like '@john:example.com',
+                        a partial user name like '@john', and a short user
+                        name like 'john' can be given. --user-login is only
+                        used by --login and ignored by all other actions.
   --name NAME [NAME ...]
                         Specify one or multiple names. This option is only
                         meaningful in combination with option --room-create.
@@ -931,16 +1025,6 @@ options:
                         possible. It cannot be turned off. This flag does
                         nothing as encryption is turned on with or without
                         this argument.
-  -s STORE, --store STORE
-                        Path to directory to be used as "store" for encrypted
-                        messaging. By default, this directory is "./store/".
-                        Since encryption is always enabled, a store is always
-                        needed. If this option is provided, the provided
-                        directory name will be used as persistent storage
-                        directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same store
-                        for the same device. The store directory can be shared
-                        between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
@@ -1014,16 +1098,6 @@ options:
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
                         via OS.
-  -v [VERIFY], --verify [VERIFY]
-                        Perform verification. By default, no verification is
-                        performed. Possible values are: "emoji". If
-                        verification is desired, run this program in the
-                        foreground (not as a service) and without a pipe.
-                        Verification questions will be printed on stdout and
-                        the user has to respond via the keyboard to accept or
-                        reject verification. Once verification is complete,
-                        stop the program and run it as a service again. Don't
-                        send messages or files when you verify.
   --set-device-name SET_DEVICE_NAME
                         Set or rename the current device to the device name
                         provided. Send, listen and verify operations are
@@ -1229,8 +1303,9 @@ options:
                         have multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
                         like this: '#someRoomAlias:matrix.example.org'. Short
-                        aliases like this '#someRoomAlias' are also accepted.
-                        In case of a short alias, the homeserver will be
+                        aliases like 'someRoomAlias' are also accepted. In
+                        case of a short alias, it will be automatically
+                        prefixed with '#' and the homeserver will be
                         automatically appended. Adding the same alias multiple
                         times to the same room results in an error. --room-
                         put-alias is eqivalent to --room-set-alias.
@@ -1239,13 +1314,14 @@ options:
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
                         looks like this: '#someRoomAlias:matrix.example.org'.
-                        Short aliases like this '#someRoomAlias' are also
-                        accepted. In case of a short alias, the homeserver
-                        from the default room of matrix-commander (as found in
-                        credentials file) will be automatically appended.
-                        Resolving an alias that does not exist results in an
-                        error. For each room alias one line will be printed to
-                        stdout with the result.
+                        Short aliases like 'someRoomAlias' are also accepted.
+                        In case of a short alias, it will be automatically
+                        prefixed with '#' and the homeserver from the default
+                        room of matrix-commander (as found in credentials
+                        file) will be automatically appended. Resolving an
+                        alias that does not exist results in an error. For
+                        each room alias one line will be printed to stdout
+                        with the result.
   --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
                         Delete one or multiple rooms aliases. Provide one or
                         multiple room aliases. You can have multiple room
@@ -1253,11 +1329,12 @@ options:
                         from the same room or from different rooms. A room
                         alias looks like this:
                         '#someRoomAlias:matrix.example.org'. Short aliases
-                        like this '#someRoomAlias' are also accepted. In case
-                        of a short alias, the homeserver from the default room
-                        of matrix-commander (as found in credentials file)
-                        will be automatically appended. Deleting an alias that
-                        does not exist results in an error.
+                        like 'someRoomAlias' are also accepted. In case of a
+                        short alias, it will be automatically prefixed with
+                        '#' and the homeserver from the default room of
+                        matrix-commander (as found in credentials file) will
+                        be automatically appended. Deleting an alias that does
+                        not exist results in an error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1394,16 +1471,33 @@ options:
   --access-token ACCESS_TOKEN
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
-                        is ignored and not used. It is used only by the
-                        --delete-mxc, --delete-mxc-before, and --rest actions.
-  --password PASSWORD   Use the password specified in certain actions. It is
+                        is ignored and not used. It is used by the --delete-
+                        mxc, --delete-mxc-before, and --rest actions.
+  --password PASSWORD   Specify a password for use by certain actions. It is
                         an optional argument. By default --password is ignored
-                        and not used. It is used only by the --delete-device.
+                        and not used. It is used by '--login password' and '--
+                        delete-device' actions. If not provided for --login
+                        the user will be queried via keyboard.
+  --homeserver HOMESERVER
+                        Specify a homeserver for use by certain actions. It is
+                        an optional argument. By default --homeserver is
+                        ignored and not used. It is used by '--login' action.
+                        If not provided for --login the user will be queried
+                        via keyboard.
+  --device DEVICE       Specify a device name, for use by certain actions. It
+                        is an optional argument. By default --device is
+                        ignored and not used. It is used by '--login' action.
+                        If not provided for --login the user will be queried
+                        via keyboard. If you want the default value specify
+                        ''. Multiple devices (with different device id) may
+                        have the same device name. In short, the same device
+                        name can be assigned to multiple different devices if
+                        desired.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.38.0 2022-06-23. Enjoy, star on Github and
+You are running version 2.38.1 2022-06-24. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

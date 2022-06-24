@@ -229,7 +229,7 @@ function test11() {
 
 function test12() {
     echo "=== Test 12: adding an alias to the default room ==="
-    matrix-commander --room-set-alias " spaces not allowed" r "mustStartWith#" r "" r $MC_OPTIONS
+    matrix-commander --room-set-alias " spaces not allowed" r "wrong#" r "" r $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
@@ -241,7 +241,7 @@ function test12() {
 
 function test13() {
     echo "=== Test 13: adding an alias to the default room ==="
-    matrix-commander --room-set-alias "#Testing-room-A" $MC_OPTIONS
+    matrix-commander --room-set-alias "Testing-room-A" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS. Alias set."
@@ -253,7 +253,7 @@ function test13() {
 
 function test14() {
     echo "=== Test 14: adding an alias to the default room ==="
-    matrix-commander --room-set-alias "#Testing-room-B" $MC_OPTIONS
+    matrix-commander --room-set-alias "Testing-room-B" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS. Alias set."
@@ -265,7 +265,7 @@ function test14() {
 
 function test15() {
     echo "=== Test 15: resolving a room alias ==="
-    matrix-commander --room-resolve-alias "#doesntexist" "missing#" " spa ce " "#doesntexisteither" $MC_OPTIONS
+    matrix-commander --room-resolve-alias "doesntexist" "doesntexist2" "wrong#" " spa ce " "wrong:too" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
@@ -277,7 +277,7 @@ function test15() {
 
 function test16() {
     echo "=== Test 16: resolving a room alias ==="
-    matrix-commander --room-resolve-alias "#Testing-room-A" "#Testing-room-B" $MC_OPTIONS
+    matrix-commander --room-resolve-alias "Testing-room-A" "Testing-room-B" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS. Aliases resolved."
@@ -289,7 +289,7 @@ function test16() {
 
 function test17() {
     echo "=== Test 17: deleting a room alias ==="
-    matrix-commander --room-delete-alias "#doesntexist" "missing#" " spa ce " "#doesntexisteither" $MC_OPTIONS
+    matrix-commander --room-delete-alias "doesntexist" "doesntexist2" "wrong#" " spa ce " "wrong:too" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
@@ -301,7 +301,7 @@ function test17() {
 
 function test18() {
     echo "=== Test 18: deleting a room alias ==="
-    matrix-commander --room-delete-alias "#Testing-room-A" "#Testing-room-B" $MC_OPTIONS
+    matrix-commander --room-delete-alias "Testing-room-A" "Testing-room-B" $MC_OPTIONS
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS. Alias deleted."

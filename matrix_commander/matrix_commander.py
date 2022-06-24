@@ -84,6 +84,9 @@ alt="get it on Docker Hub" height="100"></a>
   (see also Issue #328 in matrix-nio)
 - new option `--room-resolve-alias` to resolve room alias(es)
 - new option `--room-delete-alias` to delete room alias(es)
+- incompatibility: login (authentication) must now be done explicitly
+  with `--login` on the first run of `matrix-commander`
+- new option: `--login`, supports login methods `password` and `sso`
 
 # Summary, TLDR
 
@@ -213,11 +216,16 @@ Please give it a :star: on Github right now so others find it more easily.
 
 # First Run, Set Up, Credentials File, End-to-end Encryption
 
-This program on the first run creates a credentials.json file.
+On the first run `matrix-commander` must be executed with the
+`--login` argument and the corresponding secondary arguments.
+This creates a credentials.json file.
 The credentials.json file stores: homeserver, user id,
-access token, device id, and room id. On the first run
-it asks some questions, creates the token and device id
-and stores everything in the credentials.json file.
+access token, device id, and default room id. On the first run,
+the --login run, it asks some questions if not everything is
+provided by arguments, creates the token and device id
+and stores everything in the credentials.json file. If desired,
+all arguments can be provided via arguments to that log in can
+be performed fully in batch.
 
 Since the credentials file holds an access token it
 should be protected and secured. One can use different
@@ -252,6 +260,22 @@ and access token found in the credentials file to log
 into the Matrix account. Now this program can be used
 to easily send simple text messages, images, and so forth
 to the just configured room.
+
+# Verification
+
+As second step after the `--login`, it is recommended to perform an
+emoji verification by running `--verify`. Verification is always
+interactive, bacause the emojis need to be confirmed via the keyboard.
+If desired `--login` and `--verify` can be done in the same first run.
+The program can accept verification request and verify other devices
+via emojis. See `--verify` in help for more details.
+
+# Room Operations, Actions on Rooms
+
+The program can create rooms, join, leave and forget rooms.
+It can also send invitations to join rooms to
+others (given that user has the appropriate permissions) as
+well as ban, unban and kick other users from rooms.
 
 # Sending
 
@@ -297,19 +321,6 @@ Messages can be received or listened to various ways:
 When listening to messages you can also choose to download and decrypt
 media. Say, someone is sending a song. The mp3 file can be downloaded
 and automatically decrypted for you.
-
-# Verification
-
-The program can accept verification request and verify other devices
-via emojis. Do do so use the --verify option and the program will
-await incoming verification request and act accordingly.
-
-# Room Operations, Actions on Rooms
-
-The program can create rooms, join, leave and forget rooms.
-It can also send invitations to join rooms to
-others (given that user has the appropriate permissions) as
-well as ban, unban and kick other users from rooms.
 
 # Dependencies and Installation
 
@@ -377,8 +388,8 @@ well as ban, unban and kick other users from rooms.
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
 
 ```
-$ matrix-commander # first run; this will configure everything
-$ matrix-commander --no-sso # alternative first run without Single Sign-On;
+$ matrix-commander --login password # first run; will configure everything
+$ matrix-commander --login sso # alternative first run with Single Sign-On;
 $   # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
@@ -511,14 +522,14 @@ $ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
 $ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org' \
+$ matrix-commander --room-set-alias 'someRoomAlias' \
     '\!someroomId1:example.com'
 $ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
-    '#someRoomAlias2:matrix.example.org'
+    'someRoomAlias2'
 $ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
 $ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
-    '#someRoomAlias2:matrix.example.org'
+    'someRoomAlias2'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
@@ -619,7 +630,9 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [-c CREDENTIALS] [-r ROOM [ROOM ...]]
+                           [--login LOGIN] [-v [VERIFY]] [-c CREDENTIALS]
+                           [-s STORE] [-r ROOM [ROOM ...]]
+                           [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -628,16 +641,17 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--room-ban ROOM_BAN [ROOM_BAN ...]]
                            [--room-unban ROOM_UNBAN [ROOM_UNBAN ...]]
                            [--room-kick ROOM_KICK [ROOM_KICK ...]]
-                           [-u USER [USER ...]] [--name NAME [NAME ...]]
+                           [-u USER [USER ...]] [--user-login USER_LOGIN]
+                           [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
                            [--config CONFIG] [--proxy PROXY] [-n]
-                           [--encrypted] [-s STORE] [-l [LISTEN]] [-t [TAIL]]
-                           [-y] [--print-event-id]
+                           [--encrypted] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [-v [VERIFY]] [--set-device-name SET_DEVICE_NAME]
+                           [--set-device-name SET_DEVICE_NAME]
                            [--set-display-name SET_DISPLAY_NAME]
                            [--get-display-name] [--set-presence SET_PRESENCE]
                            [--get-presence] [--upload UPLOAD [UPLOAD ...]]
@@ -669,24 +683,27 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
+                           [--homeserver HOMESERVER] [--device DEVICE]
                            [--version]
 
-Welcome to matrix-commander, a Matrix CLI client. ─── On first run this
-program will configure itself. On further runs this program implements a
-simple Matrix CLI client that can send messages, listen to messages, verify
-devices, etc. It can send one or multiple message to one or multiple Matrix
-rooms and/or users. The text messages can be of various formats such as
-"text", "html", "markdown" or "code". Images, audio, arbitrary files, or
-events can be sent as well. For receiving there are three main options: listen
-forever, listen once and quit, and get the last N messages and quit. Emoji
-verification is built-in which can be used to verify devices. End-to-end
-encryption is enabled by default and cannot be turned off. ─── Bundling
-several actions together into a single call to matrix-commander is faster than
-calling matrix-commander multiple times with only one action. If there are
-both 'set' and 'get' actions present in the arguments, then the 'set' actions
-will be performed before the 'get' actions. ─── For even more explications and
-examples also read the documentation provided in the on-line Github README.md
-file or the README.md in your local installation.
+Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
+to log in, to authenticate. On second run we suggest to use --verify to get
+verified. Emoji verification is built-in which can be used to verify devices.
+On further runs this program implements a simple Matrix CLI client that can
+send messages, listen to messages, verify devices, etc. It can send one or
+multiple message to one or multiple Matrix rooms and/or users. The text
+messages can be of various formats such as "text", "html", "markdown" or
+"code". Images, audio, arbitrary files, or events can be sent as well. For
+receiving there are three main options: listen forever, listen once and quit,
+and get the last N messages and quit. End-to-end encryption is enabled by
+default and cannot be turned off. ─── Bundling several actions together into a
+single call to matrix-commander is faster than calling matrix-commander
+multiple times with only one action. If there are both 'set' and 'get' actions
+present in the arguments, then the 'set' actions will be performed before the
+'get' actions. Then send actions and at the very end listen actions will be
+performed. ─── For even more explications and examples also read the
+documentation provided in the on-line Github README.md file or the README.md
+in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -706,6 +723,43 @@ options:
                         (e.g. "--log-level WARNING ERROR") then log levels of
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
+  --login LOGIN         Login to and authenticate with the Matrix homeserver.
+                        ***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.***
+                        This requires exactly one argument, the login method.
+                        Currently two choices are offered: 'password' and
+                        'sso'. Provide one of these methods. If you have
+                        chosen 'password', you will authenticate through your
+                        account password. You can optionally provide these
+                        additional arguments: --homeserver to specify the
+                        Matrix homeserver, --user-login to specify the log in
+                        user id, --password to specify the password, --device
+                        to specify a device name, --room-default to specify a
+                        default room for sending/listening. If you have chosen
+                        'sso', you will authenticate through Single Sign-On. A
+                        web-browser will be started and you authenticate on
+                        the webpage. You can optionally provide these
+                        additional arguments: --homeserver to specify the
+                        Matrix homeserver, --user-login to specify the log in
+                        user id, --device to specify a device name, --room-
+                        default to specify a default room for
+                        sending/listening. See all the extra arguments for
+                        further explanations.
+  -v [VERIFY], --verify [VERIFY]
+                        Perform verification. By default, no verification is
+                        performed. Possible values are: "emoji". If
+                        verification is desired, run this program in the
+                        foreground (not as a service) and without a pipe.
+                        Verification questions will be printed on stdout and
+                        the user has to respond via the keyboard to accept or
+                        reject verification. Once verification is complete,
+                        stop the program and run it as a service again.
+                        Verification is best done by opening e.g. Element in a
+                        browser, going to a room that you are a member of,
+                        click 'Room Info' icon, click 'People', click the
+                        appropriate user, click red 'Not Trusted' text which
+                        indicated an untrusted device, click 'Interactively
+                        verify by Emoji' button. Confirm on both sides (Yes,
+                        They Match, Got it), Click OK.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -715,16 +769,28 @@ options:
                         to the preconfigured room. If this option is provided,
                         the provided file name will be used as credentials
                         file instead of the default one.
+  -s STORE, --store STORE
+                        Path to directory to be used as "store" for encrypted
+                        messaging. By default, this directory is "./store/".
+                        Since encryption is always enabled, a store is always
+                        needed. If this option is provided, the provided
+                        directory name will be used as persistent storage
+                        directory instead of the default one. Preferably, for
+                        multiple executions of this program use the same store
+                        for the same device. The store directory can be shared
+                        between multiple different devices and users.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
-                        Send to or receive from this room or these rooms.
-                        None, one or multiple rooms can be specified. The
-                        default room is provided in credentials file. If a
-                        room (or multiple ones) is (or are) provided in the
-                        arguments, then it (or they) will be used instead of
-                        the one from the credentials file. The user must have
-                        access to the specified room in order to send messages
-                        there or listen on the room. Messages cannot be sent
-                        to arbitrary rooms. When specifying the room id some
+                        Optionally specify one or multiple rooms via room ids
+                        or room aliases. --room is used by various send
+                        actions and various listen actions. The default room
+                        is provided in the credentials file (specified at
+                        --login with --room-default). If a room (or multiple
+                        ones) is (or are) provided in the --room arguments,
+                        then it (or they) will be used instead of the one from
+                        the credentials file. The user must have access to the
+                        specified room in order to send messages there or
+                        listen on the room. Messages cannot be sent to
+                        arbitrary rooms. When specifying the room id some
                         shells require the exclamation mark to be escaped with
                         a backslash. As an alternative to specifying a room as
                         destination, one can specify a user as a destination
@@ -732,14 +798,31 @@ options:
                         'DM (direct messaging)' for details. Specifying a room
                         is always faster and more efficient than specifying a
                         user. Not all listen operations allow setting a room.
-                        Read more under the --listen options and similar.
+                        Read more under the --listen options and similar. Most
+                        actions also support room aliases instead of room ids.
+                        Some even short room aliases.
+  --room-default ROOM_DEFAULT
+                        Optionally specify a room as the default room for
+                        future actions. If not specified for --login, it will
+                        be queried via the keyboard. --login stores the
+                        specified room as default room in your credentials
+                        file. This option is only used in combination with
+                        --login. A default room is needed. Specify a valid
+                        room either with --room-default or provide it via
+                        keyboard.
   --room-create ROOM_CREATE [ROOM_CREATE ...]
-                        Create this room or these rooms. One or multiple room
-                        aliases can be specified. The room (or multiple ones)
-                        provided in the arguments will be created. The user
-                        must be permitted to create rooms. Combine --room-
-                        create with --name and --topic to add names and topics
-                        to the room(s) to be created.
+                        Create one or multiple rooms. One or multiple room
+                        aliases can be specified. For each alias specified a
+                        room will be created. For each created room one line
+                        with room id and alias will be printed to stdout. If
+                        you are not interested in an alias, provide an empty
+                        string like "".The alias provided must be in canocial
+                        local form, i.e. if you want a final full alias like
+                        '#SomeRoomAlias:matrix.example.comyou must provide the
+                        string 'SomeRoomAlias'. The user must be permitted to
+                        create rooms. Combine --room-create with --name and
+                        --topic to add names and topics to the room(s) to be
+                        created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -796,29 +879,40 @@ options:
                         messaging)'. For c) this option allows an alternative
                         to specifying a room as destination for some --listen
                         actions. For d) this gives the otion to delete the
-                        device of a different user. What is a DM? matrix-
-                        commander tries to find a room that contains only the
-                        sender and the receiver, hence DM. These rooms have
-                        nothing special other the fact that they only have 2
-                        members and them being the sender and recipient
-                        respectively. If such a room is found, the first one
-                        found will be used as destination. If no such room is
-                        found, the send fails and the user should do a --room-
-                        create and --room-invite first. If multiple such rooms
-                        exist, one of them will be used (arbitrarily). For
-                        sending and listening, specifying a room directly is
-                        always faster and more efficient than specifying a
-                        user. So, if you know the room, it is preferred to use
-                        --room instead of --user. For b) and c) --user can be
-                        specified in 3 ways: 1) full user id as in
-                        '@user:example.org', 2) partial user id as in '@user'
-                        when the user is on the same homeserver (example.org
-                        will be automatically appended), or 3) a display name.
-                        Be careful, when using display names as they might not
-                        be unique, and you could be sending to the wrong
-                        person. To see possible display names use the
-                        --joined-members '*' option which will show you the
-                        display names in the middle column.
+                        device of a different user. ----- What is a DM?
+                        matrix-commander tries to find a room that contains
+                        only the sender and the receiver, hence DM. These
+                        rooms have nothing special other the fact that they
+                        only have 2 members and them being the sender and
+                        recipient respectively. If such a room is found, the
+                        first one found will be used as destination. If no
+                        such room is found, the send fails and the user should
+                        do a --room-create and --room-invite first. If
+                        multiple such rooms exist, one of them will be used
+                        (arbitrarily). For sending and listening, specifying a
+                        room directly is always faster and more efficient than
+                        specifying a user. So, if you know the room, it is
+                        preferred to use --room instead of --user. For b) and
+                        c) --user can be specified in 3 ways: 1) full user id
+                        as in '@john:example.org', 2) partial user id as in
+                        '@john' when the user is on the same homeserver
+                        (example.org will be automatically appended), or 3) a
+                        display name as in 'john'. Be careful, when using
+                        display names as they might not be unique, and you
+                        could be sending to the wrong person. To see possible
+                        display names use the --joined-members '*' option
+                        which will show you the display names in the middle
+                        column.
+  --user-login USER_LOGIN
+                        Optional argument to specify the user for --login.
+                        This gives the otion to specify the user id for login.
+                        For '--login sso' the --user-login is not needed as
+                        user id can be obtained from server via SSO. For '--
+                        login password', if not provided it will be queried
+                        via keyboard. A full user id like '@john:example.com',
+                        a partial user name like '@john', and a short user
+                        name like 'john' can be given. --user-login is only
+                        used by --login and ignored by all other actions.
   --name NAME [NAME ...]
                         Specify one or multiple names. This option is only
                         meaningful in combination with option --room-create.
@@ -938,16 +1032,6 @@ options:
                         possible. It cannot be turned off. This flag does
                         nothing as encryption is turned on with or without
                         this argument.
-  -s STORE, --store STORE
-                        Path to directory to be used as "store" for encrypted
-                        messaging. By default, this directory is "./store/".
-                        Since encryption is always enabled, a store is always
-                        needed. If this option is provided, the provided
-                        directory name will be used as persistent storage
-                        directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same store
-                        for the same device. The store directory can be shared
-                        between multiple different devices and users.
   -l [LISTEN], --listen [LISTEN]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
@@ -1021,16 +1105,6 @@ options:
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
                         via OS.
-  -v [VERIFY], --verify [VERIFY]
-                        Perform verification. By default, no verification is
-                        performed. Possible values are: "emoji". If
-                        verification is desired, run this program in the
-                        foreground (not as a service) and without a pipe.
-                        Verification questions will be printed on stdout and
-                        the user has to respond via the keyboard to accept or
-                        reject verification. Once verification is complete,
-                        stop the program and run it as a service again. Don't
-                        send messages or files when you verify.
   --set-device-name SET_DEVICE_NAME
                         Set or rename the current device to the device name
                         provided. Send, listen and verify operations are
@@ -1236,8 +1310,9 @@ options:
                         have multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
                         like this: '#someRoomAlias:matrix.example.org'. Short
-                        aliases like this '#someRoomAlias' are also accepted.
-                        In case of a short alias, the homeserver will be
+                        aliases like 'someRoomAlias' are also accepted. In
+                        case of a short alias, it will be automatically
+                        prefixed with '#' and the homeserver will be
                         automatically appended. Adding the same alias multiple
                         times to the same room results in an error. --room-
                         put-alias is eqivalent to --room-set-alias.
@@ -1246,13 +1321,14 @@ options:
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
                         looks like this: '#someRoomAlias:matrix.example.org'.
-                        Short aliases like this '#someRoomAlias' are also
-                        accepted. In case of a short alias, the homeserver
-                        from the default room of matrix-commander (as found in
-                        credentials file) will be automatically appended.
-                        Resolving an alias that does not exist results in an
-                        error. For each room alias one line will be printed to
-                        stdout with the result.
+                        Short aliases like 'someRoomAlias' are also accepted.
+                        In case of a short alias, it will be automatically
+                        prefixed with '#' and the homeserver from the default
+                        room of matrix-commander (as found in credentials
+                        file) will be automatically appended. Resolving an
+                        alias that does not exist results in an error. For
+                        each room alias one line will be printed to stdout
+                        with the result.
   --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
                         Delete one or multiple rooms aliases. Provide one or
                         multiple room aliases. You can have multiple room
@@ -1260,11 +1336,12 @@ options:
                         from the same room or from different rooms. A room
                         alias looks like this:
                         '#someRoomAlias:matrix.example.org'. Short aliases
-                        like this '#someRoomAlias' are also accepted. In case
-                        of a short alias, the homeserver from the default room
-                        of matrix-commander (as found in credentials file)
-                        will be automatically appended. Deleting an alias that
-                        does not exist results in an error.
+                        like 'someRoomAlias' are also accepted. In case of a
+                        short alias, it will be automatically prefixed with
+                        '#' and the homeserver from the default room of
+                        matrix-commander (as found in credentials file) will
+                        be automatically appended. Deleting an alias that does
+                        not exist results in an error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1401,16 +1478,33 @@ options:
   --access-token ACCESS_TOKEN
                         Set a custom access token for use by certain actions.
                         It is an optional argument. By default --access-token
-                        is ignored and not used. It is used only by the
-                        --delete-mxc, --delete-mxc-before, and --rest actions.
-  --password PASSWORD   Use the password specified in certain actions. It is
+                        is ignored and not used. It is used by the --delete-
+                        mxc, --delete-mxc-before, and --rest actions.
+  --password PASSWORD   Specify a password for use by certain actions. It is
                         an optional argument. By default --password is ignored
-                        and not used. It is used only by the --delete-device.
+                        and not used. It is used by '--login password' and '--
+                        delete-device' actions. If not provided for --login
+                        the user will be queried via keyboard.
+  --homeserver HOMESERVER
+                        Specify a homeserver for use by certain actions. It is
+                        an optional argument. By default --homeserver is
+                        ignored and not used. It is used by '--login' action.
+                        If not provided for --login the user will be queried
+                        via keyboard.
+  --device DEVICE       Specify a device name, for use by certain actions. It
+                        is an optional argument. By default --device is
+                        ignored and not used. It is used by '--login' action.
+                        If not provided for --login the user will be queried
+                        via keyboard. If you want the default value specify
+                        ''. Multiple devices (with different device id) may
+                        have the same device name. In short, the same device
+                        name can be assigned to multiple different devices if
+                        desired.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.38.0 2022-06-23. Enjoy, star on Github and
+You are running version 2.38.1 2022-06-24. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1483,6 +1577,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 # automatically sorted by isort,
 # then formatted by black --line-length 79
 
+
 import argparse
 import ast
 import asyncio
@@ -1506,7 +1601,7 @@ import uuid
 from os import R_OK, access
 from os.path import isfile
 from ssl import SSLContext
-from typing import Union
+from typing import Optional, Union
 from urllib.parse import quote, urlparse
 
 import aiofiles
@@ -1559,8 +1654,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-23"
-VERSIONNR = "2.38.0"
+VERSION = "2022-06-24"
+VERSIONNR = "2.38.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1655,8 +1750,15 @@ class GlobalState:
         # 3) ssl a valid SSLContext means that the specified context will be
         #    used. This is useful to using local SSL certificate.
         self.ssl: Union[None, SSLContext, bool] = None
+        self.client: Union[None, AsyncClient] = None
+        self.credentials: Union[None, dict] = None
+        self.login_action = False  # argv contains login action
+        self.verify_action = False  # argv contains verify action
         self.send_action = False  # argv contains send action
+        self.listen_action = False  # argv contains listen action
         self.room_action = False  # argv contains room action
+        self.set_action = False  # argv contains set action
+        self.get_action = False  # argv contains get action
         self.setget_action = False  # argv contains set or get action
         self.err_count = 0  # how many errors have occurred so far
         self.warn_count = 0  # how many warnings have occurred so far
@@ -1877,7 +1979,7 @@ class Callbacks(object):
             gs.log.debug(f"type(msg) = {type(msg)}. msg is a string")
             sender_nick = room.user_name(event.sender)
             if not sender_nick:  # convert @foo:mat.io into foo
-                sender_nick = event.sender.split(":")[0][1:]
+                sender_nick = user_id_to_short_user_name(event.sender)
             room_nick = room.display_name
             if not room_nick or room_nick == "Empty Room" or room_nick == "":
                 room_nick = "Undetermined"
@@ -2072,9 +2174,8 @@ class Callbacks(object):
                     )
                     print(
                         "Emoji verification was successful!\n"
-                        "Hit Control-C to stop the program or "
-                        "initiate another Emoji verification from "
-                        "another device or room."
+                        "Verify with other devices or hit Control-C to "
+                        "continue."
                     )
             else:
                 print(
@@ -2118,18 +2219,6 @@ def notify(title: str, content: str, image_url: str):
             f"\nHere is the traceback:\n{traceback.format_exc()}"
         )
         pass
-
-
-def is_room_alias(room_id: str) -> bool:
-    """Determine if room identifier is a room alias.
-
-    Alias are of syntax: #somealias:someserver
-
-    """
-    if room_id and len(room_id) > 3 and room_id[0] == "#":
-        return True
-    else:
-        return False
 
 
 async def get_avatar_url(client: AsyncClient, user_id: str) -> str:
@@ -2199,6 +2288,42 @@ def cleanup() -> None:
     """Cleanup before quiting program."""
     gs.log.debug("Cleanup: cleaning up.")
     delete_pid_file()
+
+
+def credentials_exist(credentials_file_path: Optional[str] = None) -> bool:
+    """Determine if credentials file already exists."""
+    if not credentials_file_path:
+        credentials_file_path = determine_credentials_file()
+    return os.path.exists(credentials_file_path)
+
+
+def store_exists(store_dir_path: Optional[str] = None) -> bool:
+    """Determine if store dir already exists."""
+    if not store_dir_path:
+        store_dir_path = determine_store_dir()
+    return os.path.isdir(store_dir_path)
+
+
+def store_create(store_dir_path: Optional[str] = None) -> None:
+    """Create store dir."""
+    if not store_dir_path:
+        store_dir_path = determine_store_dir()
+    os.makedirs(store_dir_path)
+    gs.log.info(
+        f"The persistent storage directory {store_dir_path} "
+        "was created for you."
+    )
+
+
+def store_delete(store_dir_path: Optional[str] = None) -> None:
+    """Delete store dir."""
+    if not store_dir_path:
+        store_dir_path = determine_store_dir()
+    os.rmdir(store_dir_path)
+    gs.log.info(
+        f"The persistent storage directory {store_dir_path} "
+        "was deleted for you."
+    )
 
 
 def write_credentials_to_disk(
@@ -2378,11 +2503,10 @@ def determine_store_dir() -> str:
             "It will be used."
         )
         return pargs_store_norm
-    text0 = "Could not find an existing store directory anywhere. "
     if gs.pa.store != STORE_DIR_DEFAULT and gs.pa.store != os.path.basename(
         gs.pa.store
     ):
-        text0 = (
+        gs.log.debug(
             f'Store directory "{pargs_store_norm}" was specified by '
             "user, it is a directory with a path, but the directory "
             "does not exist. "
@@ -2415,53 +2539,10 @@ def determine_store_dir() -> str:
                 f'"{last_resort}" directory. It will be used.'
             )
             return last_resort
-    text1 = "There are 2 possibilities:"
-    text2 = (
-        f"1) This is the first time you use {PROG_WITHOUT_EXT} or you want "
-        "to create a new store. "
-        "In this first case just continue, and a new store will be created. "
-        "It will need to be verified. "
-        "The store directory will be created in the directory "
-        f'"{pargs_store_norm}". '
-        "Optionally, consider moving the persistant storage directory files "
-        f'inside "{pargs_store_norm}" into '
-        f'the directory "{STORE_DIR_LASTRESORT}" '
-        "for a more consistent experience."
-    )
-    text3 = (
-        "2) You specified the store location incorrectly or you started "
-        f"{PROG_WITHOUT_EXT} from the wrong directory. "
-        "In this second case abort, change you directory if needed or set the "
-        f"store option correctly. Then start {PROG_WITHOUT_EXT} again."
-    )
-    gs.log.debug(text0 + "\n" + text1 + "\n" + text2 + "\n" + text3)
-    print(
-        textwrap.fill(
-            text0,
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    print(
-        textwrap.fill(
-            text1,
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    print(
-        textwrap.fill(
-            text2,
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    print(
-        textwrap.fill(
-            text3,
-            width=79,
-            subsequent_indent=SEP,
-        )
+
+    gs.log.debug(
+        "Store directory was not found anywhere. Hence, we will suggest "
+        f'"{pargs_store_norm}" (local directory) as store directory.'
     )
     return pargs_store_norm  # create in the specified, local dir without path
 
@@ -2514,7 +2595,6 @@ async def determine_dm_rooms(
         gs.log.debug(f"Room(s) from --user: {rooms}, no users were specified.")
         return rooms
     sender = credentials["user_id"]  # who am i
-    domain = sender.partition(":")[2]
     gs.log.debug(f"Trying to get members for all rooms of sender: {sender}")
     resp = await client.joined_rooms()
     if isinstance(resp, JoinedRoomsError):
@@ -2563,7 +2643,8 @@ async def determine_dm_rooms(
                     if (
                         rcvr
                         and user == rcvr.user_id
-                        or user + ":" + domain == rcvr.user_id
+                        or short_user_name_to_user_id(user, credentials)
+                        == rcvr.user_id
                         or user == rcvr.display_name
                     ):
                         room_found_for_users.append(user)
@@ -2668,22 +2749,201 @@ async def map_roomalias_to_roomid(client, alias) -> str:
     return ret
 
 
-async def create_rooms(client, room_aliases, names, topics):
-    """Create one or multiple rooms.
+def default_homeserver(credentials: dict):
+    """Get the default homeserver (domain) from the credentials file.
+    Use the user_id, not the room_id. The room_id could be on a
+    different server owned by someone else. user_id makes more sense.
+    """
+    user = credentials["user_id"]  # who am i
+    homeserver = user.partition(":")[2]
+    return homeserver  # matrix.example.com
+
+
+def short_room_alias_to_room_alias(short_room_alias: str, credentials: dict):
+    """Convert 'SomeRoomAlias' to ''#SomeToomAlias:matrix.example.com'.
+    Converts short canonical local room alias to full room alias.
+    """
+    return "#" + short_room_alias + ":" + default_homeserver(credentials)
+
+
+def room_alias_to_short_room_alias(room_alias: str, credentials: dict):
+    """Convert '#SomeToomAlias:matrix.example.com' to 'SomeRoomAlias'.
+    Converts full room alias to short canonical local room alias.
+    """
+    return room_alias.split(":")[0][1:]
+
+
+def user_id_to_short_user_name(user_id: str):
+    """Convert '@someuser:matrix.example.com' to 'someuser'.
+    Convert full user_id to user nick name.
+    """
+    return user_id.split(":")[0][1:]
+
+
+def short_user_name_to_user_id(short_user: str, credentials: dict):
+    """Convert 'someuser' to '@someuser:matrix.example.com'.
+    Convert user nick name to full user_id.
+    """
+    return "@" + short_user + ":" + default_homeserver(credentials)
+
+
+def is_room_alias(room_id: str) -> bool:
+    """Determine if room identifier is a room alias.
+
+    Room aliases are of syntax: #somealias:someserver
+    This is not an exhaustive check!
+
+    """
+    if (
+        room_id
+        and len(room_id) > 3
+        and (room_id[0] == "#")
+        and (":" in room_id)
+        and (" " not in room_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_room_id(room_id: str) -> bool:
+    """Determine if room identifier is a valid room id.
+
+    Room ids are of syntax: !somealias:someserver
+    This is not an exhaustive check!
+
+    """
+    if (
+        room_id
+        and len(room_id) > 3
+        and (room_id[0] == "!")
+        and (":" in room_id)
+        and (" " not in room_id)
+        and ("#" not in room_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_room(room_id: str) -> bool:
+    """Determine if room id is a valid room id or a valid room alias.
+
+    This is not an exhaustive check!
+
+    """
+    return is_room_id(room_id) or is_room_alias(room_id)
+
+
+def is_short_room_alias(room_id: str) -> bool:
+    """Determine if room identifier is a local part of canocial room alias.
+
+    Local parts of canonical room aliases are of syntax: somealias
+
+    """
+    if (
+        room_id
+        and len(room_id) > 0
+        and (":" not in room_id)
+        and ("#" not in room_id)
+        and ("!" not in room_id)
+        and (" " not in room_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_user_id(user_id: str) -> bool:
+    """Determine if user identifier is a valid user id.
+
+    User ids are of syntax: @someuser:someserver
+    This is not an exhaustive check!
+
+    """
+    if (
+        user_id
+        and len(user_id) > 3
+        and (user_id[0] == "@")
+        and (":" in user_id)
+        and (" " not in user_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_short_user_id(user_id: str) -> bool:
+    """Determine if user identifier is a valid short user id.
+
+    Short user ids are of syntax: someuser
+    This is not an exhaustive check!
+
+    """
+    if (
+        user_id
+        and len(user_id) > 0
+        and (":" not in user_id)
+        and ("@" not in user_id)
+        and (" " not in user_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_partial_user_id(user_id: str) -> bool:
+    """Determine if user identifier is a valid abbreviated user id.
+
+    Abbrev. user ids are of syntax: @someuser
+    This is not an exhaustive check!
+
+    """
+    if (
+        user_id
+        and len(user_id) > 1
+        and (user_id[0] == "@")
+        and (":" not in user_id)
+        and (" " not in user_id)
+    ):
+        return True
+    else:
+        return False
+
+
+def is_user(user_id: str) -> bool:
+    """Determine if user id is a valid user id or a valid short user id.
+
+    This is not an exhaustive check!
+
+    """
+    return (
+        is_user_id(user_id)
+        or is_partial_user_id(user_id)
+        or is_short_user_id(user_id)
+    )
+
+
+async def action_room_create(client: AsyncClient, credentials: dict):
+    """Create one or multiple rooms while already being logged in.
 
     Arguments:
     ---------
-    client : nio client
-    room_aliases : list of room aliases in the form of "sampleAlias"
-            These aliases will then be used by the server and
-            the server creates the definite alias in the form
-            of "#sampleAlias:example.com" from it.
-            Do not attempt to use "#sampleAlias:example.com"
-            as it will confuse the server.
-    names : list of names for rooms
-    topics : list of room topics
-
+    client: AsyncClient: nio client, allows as to query the server
+    credentials: dict: allows to get the user_id of sender, etc
     """
+    # room_aliases : list of room aliases in the form of "sampleAlias"
+    #         These aliases will then be used by the server and
+    #         the server creates the definite alias in the form
+    #         of "#sampleAlias:example.com" from it.
+    #         We permit "#sampleAlias:example.com" and downscale it to
+    #         "sampleAlias".
+    # names : list of names for rooms
+    # topics : list of room topics
+
+    room_aliases = gs.pa.room_create
+    names = gs.pa.name
+    topics = gs.pa.topic
     try:
         index = 0
         gs.log.debug(
@@ -2693,7 +2953,9 @@ async def create_rooms(client, room_aliases, names, topics):
         for alias in room_aliases:
             alias = alias.replace(r"\!", "!")  # remove possible escape
             # alias is a true alias, not a room id
-            # "alias1" will be converted into "#alias1:example.com"
+            # if by mistake user has given full room alias, shorten it
+            if is_room_alias(alias):
+                alias = room_alias_to_short_room_alias(alias, credentials)
             try:
                 name = names[index]
             except (IndexError, TypeError):
@@ -2702,21 +2964,34 @@ async def create_rooms(client, room_aliases, names, topics):
                 topic = topics[index]
             except (IndexError, TypeError):
                 topic = ""
+            alias = alias.strip()
+            alias = None if alias == "" else alias
+            name = name.strip()
+            name = None if name == "" else name
+            topic = topic.strip()
+            topic = None if topic == "" else topic
             gs.log.debug(
                 f'Creating room with room alias "{alias}", '
                 f'name "{name}", and topic "{topic}".'
             )
+            # nio's room_create does NOT accept "#foo:example.com"
             resp = await client.room_create(
-                alias=alias,
+                alias=alias,  # desired canonical alias local part, e.g. foo
                 name=name,  # room name
                 topic=topic,  # room topic
                 initial_state=[EnableEncryptionBuilder().as_dict()],
             )
+            # "alias1" will create a "#alias1:example.com"
             if isinstance(resp, RoomCreateError):
-                gs.log.error(f"Room_create failed with {resp}")
+                gs.log.error(f"Room_create failed with response: {resp}")
                 gs.err_count += 1
             else:
-                gs.log.info(f'Created room "{alias}".')
+                full_alias = short_room_alias_to_room_alias(alias, credentials)
+                gs.log.info(
+                    f'Created room with room id "{resp.room_id}" '
+                    f'and short alias "{alias}" and full alias "{full_alias}".'
+                )
+                print(f"{resp.room_id}{SEP}{full_alias}")
             index = index + 1
     except Exception:
         gs.log.error("Room creation failed. Sorry.")
@@ -2724,8 +2999,9 @@ async def create_rooms(client, room_aliases, names, topics):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def join_rooms(client, rooms):
+async def action_room_join(client, credentials):
     """Join one or multiple rooms."""
+    rooms = gs.pa.room_join
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2744,8 +3020,9 @@ async def join_rooms(client, rooms):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def leave_rooms(client, rooms):
+async def action_room_leave(client, credentials):
     """Leave one or multiple rooms."""
+    rooms = gs.pa.room_leave
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2764,8 +3041,9 @@ async def leave_rooms(client, rooms):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def forget_rooms(client, rooms):
+async def action_room_forget(client, credentials):
     """Forget one or multiple rooms."""
+    rooms = gs.pa.room_forget
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2783,8 +3061,10 @@ async def forget_rooms(client, rooms):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def invite_to_rooms(client, rooms, users):
+async def action_room_invite(client, credentials):
     """Invite one or multiple users to one or multiple rooms."""
+    rooms = gs.pa.room_invite
+    users = gs.pa.user
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2809,8 +3089,10 @@ async def invite_to_rooms(client, rooms, users):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def ban_from_rooms(client, rooms, users):
+async def action_room_ban(client, credentials):
     """Ban one or multiple users from one or multiple rooms."""
+    rooms = gs.pa.room_ban
+    users = gs.pa.user
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2835,8 +3117,10 @@ async def ban_from_rooms(client, rooms, users):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def unban_from_rooms(client, rooms, users):
+async def action_room_unban(client, credentials):
     """Unban one or multiple users from one or multiple rooms."""
+    rooms = gs.pa.room_unban
+    users = gs.pa.user
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -2862,8 +3146,10 @@ async def unban_from_rooms(client, rooms, users):
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
-async def kick_from_rooms(client, rooms, users):
+async def action_room_kick(client, credentials):
     """Kick one or multiple users from one or multiple rooms."""
+    rooms = gs.pa.room_kick
+    users = gs.pa.user
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
@@ -3907,14 +4193,16 @@ async def create_credentials_file(  # noqa: C901
 
 
 def login_using_credentials_file(
-    credentials_file: str, store_dir: str
+    credentials_file: Optional[str] = None, store_dir: Optional[str] = None
 ) -> (AsyncClient, dict):
     """Log in by using available credentials file.
 
     Arguments:
     ---------
         credentials_file: str : location of credentials file
+            compute it if not provided
         store_dir: str : location of persistent storage store directory
+            compute it if not provided
 
     Returns
     -------
@@ -3922,6 +4210,23 @@ def login_using_credentials_file(
         dict : the credentials dictionary from the credentials file
 
     """
+
+    if not credentials_file:
+        credentials_file = determine_credentials_file()
+    if not store_dir:
+        store_dir = determine_store_dir()
+
+    if not credentials_exist(credentials_file):
+        raise MatrixCommanderError(
+            "Credentials file was not found. Provide credentials file or "
+            "use --login to create a credentials file."
+        ) from None
+    if not store_exists(store_dir):
+        raise MatrixCommanderError(
+            "Store directory was not found. Provide store directory or "
+            "use --login to create a tore directory."
+        ) from None
+
     credentials = read_credentials_from_disk(credentials_file)
 
     # Configuration options for the AsyncClient
@@ -4399,6 +4704,42 @@ async def main_listen() -> None:
     finally:
         if client:
             await client.close()
+
+
+async def action_listen() -> None:
+    """Listen while being logged in."""
+    if not gs.client and not gs.credentials:
+        gs.log.error("Client or credentials not set. Skipping action.")
+        gs.err_count += 1
+        return
+    try:
+        # Sync encryption keys with the server
+        # Required for participating in encrypted rooms
+        if gs.client.should_upload_keys:
+            await gs.client.keys_upload()
+        gs.log.debug(f"Listening type: {gs.pa.listen}")
+        if gs.pa.listen == FOREVER:
+            await listen_forever(gs.client)
+        elif gs.pa.listen == ONCE:
+            await listen_once(gs.client)
+            # could use 'await listen_once_alternative(gs.client)'
+            # as an alternative implementation
+        elif gs.pa.listen == TAIL:
+            await listen_tail(gs.client, gs.credentials)
+        elif gs.pa.listen == ALL:
+            await listen_all(gs.client, gs.credentials)
+        else:
+            gs.log.error(
+                f'Unrecognized listening type "{gs.pa.listen}". '
+                "Skipping listening."
+            )
+            gs.err_count += 1
+    except Exception as e:
+        gs.log.error(
+            "Error during listening. Continuing despite error. "
+            f"Exception: {e}"
+        )
+        gs.err_count += 1
 
 
 async def action_set_device_name(
@@ -5204,16 +5545,20 @@ async def action_room_set_alias(
         room_id = gs.pa.room_set_alias[ii * 2 + 1]
         room_id = room_id.replace(r"\!", "!")  # remove possible escape
         gs.log.debug(f"Adding alias '{alias}' to room '{room_id}'.")
-        if not alias or (alias[0] != "#") or (" " in alias):
-            # not an exhaustive check, just the top 3 criteria
+        if not is_room_alias(alias) and not is_short_room_alias(alias):
+            # not an exhaustive check
             gs.log.error(
-                f"Invalid alias '{alias}'. Aliases must start with '#'. "
-                "Aliases must not have whitespaces, etc."
+                f"Invalid alias '{alias}'. This is neither a full room alias "
+                "nor a short room alias. It should either be "
+                "'#SomeRoomAlias:matrix.example.com' or 'SomeRoomAlias'."
             )
             gs.err_count += 1
             continue
         if ":" not in alias:
-            alias = alias + ":" + room_id.split(":")[1]
+            # Do NOT use short_room_alias_to_room_alias().
+            # We want this to be based on provided room_id not the default
+            # homeserver!
+            alias = "#" + alias + ":" + room_id.split(":")[1]
         resp = await client.room_put_alias(alias, room_id)
         if isinstance(resp, RoomPutAliasResponse):
             gs.log.debug(f"room_put_alias successful. Response is: {resp}")
@@ -5231,20 +5576,20 @@ async def action_room_resolve_alias(
     client: AsyncClient, credentials: dict
 ) -> None:
     """Resolve room alias(es) while already logged in."""
-    room_id = credentials["room_id"]
     for alias in gs.pa.room_resolve_alias:
         alias = alias.strip()
         gs.log.debug(f"Resolving room alias '{alias}'.")
-        if not alias or (alias[0] != "#") or (" " in alias):
-            # not an exhaustive check, just the top 3 criteria
+        if not is_room_alias(alias) and not is_short_room_alias(alias):
+            # not an exhaustive check
             gs.log.error(
-                f"Invalid alias '{alias}'. Aliases must start with '#'. "
-                "Aliases must not have whitespaces, etc."
+                f"Invalid alias '{alias}'. This is neither a full room alias "
+                "nor a short room alias. It should either be "
+                "'#SomeRoomAlias:matrix.example.com' or 'SomeRoomAlias'."
             )
             gs.err_count += 1
             continue
         if ":" not in alias:  # short alias, without homeserver
-            alias = alias + ":" + room_id.split(":")[1]
+            alias = short_room_alias_to_room_alias(alias, credentials)
         resp = await client.room_resolve_alias(alias)
         if isinstance(resp, RoomResolveAliasResponse):
             gs.log.debug(f"room_resolve_alias successful. Response is: {resp}")
@@ -5263,20 +5608,20 @@ async def action_room_delete_alias(
     client: AsyncClient, credentials: dict
 ) -> None:
     """Delete room alias(es) while already logged in."""
-    room_id = credentials["room_id"]
     for alias in gs.pa.room_delete_alias:
         alias = alias.strip()
         gs.log.debug(f"Deleting room alias '{alias}'.")
-        if not alias or (alias[0] != "#") or (" " in alias):
-            # not an exhaustive check, just the top 3 criteria
+        if not is_room_alias(alias) and not is_short_room_alias(alias):
+            # not an exhaustive check
             gs.log.error(
-                f"Invalid alias '{alias}'. Aliases must start with '#'. "
-                "Aliases must not have whitespaces, etc."
+                f"Invalid alias '{alias}'. This is neither a full room alias "
+                "nor a short room alias. It should either be "
+                "'#SomeRoomAlias:matrix.example.com' or 'SomeRoomAlias'."
             )
             gs.err_count += 1
             continue
         if ":" not in alias:  # short alias, without homeserver
-            alias = alias + ":" + room_id.split(":")[1]
+            alias = short_room_alias_to_room_alias(alias, credentials)
         resp = await client.room_delete_alias(alias)
         if isinstance(resp, RoomDeleteAliasResponse):
             gs.log.debug(f"room_delete_alias successful. Response is: {resp}")
@@ -5503,7 +5848,7 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     print(whoami)
 
 
-async def main_roomsetget_action() -> None:
+async def main_roomsetget_action() -> None:  # todo: delete this function
     """Use credentials to log in and perform actions on server."""
     credentials_file = determine_credentials_file()
     store_dir = determine_store_dir()
@@ -5525,26 +5870,39 @@ async def main_roomsetget_action() -> None:
         # room_action
         # we already checked args at the beginning, no need to check
         # room and user argument combinations again.
+        # room set actions
         if gs.pa.room_create:
-            await create_rooms(
-                client, gs.pa.room_create, gs.pa.name, gs.pa.topic
-            )
+            await action_room_create(client, credentials)
         if gs.pa.room_join:
-            await join_rooms(client, gs.pa.room_join)
+            await action_room_join(client, credentials)
         if gs.pa.room_leave:
-            await leave_rooms(client, gs.pa.room_leave)
+            await action_room_leave(client, credentials)
         if gs.pa.room_forget:
-            await forget_rooms(client, gs.pa.room_forget)
+            await action_room_forget(client, credentials)
         if gs.pa.room_invite and gs.pa.user:
-            await invite_to_rooms(client, gs.pa.room_invite, gs.pa.user)
+            await action_room_invite(client, credentials)
         if gs.pa.room_ban and gs.pa.user:
-            await ban_from_rooms(client, gs.pa.room_ban, gs.pa.user)
+            await action_room_ban(client, credentials)
         if gs.pa.room_unban and gs.pa.user:
-            await unban_from_rooms(client, gs.pa.room_unban, gs.pa.user)
+            await action_room_unban(client, credentials)
         if gs.pa.room_kick and gs.pa.user:
-            await kick_from_rooms(client, gs.pa.room_kick, gs.pa.user)
+            await action_room_kick(client, credentials)
+        if gs.pa.room_redact:
+            await action_room_redact(client, credentials)
+        if gs.pa.room_set_alias:
+            await action_room_set_alias(client, credentials)
+        if gs.pa.room_delete_alias:
+            await action_room_delete_alias(client, credentials)
+        # room get actions
+        if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
+            await action_room_get_visibility(client, credentials)
+        if gs.pa.room_get_state is not None:  # empty list must invoke func
+            await action_room_get_state(client, credentials)
+        if gs.pa.room_resolve_alias:
+            await action_room_resolve_alias(client, credentials)
         if gs.room_action:
             gs.log.debug("Room action(s) were performed or attempted.")
+
         # set_action
         if gs.pa.set_display_name:
             await action_set_display_name(client, credentials)
@@ -5566,12 +5924,6 @@ async def main_roomsetget_action() -> None:
             await action_import_keys(client, credentials)
         if gs.pa.delete_device:
             await action_delete_device(client, credentials)
-        if gs.pa.room_redact:
-            await action_room_redact(client, credentials)
-        if gs.pa.room_set_alias:
-            await action_room_set_alias(client, credentials)
-        if gs.pa.room_delete_alias:
-            await action_room_delete_alias(client, credentials)
         # get_action
         if gs.pa.get_display_name:
             await action_get_display_name(client, credentials)
@@ -5603,12 +5955,6 @@ async def main_roomsetget_action() -> None:
             await action_export_keys(client, credentials)
         if gs.pa.get_openid_token is not None:  # empty list must invoke func
             await action_get_openid_token(client, credentials)
-        if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
-            await action_room_get_visibility(client, credentials)
-        if gs.pa.room_get_state is not None:  # empty list must invoke func
-            await action_room_get_state(client, credentials)
-        if gs.pa.room_resolve_alias:
-            await action_room_resolve_alias(client, credentials)
         if gs.pa.whoami:
             await action_whoami(client, credentials)
         if gs.setget_action:
@@ -5616,6 +5962,114 @@ async def main_roomsetget_action() -> None:
     finally:
         if client:
             await client.close()
+
+
+async def action_roomsetget() -> None:
+    """Perform room, get, set actions while being logged in."""
+    if not gs.client and not gs.credentials:
+        gs.log.error("Client or credentials not set. Skipping action.")
+        gs.err_count += 1
+        return
+    try:
+        # room_action
+        # we already checked args at the beginning, no need to check
+        # room and user argument combinations again.
+        # room set actions
+        if gs.pa.room_create:
+            await action_room_create(gs.client, gs.credentials)
+        if gs.pa.room_join:
+            await action_room_join(gs.client, gs.credentials)
+        if gs.pa.room_leave:
+            await action_room_leave(gs.client, gs.credentials)
+        if gs.pa.room_forget:
+            await action_room_forget(gs.client, gs.credentials)
+        if gs.pa.room_invite and gs.pa.user:
+            await action_room_invite(gs.client, gs.credentials)
+        if gs.pa.room_ban and gs.pa.user:
+            await action_room_ban(gs.client, gs.credentials)
+        if gs.pa.room_unban and gs.pa.user:
+            await action_room_unban(gs.client, gs.credentials)
+        if gs.pa.room_kick and gs.pa.user:
+            await action_room_kick(gs.client, gs.credentials)
+        if gs.pa.room_redact:
+            await action_room_redact(gs.client, gs.credentials)
+        if gs.pa.room_set_alias:
+            await action_room_set_alias(gs.client, gs.credentials)
+        if gs.pa.room_delete_alias:
+            await action_room_delete_alias(gs.client, gs.credentials)
+        # room get actions
+        if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
+            await action_room_get_visibility(gs.client, gs.credentials)
+        if gs.pa.room_get_state is not None:  # empty list must invoke func
+            await action_room_get_state(gs.client, gs.credentials)
+        if gs.pa.room_resolve_alias:
+            await action_room_resolve_alias(gs.client, gs.credentials)
+        if gs.room_action:
+            gs.log.debug("Room action(s) were performed or attempted.")
+
+        # set_action
+        if gs.pa.set_display_name:
+            await action_set_display_name(gs.client, gs.credentials)
+        if gs.pa.set_device_name:
+            await action_set_device_name(gs.client, gs.credentials)
+        if gs.pa.set_presence:
+            await action_set_presence(gs.client, gs.credentials)
+        if gs.pa.upload:
+            await action_upload(gs.client, gs.credentials)
+        if gs.pa.delete_mxc:
+            await action_delete_mxc(gs.client, gs.credentials)
+        if gs.pa.delete_mxc_before:
+            await action_delete_mxc_before(gs.client, gs.credentials)
+        if gs.pa.rest:
+            await action_rest(gs.client, gs.credentials)
+        if gs.pa.set_avatar:
+            await action_set_avatar(gs.client, gs.credentials)
+        if gs.pa.import_keys:
+            await action_import_keys(gs.client, gs.credentials)
+        if gs.pa.delete_device:
+            await action_delete_device(gs.client, gs.credentials)
+
+        # get_action
+        if gs.pa.get_display_name:
+            await action_get_display_name(gs.client, gs.credentials)
+        if gs.pa.get_presence:
+            await action_get_presence(gs.client, gs.credentials)
+        if gs.pa.download:
+            await action_download(gs.client, gs.credentials)
+        if gs.pa.joined_rooms:
+            await action_joined_rooms(gs.client, gs.credentials)
+        if gs.pa.joined_members:
+            await action_joined_members(gs.client, gs.credentials)
+        if gs.pa.mxc_to_http:
+            await action_mxc_to_http(gs.client, gs.credentials)
+        if gs.pa.devices:
+            await action_devices(gs.client, gs.credentials)
+        if gs.pa.discovery_info:
+            await action_discovery_info(gs.client, gs.credentials)
+        if gs.pa.login_info:
+            await action_login_info(gs.client, gs.credentials)
+        if gs.pa.content_repository_config:
+            await action_content_repository_config(gs.client, gs.credentials)
+        if gs.pa.get_avatar is not None:  # empty list must invoke function
+            await action_get_avatar(gs.client, gs.credentials)
+        if gs.pa.get_profile is not None:  # empty list must invoke function
+            await action_get_profile(gs.client, gs.credentials)
+        if gs.pa.has_permission:
+            await action_has_permission(gs.client, gs.credentials)
+        if gs.pa.export_keys:
+            await action_export_keys(gs.client, gs.credentials)
+        if gs.pa.get_openid_token is not None:  # empty list must invoke func
+            await action_get_openid_token(gs.client, gs.credentials)
+        if gs.pa.whoami:
+            await action_whoami(gs.client, gs.credentials)
+        if gs.setget_action:
+            gs.log.debug("Set or get action(s) were performed or attempted.")
+    except Exception as e:
+        gs.log.error(
+            "Error during room, set, get actions. Continuing despite error. "
+            f"Exception: {e}"
+        )
+        gs.err_count += 1
 
 
 async def main_verify() -> None:
@@ -5651,11 +6105,46 @@ async def main_verify() -> None:
             '"Verify by Emoji"'
             "in their Matrix client."
         )
-        # the sync_loop will be terminated by user hitting Control-C to stop
+        # the sync_loop will be terminated by user hitting Control-C
+        # to stop or by success with .stop()
         await client.sync_forever(timeout=30000, full_state=True)
     finally:
         if client:
             await client.close()
+
+
+async def action_verify() -> None:
+    """Verify while already logged in."""
+    if not gs.client and not gs.credentials:
+        gs.log.error("Client or credentials not set. Skipping action.")
+        gs.err_count += 1
+        return
+    try:
+        # Set up event callbacks
+        callbacks = Callbacks(gs.client)
+        gs.client.add_to_device_callback(
+            callbacks.to_device_callback, (KeyVerificationEvent,)
+        )
+        # Sync encryption keys with the server
+        # Required for participating in encrypted rooms
+        if gs.client.should_upload_keys:
+            await gs.client.keys_upload()
+        print(
+            "This program is ready and waiting for the other party to "
+            "initiate an emoji verification with us by selecting "
+            '"Verify by Emoji"'
+            "in their Matrix client."
+        )
+        # the sync_loop will be terminated by user hitting Control-C
+        await gs.client.sync_forever(timeout=30000, full_state=True)
+    except KeyboardInterrupt:
+        # This will never be caught. I do not know why.
+        gs.log.debug("Keyboard interrupt after Emoji verification.")
+    except Exception as e:
+        gs.log.error(
+            "Error during verify. Continuing despite error. " f"Exception: {e}"
+        )
+        gs.err_count += 1
 
 
 async def main_send() -> None:
@@ -5690,6 +6179,407 @@ async def main_send() -> None:
     finally:
         if client:
             await client.close()
+
+
+async def action_send() -> None:
+    """Send messages while already logged in."""
+    if not gs.client and not gs.credentials:
+        gs.log.error("Client or credentials not set. Skipping action.")
+        gs.err_count += 1
+        return
+    try:
+        # a few more steps to prepare for sending messages
+        rooms = await determine_rooms(
+            gs.credentials["room_id"], gs.client, gs.credentials
+        )
+        gs.log.debug(f"Rooms are: {rooms}")
+        # Sync encryption keys with the server
+        # Required for participating in encrypted rooms
+        if gs.client.should_upload_keys:
+            await gs.client.keys_upload()
+        # must sync first to get room ids for encrypted rooms
+        # since we only send a msg and then stop we can use sync() instead of
+        # sync_forever() (await client.sync_forever(30000, full_state=True))
+        await gs.client.sync(timeout=30000, full_state=True)
+        # Now we can send messages as the user
+        await process_arguments_and_input(gs.client, rooms)
+        gs.log.debug("Message send action finished.")
+    except Exception as e:
+        gs.log.error(
+            "Error during sending. Continuing despite error. "
+            f"Exception: {e}"
+        )
+        gs.err_count += 1
+
+
+async def action_login() -> None:
+    """Log in using SSO or password, create credentials file, and
+    remain logged in.
+    """
+    credentials_file = determine_credentials_file()
+    if credentials_exist(credentials_file):
+        raise MatrixCommanderError(
+            "--login was used but credentials already exist "
+            f"in '{credentials_file}'."
+        ) from None
+    store_dir = determine_store_dir()
+    if store_exists(store_dir):
+        raise MatrixCommanderError(
+            f"--login was used but store already exists in '{store_dir}'."
+        ) from None
+    method = gs.pa.login.lower()
+    interactive = False
+    if method == "password":
+        gs.log.debug("--login has chosen password method for authentication")
+    elif method == "sso":
+        gs.log.debug("--login has chosen SSO method for authentication")
+    else:
+        raise MatrixCommanderError(
+            "--login specifies invalid aythenticatin method "
+            f"'{method}'. Only 'password' and 'sso' allowed."
+        ) from None
+    if gs.pa.homeserver:
+        homeserver = gs.pa.homeserver
+    else:
+        interactive = True
+        homeserver = "https://matrix.example.org"
+        homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
+        if not homeserver:
+            homeserver = "https://matrix.org"  # better error msg later
+    if not (
+        homeserver.startswith("https://") or homeserver.startswith("http://")
+    ):
+        homeserver = "https://" + homeserver
+    homeserver_short = urlparse(homeserver).hostname  # matrix.example.org
+
+    # For SSO login, user_id is not needed. But matrix-commander needs
+    # user_id for credentials for arguments like --whoami.
+    # For SSO, we get the user_id from login() API call, i.e. from server.
+    if gs.pa.user_login:
+        user_id = gs.pa.user_login
+    else:
+        user_id = None
+    if method == "password" and not user_id:
+        interactive = True
+        user_id = "@john:example.org"
+        user_id2 = "@john:" + homeserver_short
+        user_id = input(
+            f"Enter your user ID:  [{user_id}]  or  [john] for {user_id2} : "
+        ).strip()
+    if method == "password":
+        if gs.pa.password:
+            password = gs.pa.password
+        else:
+            interactive = True
+            print("Please provide your Matrix account password.")
+            password = getpass.getpass()
+    elif method == "sso":
+        password = None
+    if gs.pa.device is not None:  # something was specified
+        device_name = gs.pa.device.strip()
+        if device_name == "":
+            device_name = PROG_WITHOUT_EXT  # default
+    else:
+        interactive = True
+        device_name = PROG_WITHOUT_EXT
+        device_name = input(
+            f"Choose a name for this device: [{device_name}] "
+        ).strip()
+        if device_name == "":
+            device_name = PROG_WITHOUT_EXT  # default
+    if gs.pa.room_default is not None:  # something was specified
+        room_id = gs.pa.room_default.strip()
+        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+    else:
+        interactive = True
+        room_id = "!SomeRoomIdString:example.org"
+        room_id2 = "#alias:" + homeserver_short
+        room_id = input(
+            f"Enter room ID for default room:  [{room_id}]  "
+            f"or  [alias] for {room_id2} : "
+        ).strip()
+    if user_id is not None:
+        if is_partial_user_id(user_id):
+            user_id = user_id + ":" + homeserver_short  # dont use fn
+        if is_short_user_id(user_id):
+            user_id = "@" + user_id + ":" + homeserver_short  # dont use fn
+        if not is_user_id(user_id):
+            raise MatrixCommanderError(
+                f"User id '{user_id}' for --login is invalid. "
+                "Specify correct user id."
+            ) from None
+    if is_short_room_alias(room_id):
+        room_id = "#" + room_id + ":" + homeserver_short  # dont use fn
+    if not is_room(room_id):
+        raise MatrixCommanderError(
+            f"Room id '{room_id}' for --login is invalid. "
+            "Specify correct room id."
+        ) from None
+
+    gs.log.info(f"The provided login data is: homeserver='{homeserver}'")
+    gs.log.info(f"                            user id='{user_id}'")
+    # gs.log.info(f"                            password='{password}'")
+    gs.log.info(f"                            device name='{device_name}'")
+    gs.log.info(f"                            room id='{room_id}'")
+    if interactive:
+        print(f"The provided login data is: homeserver='{homeserver}'")
+        print(f"                            user id='{user_id}'")
+        # print(f"                            password='{password}'")
+        print("                            password='***'")
+        print(f"                            device name='{device_name}'")
+        print(f"                            room id='{room_id}'")
+        confirm = input("Correct? (Yes or Ctrl-C to abort) ")
+        if confirm.lower() != "yes" and confirm.lower() != "y":
+            print("")  # add newline to stdout to separate any log info
+            gs.log.info("Aborting due to user request.")
+            return
+
+    # all the input required for login is collected,
+    # later we get user_id for SSO (returned at login)
+
+    if gs.pa.proxy:
+        gs.log.info(f"Proxy {gs.pa.proxy} will be used.")
+
+    # check for password/SSO
+    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
+    async with ClientSession(connector=connector) as session:  # aiohttp
+        async with session.get(
+            f"{homeserver}/_matrix/client/r0/login",
+            raise_for_status=True,
+            proxy=gs.pa.proxy,
+        ) as response:
+            flow_types = {
+                x["type"] for x in (await response.json()).get("flows", [])
+            }
+            gs.log.debug("Supported login flows: %r", flow_types)
+
+            # token_available = "m.login.token" in flow_types
+            password_available = "m.login.password" in flow_types
+            sso_available = (
+                "m.login.sso" in flow_types and "m.login.token" in flow_types
+            )
+
+    if method == "sso" and not sso_available:
+        raise MatrixCommanderError(
+            "Method 'sso' was selected for --login but Matrix server does "
+            "not support Single Sign-On. Try --login with method 'password'."
+        ) from None
+    if method == "password" and not password_available:
+        raise MatrixCommanderError(
+            "Method 'password' was selected for --login but Matrix server "
+            "does not support password login. Try --login with method 'sso'."
+        ) from None
+    # if not token_available:
+    #     gs.log.warning(
+    #         "Access to server via access token is not supported by Matrix "
+    #         "server. This will cause problems later. Upgrade server!"
+    #     )
+    #     gs.warn_count += 1
+
+    # SSO: Single Sign-On:
+    # see https://matrix.org/docs/guides/sso-for-client-developers
+    if sso_available:
+        gs.log.debug("Server supports SSO for login.")
+    else:
+        gs.log.debug("Server does not support SSO for login.")
+
+    if method == "sso":
+        # startup server to handle response
+        stop_server_evt = asyncio.Event()
+        login_token = None
+
+        async def handle(request):
+            nonlocal login_token
+            login_token = request.query.get("loginToken")
+            stop_server_evt.set()
+            return web.Response(
+                body="Login complete. You can now close this page."
+            )
+
+        app = web.Application()
+        app.add_routes([web.get("/", handle)])
+
+        logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "localhost", 38080)
+        await site.start()
+
+        try:
+            print("Launching browser to complete SSO login.")
+            if gs.pa.proxy:
+                gs.log.warning(
+                    f"Specified proxy {gs.pa.proxy} cannot "
+                    "be configured for browser."
+                )
+                gs.warn_count += 1
+
+            # launch web-browser
+            if sys.platform.startswith("darwin"):
+                cmd = [shutil.which("open")]
+            elif sys.platform.startswith("win"):
+                cmd = ["start"]
+            else:
+                cmd = [shutil.which("x-www-browser")]
+            cmd.append(
+                f"{homeserver}/_matrix/client/r0/login/sso/redirect"
+                "?redirectUrl=http://localhost:38080/"
+            )
+            try:
+                subprocess.check_output(cmd)
+            except Exception:
+                gs.log.error(
+                    "Browser could not be launched. "
+                    "Hence SSO (Single Sign-On) login could not be "
+                    "completed. Sorry. If you think the browser and "
+                    "SSO should work then try again. If you do not have "
+                    "a browser or don't want SSO or want to login with a "
+                    "password instead, then use the '--no-sso' option in "
+                    "the command line."
+                )
+                raise
+
+            # wait and shutdown server
+            try:
+                await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
+            except asyncio.TimeoutError:
+                gs.log.error(
+                    f"The program {PROG_WITH_EXT} failed. "
+                    "No response was received from SSO provider. "
+                    "There was a timeout. Sorry."
+                )
+                raise
+        finally:
+            await runner.cleanup()
+
+    # Configuration options for the AsyncClient
+    client_config = AsyncClientConfig(
+        max_limit_exceeded=0,
+        max_timeouts=0,
+        store_sync_tokens=True,
+        encryption_enabled=True,
+    )
+
+    store_create(store_dir)
+
+    # Initialize the matrix client
+    client = AsyncClient(
+        homeserver,
+        "" if not user_id else user_id,
+        store_path=store_dir,
+        config=client_config,
+        ssl=gs.ssl,
+        proxy=gs.pa.proxy,
+    )
+    try:
+        if method == "sso":
+            resp = await client.login(
+                token=login_token, device_name=device_name
+            )
+        elif method == "password":
+            resp = await client.login(password, device_name=device_name)
+
+        # check that we logged in succesfully
+        if isinstance(resp, LoginResponse):
+            # when writing, always write to primary location (e.g. .)
+            write_credentials_to_disk(
+                homeserver,
+                resp.user_id,
+                resp.device_id,  # note the naming mistake in nio, id!
+                resp.access_token,
+                room_id,
+                gs.pa.credentials,
+            )
+            gs.client = client
+            gs.credentials = read_credentials_from_disk(credentials_file)
+            txt = (
+                f"Log in using method '{method}' was successful. "
+                f"Credentials were stored in file '{gs.pa.credentials}'. "
+                f"From now on you can run program '{PROG_WITH_EXT}' "
+                "without log in, as an access token is stored in your "
+                "credentials file. "
+                "If you plan on having many credential files, consider "
+                f"moving them to directory '{CREDENTIALS_DIR_LASTRESORT}'."
+            )
+            gs.log.info(txt)
+        else:
+            # cleanup
+            await client.close()  # not yet in gs.
+            store_delete(store_dir)  # empty, just created
+            txt = (
+                "Log in failed. "
+                "Most likely wrong credentials were entered. "
+                f"homeserver='{homeserver}'; device name='{device_name}'; "
+                f"user='{user_id}'; room_id='{room_id}'. "
+                f"Failed to log in: {resp}"
+            )
+            gs.err_count += 1
+            raise MatrixCommanderError(txt)
+    except Exception as e:
+        txt = (
+            "Log in failed. Sorry."
+            f"homeserver='{homeserver}'; device name='{device_name}'; "
+            f"user='{user_id}'; room_id='{room_id}'. "
+            f"Failed to log in: {e}"
+        )
+        # gs.err_count += 1  # don't incremement since not MatrixCommanderError
+        raise
+    # gs now has client and credentials, needed by further actions
+
+
+async def implicit_login() -> None:
+    """Log in using credentials file and remain logged in."""
+    client, credentials = login_using_credentials_file()
+    gs.client = client
+    gs.credentials = credentials
+
+
+def rooms_to_long_room_names() -> None:
+    """Convert foo to #foo:example.com in gs.pa.room where necessary."""
+    if gs.pa.room:
+        long_rooms = []
+        for room in gs.pa.room:
+            if is_short_room_alias(room):
+                long_rooms.append(
+                    short_room_alias_to_room_alias(room, gs.credentials)
+                )
+            else:
+                long_rooms.append(room)
+        gs.pa.room = long_rooms
+
+
+async def async_main() -> None:
+    """Run main functions being inside the event loop."""
+    # login explicitly
+    # login implicitly
+    # verify?
+    # set, get, room, send, listen
+    # sys.argv ordering?
+    # close client
+    try:
+        if gs.pa.login:
+            await action_login()  # explicit login
+        else:
+            await implicit_login()
+        if gs.pa.verify:
+            await action_verify()
+            gs.log.debug(
+                "Keyboard interrupt received after Emoji verification."
+            )
+        rooms_to_long_room_names()
+        if gs.room_action or gs.setget_action:
+            await action_roomsetget()
+        if gs.send_action:
+            await action_send()
+        if gs.listen_action:
+            await action_listen()
+        if gs.client:
+            await gs.client.close()
+    except Exception:
+        if gs.client:
+            await gs.client.close()
+        raise
+    # todo: remove --no-sso option from interface
 
 
 def check_arg_files_readable() -> None:
@@ -5787,7 +6677,7 @@ def initial_check_of_log_args() -> None:
         up = gs.pa.log_level[i].upper()
         gs.pa.log_level[i] = up
         if up not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-            gs.err_count += 1
+            # gs.err_count += 1  # wrong
             raise MatrixCommanderError(
                 '--log-level only allows values "DEBUG", "INFO", "WARNING", '
                 '"ERROR", or "CRITICAL". --log-level argument incorrect. '
@@ -5809,6 +6699,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     if gs.pa.listen == NEVER and gs.pa.tail != 0:
         gs.pa.listen = TAIL  # --tail turns on --listen TAIL
         gs.log.debug('--listen set to "tail" because "--tail" is used.')
+
     if (
         gs.pa.message
         or gs.pa.image
@@ -5819,7 +6710,19 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.send_action = True
     else:
         gs.send_action = False
+
     if (
+        gs.pa.listen == FOREVER
+        or gs.pa.listen == ONCE
+        or gs.pa.listen == TAIL
+        or gs.pa.listen == ALL
+    ):
+        gs.listen_action = True
+    else:
+        gs.listen_action = False
+
+    if (
+        # room set
         gs.pa.room_create
         or gs.pa.room_join
         or gs.pa.room_leave
@@ -5828,10 +6731,18 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.room_ban
         or gs.pa.room_unban
         or gs.pa.room_kick
+        or gs.pa.room_redact
+        or gs.pa.room_set_alias
+        or gs.pa.room_delete_alias
+        # room get
+        or gs.pa.room_get_visibility is not None  # empty list must invoke func
+        or gs.pa.room_get_state is not None  # empty list must invoke func
+        or gs.pa.room_resolve_alias
     ):
         gs.room_action = True
     else:
         gs.room_action = False
+
     if (
         gs.pa.set_device_name  # set
         or gs.pa.set_display_name
@@ -5843,10 +6754,13 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.set_avatar
         or gs.pa.import_keys
         or gs.pa.delete_device
-        or gs.pa.room_redact
-        or gs.pa.room_set_alias
-        or gs.pa.room_delete_alias
-        or gs.pa.get_display_name  # get
+    ):
+        gs.set_action = True
+    else:
+        gs.set_action = False
+
+    if (
+        gs.pa.get_display_name  # get
         or gs.pa.get_presence
         or gs.pa.download
         or gs.pa.joined_rooms
@@ -5861,14 +6775,27 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.has_permission
         or gs.pa.export_keys
         or gs.pa.get_openid_token is not None  # empty list must invoke func
-        or gs.pa.room_get_visibility is not None  # empty list must invoke func
-        or gs.pa.room_get_state is not None  # empty list must invoke func
-        or gs.pa.room_resolve_alias
         or gs.pa.whoami
     ):
+        gs.get_action = True
+    else:
+        gs.get_action = False
+
+    if gs.set_action or gs.get_action:
         gs.setget_action = True
     else:
         gs.setget_action = False
+
+    if gs.pa.login:
+        gs.login_action = True
+    else:
+        gs.login_action = False
+
+    if gs.pa.verify:
+        gs.verify_action = True
+    else:
+        gs.verify_action = False
+
     # only 2 SSL states allowed: None (SSL default on), False (SSL off)
     if gs.pa.no_ssl is not True:
         gs.pa.no_ssl = None
@@ -5932,12 +6859,13 @@ def initial_check_of_args() -> None:  # noqa: C901
             "Specify --store and run program again."
         )
     elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
-        t = f'For --verify currently only "{EMOJI}" is allowed ' "as keyword."
+        t = f'For --verify currently only "{EMOJI}" is allowed as keyword.'
     elif gs.pa.verify and (
-        gs.send_action
-        or gs.pa.room
+        # gs.login_action allowed
+        # gs.send_action allowed  # todo
+        gs.pa.room
         or gs.room_action
-        or gs.pa.listen != NEVER
+        or gs.listen_action
         or gs.setget_action
     ):
         t = (
@@ -5946,31 +6874,34 @@ def initial_check_of_args() -> None:  # noqa: C901
             "No listening or tailing allowed. "
             "No other actions allowed."
         )
-    elif gs.pa.listen != NEVER and (
-        gs.send_action or gs.room_action or gs.pa.verify or gs.setget_action
-    ):
-        t = (
-            "If --listen is specified, only listening can be done. "
-            "No messages, images, files or events can be sent. "
-            "No room or other actions allowed."
-        )
-    elif gs.send_action and (
-        gs.room_action
-        or gs.pa.listen != NEVER
-        or gs.pa.verify
-        or gs.setget_action
-    ):
-        t = (
-            "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
-            "be done. No listening allowed. "
-            "No room or other actions allowed."
-        )
+    # todo
+    # elif gs.pa.listen != NEVER and (
+    #     gs.send_action or gs.room_action or gs.pa.verify or gs.setget_action
+    # ):
+    #     t = (
+    #         "If --listen is specified, only listening can be done. "
+    #         "No messages, images, files or events can be sent. "
+    #         "No room or other actions allowed."
+    #     )
+    # todo
+    # elif gs.send_action and (
+    #     gs.room_action
+    #     or gs.listen_action
+    #     # or gs.pa.verify  # allow  # todo
+    #     # or gs.setget_action  # add more parallelism
+    # ):
+    #     t = (
+    #         "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
+    #         "be done. No listening allowed. "
+    #         "No room or other actions allowed."
+    #     )
     elif gs.pa.set_device_name and (gs.pa.set_device_name.strip() == ""):
         t = "Don't use an empty name for --set-device-name."
     elif gs.pa.set_display_name and (gs.pa.set_display_name.strip() == ""):
         t = "Don't use an empty name for --set-display-name."
     elif (gs.pa.user) and not (
-        gs.send_action
+        gs.login_action
+        or gs.send_action
         or gs.room_action
         or gs.pa.get_display_name
         or gs.pa.get_presence
@@ -6048,7 +6979,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     else:
         gs.log.debug("All arguments are valid. All checks passed.")
         return  # all OK
-    gs.err_count += 1
+    # gs.err_count += 1 # wrong
     raise MatrixCommanderError(t) from None
 
 
@@ -6078,7 +7009,10 @@ def main_inner(
     ap = argparse.ArgumentParser(
         description=(
             f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. ─── "
-            "On first run this program will configure itself. "
+            "On first run use --login to log in, to authenticate. "
+            "On second run we suggest to use --verify to get verified. "
+            "Emoji verification is built-in which can be used "
+            "to verify devices. "
             "On further runs this program implements a simple Matrix CLI "
             "client that can send messages, listen to messages, verify "
             "devices, etc. It can send one or multiple message to one or "
@@ -6088,14 +7022,15 @@ def main_inner(
             "Images, audio, arbitrary files, or events can be sent as well. "
             "For receiving there are three main options: listen forever, "
             "listen once and quit, and get the last N messages "
-            "and quit. Emoji verification is built-in which can be used "
-            "to verify devices. End-to-end encryption is enabled by default "
+            "and quit. End-to-end encryption is enabled by default "
             "and cannot be turned off.  ─── "
             "Bundling several actions together into a single call to "
             f"{PROG_WITHOUT_EXT} is faster than calling {PROG_WITHOUT_EXT} "
             "multiple times with only one action. If there are both 'set' "
             "and 'get' actions present in the arguments, then the 'set' "
-            "actions will be performed before the 'get' actions. ─── "
+            "actions will be performed before the 'get' actions. Then "
+            "send actions and at the very end listen actions will be "
+            "performed. ─── "
             "For even more explications and examples also read the "
             "documentation provided in the on-line Github README.md file "
             "or the README.md in your local installation."
@@ -6134,6 +7069,59 @@ def main_inner(
         "See also --debug.",
     )
     ap.add_argument(
+        "--login",
+        required=False,
+        type=str,  # login method: password, sso, (access-token)
+        help="Login to and authenticate with the Matrix homeserver. "
+        "***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.*** "
+        "This requires exactly one argument, the login method. "
+        "Currently two choices are offered: 'password' and 'sso'. "
+        "Provide one of these methods. "
+        "If you have chosen 'password', "
+        "you will authenticate through your account password. You can "
+        "optionally provide these additional arguments: "
+        "--homeserver to specify the Matrix homeserver, "
+        "--user-login to specify the log in user id, "
+        "--password to specify the password, "
+        "--device to specify a device name, "
+        "--room-default to specify a default room for sending/listening. "
+        "If you have chosen 'sso', "
+        "you will authenticate through Single Sign-On. A web-browser will "
+        "be started and you authenticate on the webpage. You can "
+        "optionally provide these additional arguments: "
+        "--homeserver to specify the Matrix homeserver, "
+        "--user-login to specify the log in user id, "
+        "--device to specify a device name, "
+        "--room-default to specify a default room for sending/listening. "
+        "See all the extra arguments for further explanations.",
+    )
+    ap.add_argument(
+        "-v",
+        "--verify",
+        required=False,
+        type=str,
+        default=VERIFY_UNUSED_DEFAULT,  # when -t is not used
+        nargs="?",  # makes the word optional
+        # when -v is used, but text is not added
+        const=VERIFY_USED_DEFAULT,
+        help="Perform verification. By default, no "
+        "verification is performed. "
+        f'Possible values are: "{EMOJI}". '
+        "If verification is desired, run this program in the "
+        "foreground (not as a service) and without a pipe. "
+        "Verification questions "
+        "will be printed on stdout and the user has to respond "
+        "via the keyboard to accept or reject verification. "
+        "Once verification is complete, stop the program and "
+        "run it as a service again. Verification is best done by "
+        "opening e.g. Element in a browser, going to a room that "
+        "you are a member of, click 'Room Info' icon, click 'People', "
+        "click the appropriate user, click red 'Not Trusted' text "
+        "which indicated an untrusted device, click "
+        "'Interactively verify by Emoji' button. "
+        "Confirm on both sides (Yes, They Match, Got it), Click OK.",
+    )
+    ap.add_argument(
         "-c",
         "--credentials",
         required=False,
@@ -6151,18 +7139,38 @@ def main_inner(
         "default one. ",
     )
     ap.add_argument(
+        "-s",
+        "--store",
+        required=False,
+        type=str,
+        default=STORE_DIR_DEFAULT,
+        help="Path to directory to be "
+        'used as "store" for encrypted messaging. '
+        "By default, this directory "
+        f'is "{STORE_DIR_DEFAULT}". '
+        "Since encryption is always enabled, a store is "
+        "always needed. "
+        "If this option is provided, the provided directory name "
+        "will be used as persistent storage directory instead of "
+        "the default one. Preferably, for multiple executions "
+        "of this program use the same store for the same device. "
+        "The store directory can be shared between multiple "
+        "different devices and users.",
+    )
+    ap.add_argument(
         "-r",
         "--room",
         required=False,
         action="extend",
         nargs="+",
         type=str,
-        help="Send to or receive from this room or these rooms. "
-        "None, one or "
-        "multiple rooms can be specified. "
+        help="Optionally specify one or multiple rooms via room ids or "
+        "room aliases. --room is used by various send actions and "
+        "various listen actions. "
         "The default room is provided "
-        "in credentials file. If a room (or multiple ones) "
-        "is (or are) provided in the arguments, then it "
+        "in the credentials file (specified at --login with --room-default). "
+        "If a room (or multiple ones) "
+        "is (or are) provided in the --room arguments, then it "
         "(or they) will be used "
         "instead of the one from the credentials file. "
         "The user must have access to the specified room "
@@ -6177,7 +7185,19 @@ def main_inner(
         "for details. Specifying a room is always faster and more "
         "efficient than specifying a user. Not all listen operations "
         "allow setting a room. Read more under the --listen options "
-        "and similar. ",
+        "and similar. Most actions also support room aliases instead of "
+        "room ids. Some even short room aliases.",
+    )
+    ap.add_argument(
+        "--room-default",
+        required=False,
+        type=str,
+        help="Optionally specify a room as the "
+        "default room for future actions. If not specified for --login, it "
+        "will be queried via the keyboard. --login stores the specified room "
+        "as default room in your credentials file. This option is only used "
+        "in combination with --login. A default room is needed. Specify a "
+        "valid room either with --room-default or provide it via keyboard.",
     )
     ap.add_argument(
         "--room-create",
@@ -6185,9 +7205,17 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Create this room or these rooms. One or multiple "
-        "room aliases can be specified. The room (or multiple "
-        "ones) provided in the arguments will be created. "
+        help="Create one or multiple rooms. One or multiple "
+        "room aliases can be specified. "
+        "For each alias specified a room will be created. "
+        "For each created room one line with room id and alias "
+        "will be printed to stdout. "
+        "If you are not interested in an "
+        'alias, provide an empty string like "".'
+        "The alias provided must be in canocial local form, i.e. "
+        "if you want a final full alias like "
+        "'#SomeRoomAlias:matrix.example.com"
+        "you must provide the string 'SomeRoomAlias'. "
         "The user must be permitted to create rooms. "
         "Combine --room-create with --name and --topic to add "
         "names and topics to the room(s) to be created.",
@@ -6298,7 +7326,7 @@ def main_inner(
         "to specifying a room as destination for some --listen actions. "
         "For d) this gives the otion to delete the device of a different "
         "user. "
-        f"What is a DM? {PROG_WITHOUT_EXT} tries to find a "
+        f"----- What is a DM? {PROG_WITHOUT_EXT} tries to find a "
         "room that contains only the sender and the receiver, hence DM. "
         "These rooms have nothing special other the fact that they only have "
         "2 members and them being the sender and recipient respectively. "
@@ -6310,13 +7338,29 @@ def main_inner(
         "faster and more efficient than specifying a user. So, if you know "
         "the room, it is preferred to use --room instead of --user. "
         "For b) and c) --user can be specified in 3 ways: 1) full user id "
-        "as in '@user:example.org', 2) partial user id as in '@user' when "
+        "as in '@john:example.org', 2) partial user id as in '@john' when "
         "the user is on the same homeserver (example.org will be "
-        "automatically appended), or 3) a display name. Be careful, when "
+        "automatically appended), or 3) a display name as in 'john'. "
+        "Be careful, when "
         "using display names as they might not be unique, and you could "
         "be sending to the wrong person. To see possible display names use "
         "the --joined-members '*' option which will show you the display "
         "names in the middle column.",
+    )
+    ap.add_argument(
+        "--user-login",
+        required=False,
+        type=str,
+        # @john:example.com and @john and john accepted
+        help="Optional argument to specify the user for --login. "
+        "This gives the otion to specify the user id for login. "
+        "For '--login sso' the --user-login is not needed as user id can be "
+        "obtained from server via SSO. For '--login password', if not "
+        "provided it will be queried via keyboard. A full user id like "
+        "'@john:example.com', a partial user name like '@john', and "
+        "a short user name like 'john' can be given. "
+        "--user-login is only used by --login and ignored by all other "
+        "actions.",
     )
     ap.add_argument(
         "--name",
@@ -6559,25 +7603,6 @@ def main_inner(
         "argument.",
     )
     ap.add_argument(
-        "-s",
-        "--store",
-        required=False,
-        type=str,
-        default=STORE_DIR_DEFAULT,
-        help="Path to directory to be "
-        'used as "store" for encrypted messaging. '
-        "By default, this directory "
-        f'is "{STORE_DIR_DEFAULT}". '
-        "Since encryption is always enabled, a store is "
-        "always needed. "
-        "If this option is provided, the provided directory name "
-        "will be used as persistent storage directory instead of "
-        "the default one. Preferably, for multiple executions "
-        "of this program use the same store for the same device. "
-        "The store directory can be shared between multiple "
-        "different devices and users.",
-    )
-    ap.add_argument(
         "-l",
         "--listen",
         required=False,
@@ -6706,27 +7731,6 @@ def main_inner(
         "then program will attempt to visually notify of "
         "arriving messages through the operating system. "
         "By default there is no notification via OS.",
-    )
-    ap.add_argument(
-        "-v",
-        "--verify",
-        required=False,
-        type=str,
-        default=VERIFY_UNUSED_DEFAULT,  # when -t is not used
-        nargs="?",  # makes the word optional
-        # when -v is used, but text is not added
-        const=VERIFY_USED_DEFAULT,
-        help="Perform verification. By default, no "
-        "verification is performed. "
-        f'Possible values are: "{EMOJI}". '
-        "If verification is desired, run this program in the "
-        "foreground (not as a service) and without a pipe. "
-        "Verification questions "
-        "will be printed on stdout and the user has to respond "
-        "via the keyboard to accept or reject verification. "
-        "Once verification is complete, stop the program and "
-        "run it as a service again. Don't send messages or "
-        "files when you verify.",
     )
     ap.add_argument(
         # removed "-x", starting v2.21 -x is no longer supported
@@ -7073,11 +8077,13 @@ def main_inner(
         f"{PROG_WITHOUT_EXT} (as found in credentials file). In short, "
         "you can have just a single argument or an even number of arguments "
         "forming pairs. You can have multiple room aliases per room. So, "
-        "you may add multiple aliases to the same room. A room alias looks "
-        "like "
-        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
-        "'#someRoomAlias' are also accepted. In case of a short alias, the "
-        "homeserver will be automatically appended. Adding the same alias "
+        "you may add multiple aliases to the same room. "
+        "A room alias looks like this: "
+        "'#someRoomAlias:matrix.example.org'. Short aliases like "
+        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "it will be automatically prefixed with '#' and the "
+        "homeserver will be automatically appended. "
+        "Adding the same alias "
         "multiple times to the same room results in an error. "
         "--room-put-alias is eqivalent to --room-set-alias.",
     )
@@ -7090,9 +8096,10 @@ def main_inner(
         help="Resolves a room alias to the corresponding room id, "
         "or multiple room aliases to their corresponding room ids. "
         "Provide one or multiple room aliases. "
-        "A room alias looks like "
-        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
-        "'#someRoomAlias' are also accepted. In case of a short alias, the "
+        "A room alias looks like this: "
+        "'#someRoomAlias:matrix.example.org'. Short aliases like "
+        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "it will be automatically prefixed with '#' and the "
         f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
         "in credentials file) will be automatically appended. "
         "Resolving an alias that does not exist results in an error. "
@@ -7109,9 +8116,11 @@ def main_inner(
         "Provide one or multiple room aliases. "
         "You can have multiple room aliases per room. So, "
         "you may delete multiple aliases from the same room or from different "
-        "rooms. A room alias looks like "
-        "this: '#someRoomAlias:matrix.example.org'. Short aliases like this "
-        "'#someRoomAlias' are also accepted. In case of a short alias, the "
+        "rooms. "
+        "A room alias looks like this: "
+        "'#someRoomAlias:matrix.example.org'. Short aliases like "
+        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "it will be automatically prefixed with '#' and the "
         f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
         "in credentials file) will be automatically appended. "
         "Deleting an alias that does not exist results in an error.",
@@ -7330,17 +8339,43 @@ def main_inner(
         help="Set a custom access token for use by certain actions. "
         "It is an optional argument. "
         "By default --access-token is ignored and not used. "
-        "It is used only by the --delete-mxc, --delete-mxc-before, "
+        "It is used by the --delete-mxc, --delete-mxc-before, "
         "and --rest actions.",
     )
     ap.add_argument(
         "--password",
         required=False,
         type=str,
-        help="Use the password specified in certain actions. "
+        help="Specify a password for use by certain actions. "
         "It is an optional argument. "
         "By default --password is ignored and not used. "
-        "It is used only by the --delete-device.",
+        "It is used by '--login password' and '--delete-device' "
+        "actions. "
+        "If not provided for --login the user will be queried via keyboard.",
+    )
+    ap.add_argument(
+        "--homeserver",
+        required=False,
+        type=str,
+        help="Specify a homeserver for use by certain actions. "
+        "It is an optional argument. "
+        "By default --homeserver is ignored and not used. "
+        "It is used by '--login' action. "
+        "If not provided for --login the user will be queried via keyboard.",
+    )
+    ap.add_argument(
+        "--device",  # do not confuse with --devices
+        required=False,
+        type=str,  # device id, device name
+        help="Specify a device name, for use by certain actions. "
+        "It is an optional argument. "
+        "By default --device is ignored and not used. "
+        "It is used by '--login' action. "
+        "If not provided for --login the user will be queried via keyboard. "
+        "If you want the default value specify ''. "
+        "Multiple devices (with different device id) may have the same device "
+        "name. In short, the same device name can be assigned to multiple "
+        "different devices if desired.",
     )
     ap.add_argument(
         # no single char flag
@@ -7468,19 +8503,7 @@ def main_inner(
         gs.ssl = None
 
     try:
-        if gs.pa.verify:
-            asyncio.run(main_verify())
-        elif (
-            gs.pa.listen == FOREVER
-            or gs.pa.listen == ONCE
-            or gs.pa.listen == TAIL
-            or gs.pa.listen == ALL
-        ):
-            asyncio.run(main_listen())
-        elif gs.room_action or gs.setget_action:
-            asyncio.run(main_roomsetget_action())
-        else:  # send_action
-            asyncio.run(main_send())
+        asyncio.run(async_main())  # do everything in the event loop
         # the next can be reached on success or failure
         gs.log.debug(f"The program {PROG_WITH_EXT} left the event loop.")
     except TimeoutError as e:
