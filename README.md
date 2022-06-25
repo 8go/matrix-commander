@@ -154,6 +154,9 @@ Use cases for this program could be
   his audience informed.
 - `poor man's diary`: a person could write a diary or run a gratitude
   journal by sending messages to her/his own diary room or gratitude room.
+- `ghost`: `matrix-commander` can be used in an ephemeral fashion, in a
+  fire-and-forget style. A single batch command can log in, create a
+  new device, send a message, and then log out and delete the device.
 
 # Give it a Star
 
@@ -648,8 +651,8 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--login LOGIN] [-v [VERIFY]] [-c CREDENTIALS]
-                           [-s STORE] [-r ROOM [ROOM ...]]
+                           [--login LOGIN] [-v [VERIFY]] [--logout LOGOUT]
+                           [-c CREDENTIALS] [-s STORE] [-r ROOM [ROOM ...]]
                            [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
@@ -804,6 +807,22 @@ options:
                         should see a text message indicating success. You
                         should now be verified across all devices and across
                         all users.
+  --logout LOGOUT       Logout this or all devices from the Matrix homeserver.
+                        This requires exactly one argument. Two choices are
+                        offered: 'me' and 'all'. Provide one of these choices.
+                        If you choose 'me', only the one device matrix-
+                        commander is currently using will be logged out. If
+                        you choose 'all', all devices of the user used by
+                        matrix-commander will be logged out. While --logout
+                        neither removes the credentials nor the store, the
+                        logout action removes the device and makes the access-
+                        token stored in the credentials invalid. Hence, after
+                        a --logout, one must manually remove creditials and
+                        store, and then perform a new --login to use matrix-
+                        commander again. You can perfectly use matrix-
+                        commander without ever logging out. --logout is a
+                        cleanup if you have decided not to use this (or all)
+                        device(s) ever again.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -1533,7 +1552,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.0.0 2022-06-25. Enjoy, star on Github and contribute
+You are running version 3.0.1 2022-06-25. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 

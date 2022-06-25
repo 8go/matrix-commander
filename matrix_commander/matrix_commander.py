@@ -161,6 +161,9 @@ Use cases for this program could be
   his audience informed.
 - `poor man's diary`: a person could write a diary or run a gratitude
   journal by sending messages to her/his own diary room or gratitude room.
+- `ghost`: `matrix-commander` can be used in an ephemeral fashion, in a
+  fire-and-forget style. A single batch command can log in, create a
+  new device, send a message, and then log out and delete the device.
 
 # Give it a Star
 
@@ -655,8 +658,8 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--login LOGIN] [-v [VERIFY]] [-c CREDENTIALS]
-                           [-s STORE] [-r ROOM [ROOM ...]]
+                           [--login LOGIN] [-v [VERIFY]] [--logout LOGOUT]
+                           [-c CREDENTIALS] [-s STORE] [-r ROOM [ROOM ...]]
                            [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
@@ -811,6 +814,22 @@ options:
                         should see a text message indicating success. You
                         should now be verified across all devices and across
                         all users.
+  --logout LOGOUT       Logout this or all devices from the Matrix homeserver.
+                        This requires exactly one argument. Two choices are
+                        offered: 'me' and 'all'. Provide one of these choices.
+                        If you choose 'me', only the one device matrix-
+                        commander is currently using will be logged out. If
+                        you choose 'all', all devices of the user used by
+                        matrix-commander will be logged out. While --logout
+                        neither removes the credentials nor the store, the
+                        logout action removes the device and makes the access-
+                        token stored in the credentials invalid. Hence, after
+                        a --logout, one must manually remove creditials and
+                        store, and then perform a new --login to use matrix-
+                        commander again. You can perfectly use matrix-
+                        commander without ever logging out. --logout is a
+                        cleanup if you have decided not to use this (or all)
+                        device(s) ever again.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -1540,7 +1559,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.0.0 2022-06-25. Enjoy, star on Github and contribute
+You are running version 3.0.1 2022-06-25. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1652,8 +1671,8 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  JoinedRoomsError, JoinError, KeyVerificationCancel,
                  KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
                  KeyVerificationStart, LocalProtocolError, LoginInfoError,
-                 LoginResponse, MatrixRoom, MessageDirection, PresenceGetError,
-                 PresenceSetError, ProfileGetAvatarResponse,
+                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
+                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
                  ProfileGetDisplayNameError, ProfileGetError,
                  ProfileSetAvatarResponse, ProfileSetDisplayNameError,
                  RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
@@ -1670,7 +1689,7 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
                  RoomResolveAliasResponse, RoomUnbanError, SyncError,
                  SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
-                 UploadError, UploadResponse, crypto)
+                 UploadError, UploadResponse, crypto, responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1690,7 +1709,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-06-25"
-VERSIONNR = "3.0.0"
+VERSIONNR = "3.0.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3972,7 +3991,7 @@ async def process_arguments_and_input(client, rooms):
     await send_messages_and_files(client, rooms, messages_all_split)
 
 
-def login_using_credentials_file(
+async def login_using_credentials_file(
     credentials_file: Optional[str] = None, store_dir: Optional[str] = None
 ) -> (AsyncClient, dict):
     """Log in by using available credentials file.
@@ -4027,11 +4046,11 @@ def login_using_credentials_file(
         proxy=gs.pa.proxy,
     )
 
-    client.restore_login(
+    resp = client.restore_login(
         user_id=credentials["user_id"],
         device_id=credentials["device_id"],
         access_token=credentials["access_token"],
-    )
+    )  # returns always None, on success or failure
     # room_id = credentials['room_id']
     gs.log.debug(
         "Logged in using stored credentials from "
@@ -4039,7 +4058,27 @@ def login_using_credentials_file(
     )
     if gs.pa.proxy:
         gs.log.debug(f"Proxy {gs.pa.proxy} will be used for connectivity.")
-    gs.log.debug(f"Logged_in() = {client.logged_in}")
+    # gs.log.debug(f"Logged_in() = {client.logged_in}")  # this was meaningless
+    # just because client.logged_in is True does not mean we are logged in
+    # How to know if login was successful? Do an actual API call. E.g. whoami
+    resp = await client.whoami()
+    if isinstance(resp, responses.WhoamiError):
+        gs.log.error(
+            "restore_login failed. Did you perform --logout "
+            "before? Looks like your access-token expired. Maybe "
+            "delete credentials file and store and perform a "
+            f"new --login. Response is: {resp}"
+        )
+        gs.err_count += 1
+        await client.close()
+        client = None
+        credentials = None
+    else:
+        gs.log.debug(
+            "restore_login successful. Successfully "
+            f"logged in as user {resp.user_id} via restore_login. "
+            f"Response is: {resp}"
+        )
     return (client, credentials)
 
 
@@ -5758,6 +5797,42 @@ async def action_send() -> None:
         gs.err_count += 1
 
 
+async def action_logout() -> None:
+    """Log out one or all devices from Matrix server."""
+    if not gs.client and not gs.credentials:
+        gs.log.error("Client or credentials not set. Skipping action.")
+        gs.err_count += 1
+        return
+    try:
+        device = gs.pa.logout.lower()
+        if device == "me":
+            gs.log.debug(f"--logout has chosen to log out device {device}")
+            all_devices = False
+        elif device == "all":
+            gs.log.debug(f"--logout has chosen to log out devices {device}")
+            all_devices = True
+        else:
+            gs.log.error(
+                "Error during logout. Only 'me' and 'all' are supported. "
+                f"But found --logout '{device}'. Continuing despite error. "
+            )
+            gs.err_count += 1
+            return
+        resp = await gs.client.logout(all_devices)
+        if isinstance(resp, LogoutError):
+            gs.log.error(f"Failed to logout {device}. Response: {resp}")
+            gs.err_count += 1
+        else:
+            gs.log.debug(f"logout successful. Response is: {resp}")
+            gs.log.info(f"Successfully logged out {device}.")
+
+    except Exception as e:
+        gs.log.error(
+            "Error during logout. Continuing despite error. " f"Exception: {e}"
+        )
+        gs.err_count += 1
+
+
 async def action_login() -> None:
     """Log in using SSO or password, create credentials file, create store,
     and remain logged in.
@@ -6071,7 +6146,7 @@ async def action_login() -> None:
 
 async def implicit_login() -> None:
     """Log in using credentials file and remain logged in."""
-    client, credentials = login_using_credentials_file()
+    client, credentials = await login_using_credentials_file()
     gs.client = client
     gs.credentials = credentials
 
@@ -6094,10 +6169,13 @@ async def async_main() -> None:
     """Run main functions being inside the event loop."""
     # login explicitly
     # login implicitly
-    # verify?
-    # set, get, room, send, listen
-    # sys.argv ordering?
+    # verify
+    # set, get, room,
+    # send
+    # listen
+    # logout
     # close client
+    # sys.argv ordering? # todo
     try:
         if gs.pa.login:
             await action_login()  # explicit login
@@ -6115,6 +6193,8 @@ async def async_main() -> None:
             await action_send()
         if gs.listen_action:
             await action_listen()
+        if gs.pa.logout:
+            await action_logout()
     except Exception:
         raise
     finally:
@@ -6650,6 +6730,27 @@ def main_inner(
         f"{PROG_WITHOUT_EXT} device is now green and verified in the webpage. "
         "In the terminal you should see a text message indicating success. "
         "You should now be verified across all devices and across all users.",
+    )
+    ap.add_argument(
+        "--logout",
+        required=False,
+        type=str,  # logout options: me and all
+        help="Logout this or all devices from the Matrix homeserver. "
+        "This requires exactly one argument. "
+        "Two choices are offered: 'me' and 'all'. "
+        "Provide one of these choices. "
+        f"If you choose 'me', only the one device {PROG_WITHOUT_EXT} "
+        "is currently using will be logged out. "
+        "If you choose 'all', all devices of the user used by "
+        f"{PROG_WITHOUT_EXT} will be logged out. "
+        "While --logout neither removes the credentials nor the store, the "
+        "logout action removes the device and makes the access-token stored "
+        "in the credentials invalid. Hence, after a --logout, one must "
+        "manually remove creditials and store, and then perform a new "
+        f"--login to use {PROG_WITHOUT_EXT} again. "
+        "You can perfectly use "
+        f"{PROG_WITHOUT_EXT} without ever logging out. --logout is a cleanup "
+        "if you have decided not to use this (or all) device(s) ever again.",
     )
     ap.add_argument(
         "-c",
