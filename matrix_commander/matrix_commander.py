@@ -124,18 +124,43 @@ creating rooms, inviting, verifying, and so much more.
 
 Use cases for this program could be
 - a bot or part of a bot,
-- to send alerts,
-- combine it with `cron` to publish periodic data,
-- send yourself daily/weekly reminders via a cron job
-- send yourself a daily song from your music collection
-- a trivial way to fire off some instant messages from the command line
-- a trivial way to read messages in the terminal
 - to automate sending via programs and scripts
-- a "blogger" who frequently sends messages and images to the same
-  room(s) could use it
-- a person could write a diary or run a gratitude journal by
-  sending messages to her/his own room
-- as educational material that showcases the use of the `matrix-nio` SDK
+- `matrix-nio show case`: as educational material that showcases the use
+  of the `matrix-nio` SDK
+- `alerter`: to send all sorts of alerts,
+- `Gitlab CI automation tool`: some user uses it as Gitlab CI automation tool
+   to report build success/failure to their internal Matrix room.
+- `admin tool` or `automation tool`: you needs to create 175 room for the
+   roll-out within a company? You want to query some 9000 rooms for
+   visibility data? You want to collect profile data of 7000 enterprise or
+   public users? `matrix-commander` has many admin capabilities and can
+   automate many tasks completely. Many admin jobs can be reduced to running
+   a simple bash script or a simple Python program using `matrix-commander`.
+- `reminder`: send yourself or others daily/weekly reminders via a cron job.
+- `surf report`: an addict surfer uses `matrix-commander` combined with a
+   `cron` job to publish daily early morning surf reports for his 3 favorite
+   surfing spots to his Element app.
+- `juke box`: a user told me he has a large collection of mp3 files on his
+  server. He uses `matrix-commander` to send himself a random song from
+  his music collection to brighten his day.
+- `ticker`: many people send themselves stock prices from one of the many
+  public ticker APIs. This is usually a single `curl` command piped into
+  `matrix-commander`.
+- `poor-man's Matrix client`: if you love the terminal and are too lazy to
+   start up an Element desktop app or an Element webpage,
+   `matrix-commander` is a a trivial way to fire off some instant
+   messages to your friends from the terminal.
+- `poor-man's importer or exporter`: you want to get things in and out of
+   Matrix?
+   Send those 39 holiday picture you have laying around in a holiday folder?
+   Or, your best friend just sent you 57 wedding pictures on Element and
+   you want to store them? `matrix-commander` can help with importing and
+   exporting data.
+- `poor man's blogger`: a "blogger" who frequently sends messages and
+  images to the same public room(s) could use `matrix-commander` to keep
+  his audience informed.
+- `poor man's diary`: a person could write a diary or run a gratitude
+  journal by sending messages to her/his own diary room or gratitude room.
 
 # Give it a Star
 
@@ -678,7 +703,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--ssl-certificate SSL_CERTIFICATE]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
@@ -724,7 +749,6 @@ options:
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
   --login LOGIN         Login to and authenticate with the Matrix homeserver.
-                        ***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.***
                         This requires exactly one argument, the login method.
                         Currently two choices are offered: 'password' and
                         'sso'. Provide one of these methods. If you have
@@ -743,23 +767,50 @@ options:
                         user id, --device to specify a device name, --room-
                         default to specify a default room for
                         sending/listening. See all the extra arguments for
-                        further explanations.
+                        further explanations. ----- SSO (Single Sign-On)
+                        starts a web browser and connects the user to a web
+                        page on the server for login. SSO will only work if
+                        the server supports it and if there is access to a
+                        browser. So, don't use SSO on headless homeservers
+                        where there is no browser installed or accessible.
   -v [VERIFY], --verify [VERIFY]
                         Perform verification. By default, no verification is
                         performed. Possible values are: "emoji". If
                         verification is desired, run this program in the
                         foreground (not as a service) and without a pipe.
-                        Verification questions will be printed on stdout and
-                        the user has to respond via the keyboard to accept or
-                        reject verification. Once verification is complete,
-                        stop the program and run it as a service again.
-                        Verification is best done by opening e.g. Element in a
-                        browser, going to a room that you are a member of,
-                        click 'Room Info' icon, click 'People', click the
-                        appropriate user, click red 'Not Trusted' text which
-                        indicated an untrusted device, click 'Interactively
-                        verify by Emoji' button. Confirm on both sides (Yes,
-                        They Match, Got it), Click OK.
+                        While verification is optional it is highly
+                        recommended, and it is recommended to be done right
+                        after (or together with) the --login action.
+                        Verification is always interactive, i.e. it required
+                        keyboard input. Verification questions will be printed
+                        on stdout and the user has to respond via the keyboard
+                        to accept or reject verification. Once verification is
+                        complete, the program may be run as a service.
+                        Verification is best done as follows: Perform a cross-
+                        device verification, that means, perform a
+                        verification between two devices of the *same* user.
+                        For that, open (e.g.) Element in a browser, make sure
+                        Element is using the same user account as the matrix-
+                        commander user (specified with --user-login at
+                        --login). Now in the Element webpage go to the room
+                        that is the matrix-commander default room (specified
+                        with --room-default at --login). OK, in the web-
+                        browser you are now the same user and in the same room
+                        as matrix-commander. Now click the round 'i' 'Room
+                        Info' icon, then click 'People', click the appropriate
+                        user (the matrix-commander user), click red 'Not
+                        Trusted' text which indicated an untrusted device,
+                        then click the square 'Interactively verify by Emoji'
+                        button (one of 3 button choices). At this point both
+                        web-page and matrix-commander in terminal show a set
+                        of emoji icons and names. Compare them visually.
+                        Confirm on both sides (Yes, They Match, Got it),
+                        finally click OK. You should see a green shield and
+                        also see that the matrix-commander device is now green
+                        and verified in the webpage. In the terminal you
+                        should see a text message indicating success. You
+                        should now be verified across all devices and across
+                        all users.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -1433,21 +1484,6 @@ options:
                         the path and file to your SSL certificate. If used
                         together with the "--no-ssl" parameter, this option is
                         meaningless and an error will be raised.
-  --no-sso              This argument is optional. If it is not used, the
-                        default login method will be used. This default login
-                        method is: SSO (Single Sign-On). SSO starts a web
-                        browser and connects the user to a web page on the
-                        server for login. SSO will only work if the server
-                        supports it and if there is access to a browser. If
-                        this argument is used, then SSO will be avoided. This
-                        is useful on headless homeservers where there is no
-                        browser installed or accessible. It is also useful if
-                        the user prefers to login via a password. So, if SSO
-                        should be avoided and a password login is preferred
-                        then set this option. This option is only meaningful
-                        on the first run that initializes matrix-commander.
-                        Once credentials are established this option is
-                        irrelevant and it will simply be ignored.
   --file-name FILE_NAME [FILE_NAME ...]
                         Specify one or multiple file names for some actions.
                         This is an optional argument. Use this option in
@@ -1504,8 +1540,8 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.38.1 2022-06-24. Enjoy, star on Github and
-contribute by submitting a Pull Request.
+You are running version 3.0.0 2022-06-25. Enjoy, star on Github and contribute
+by submitting a Pull Request.
 ```
 
 # Autocompletion
@@ -1594,7 +1630,6 @@ import ssl
 import subprocess
 import sys
 import tempfile
-import textwrap
 import traceback
 import urllib.request
 import uuid
@@ -1654,8 +1689,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-24"
-VERSIONNR = "2.38.1"
+VERSION = "2022-06-25"
+VERSIONNR = "3.0.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1714,7 +1749,6 @@ SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if option is not specified
 SET_DISPLAY_NAME_UNUSED_DEFAULT = None  # use None option not used
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
 SSL_CERTIFICATE_DEFAULT = None  # use None if --ssl-certificate is not given
-NO_SSO_UNUSED_DEFAULT = None  # use None if --no-sso is not given
 MXC_ID_PLACEHOLDER = "__mxc_id__"
 HOMESERVER_PLACEHOLDER = "__homeserver__"  # like https://matrix.example.org
 HOSTNAME_PLACEHOLDER = "__hostname__"  # like matrix.example.org
@@ -3938,260 +3972,6 @@ async def process_arguments_and_input(client, rooms):
     await send_messages_and_files(client, rooms, messages_all_split)
 
 
-# according to pylama: function too complex: C901 # noqa: C901
-async def create_credentials_file(  # noqa: C901
-    credentials_file: str, store_dir: str
-) -> None:
-    """Log in, create credentials file, log out and exit.
-
-    Arguments:
-    ---------
-        credentials_file: str : location of credentials file
-        store_dir: str : location of persistent storage store directory
-
-    """
-    text0 = f"""
-            Credentials file \"{gs.pa.credentials}\" was not found.
-            There are 2 possibilities for this."""
-    text1 = f"""
-            1) This is your first time use? Setting up new credentials?
-            Then welcome to {PROG_WITHOUT_EXT}. Continue, and in the next
-            step you will be asked for homeserver, user, password and
-            room id to create a credentials file."""
-    text2 = f"""
-            2) You specified the credentials location incorrectly
-            or you started {PROG_WITHOUT_EXT} from the wrong directory.
-            Abort, change you directory if needed or set the credentials
-            option correctly. Then start {PROG_WITHOUT_EXT} again."""
-    print(
-        textwrap.fill(
-            textwrap.dedent(text0).strip(),
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    print(
-        textwrap.fill(
-            textwrap.dedent(text1).strip(),
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    print(
-        textwrap.fill(
-            textwrap.dedent(text2).strip(),
-            width=79,
-            subsequent_indent=SEP,
-        )
-    )
-    confirm = input(
-        "Continue to create new credentials? (Yes or Ctrl-C to abort) "
-    )
-    if confirm.lower() != "yes" and confirm.lower() != "y":
-        print("")  # add newline to stdout to separate any log info
-        gs.log.info("Aborting due to user request.")
-        return
-    homeserver = "https://matrix.example.org"
-    homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ")
-    if not homeserver:
-        homeserver = "https://matrix.example.org"  # better error msg later
-    if not (
-        homeserver.startswith("https://") or homeserver.startswith("http://")
-    ):
-        homeserver = "https://" + homeserver
-
-    if gs.pa.proxy:
-        gs.log.info(f"Proxy {gs.pa.proxy} will be used.")
-
-    # check for password/SSO
-    connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
-    async with ClientSession(connector=connector) as session:  # aiohttp
-        async with session.get(
-            f"{homeserver}/_matrix/client/r0/login",
-            raise_for_status=True,
-            proxy=gs.pa.proxy,
-        ) as response:
-            flow_types = {
-                x["type"] for x in (await response.json()).get("flows", [])
-            }
-            gs.log.debug("Supported login flows: %r", flow_types)
-
-            password = "m.login.password" in flow_types
-            sso = "m.login.sso" in flow_types and "m.login.token" in flow_types
-
-    # SSO: Single Sign-On:
-    # see https://matrix.org/docs/guides/sso-for-client-developers
-    if sso:
-        gs.log.debug("Server supports SSO for login.")
-        if gs.pa.no_sso:
-            gs.log.debug('Due to "--no-sso" argument, SSO will be avoided.')
-            sso = False  # override sso due to --no-sso flag set
-    else:
-        gs.log.debug(
-            "Server does not support SSO for login. "
-            "Hence, attempting to login with password."
-        )
-
-    if not sso and password:
-
-        user_id = "@user:example.org"
-        user_id = input(f"Enter your full user ID: [{user_id}] ")
-    else:
-        user_id = ""
-
-    device_name = PROG_WITHOUT_EXT
-    device_name = input(f"Choose a name for this device: [{device_name}] ")
-    if device_name == "":
-        device_name = PROG_WITHOUT_EXT  # default
-    room_id = "!SomeRoomIdString:example.org"
-    room_id = input(f"Enter your room ID: [{room_id}] ")
-
-    if sso:
-        # startup server to handle response
-        stop_server_evt = asyncio.Event()
-        login_token = None
-
-        async def handle(request):
-            nonlocal login_token
-            login_token = request.query.get("loginToken")
-            stop_server_evt.set()
-            return web.Response(
-                body="Login complete. You can now close this page."
-            )
-
-        app = web.Application()
-        app.add_routes([web.get("/", handle)])
-
-        logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, "localhost", 38080)
-        await site.start()
-
-        try:
-            print("Launching browser to complete SSO login.")
-            if gs.pa.proxy:
-                gs.log.warning(
-                    f"Specified proxy {gs.pa.proxy} cannot "
-                    "be configured for browser."
-                )
-                gs.warn_count += 1
-
-            # launch web-browser
-            if sys.platform.startswith("darwin"):
-                cmd = [shutil.which("open")]
-            elif sys.platform.startswith("win"):
-                cmd = ["start"]
-            else:
-                cmd = [shutil.which("x-www-browser")]
-            cmd.append(
-                f"{homeserver}/_matrix/client/r0/login/sso/redirect"
-                "?redirectUrl=http://localhost:38080/"
-            )
-            try:
-                subprocess.check_output(cmd)
-            except Exception:
-                gs.log.error(
-                    "Browser could not be launched. "
-                    "Hence SSO (Single Sign-On) login could not be "
-                    "completed. Sorry. If you think the browser and "
-                    "SSO should work then try again. If you do not have "
-                    "a browser or don't want SSO or want to login with a "
-                    "password instead, then use the '--no-sso' option in "
-                    "the command line."
-                )
-                raise
-
-            # wait and shutdown server
-            try:
-                await asyncio.wait_for(stop_server_evt.wait(), 5 * 60)
-            except asyncio.TimeoutError:
-                gs.log.error(
-                    f"The program {PROG_WITH_EXT} failed. "
-                    "No response was received from SSO provider. "
-                    "There was a timeout. Sorry."
-                )
-                raise
-        finally:
-            await runner.cleanup()
-
-    elif not password:
-        gs.err_count += 1
-        raise MatrixCommanderError(
-            "No supported login method found for homeserver. "
-            "Neither SSO nor password are accepted login "
-            "methods of the server."
-        ) from None
-
-    # Configuration options for the AsyncClient
-    client_config = AsyncClientConfig(
-        max_limit_exceeded=0,
-        max_timeouts=0,
-        store_sync_tokens=True,
-        encryption_enabled=True,
-    )
-
-    if not os.path.exists(store_dir):
-        os.makedirs(store_dir)
-        gs.log.info(
-            f"The persistent storage directory {store_dir} "
-            "was created for you."
-        )
-
-    # Initialize the matrix client
-    client = AsyncClient(
-        homeserver,
-        user_id,
-        store_path=store_dir,
-        config=client_config,
-        ssl=gs.ssl,
-        proxy=gs.pa.proxy,
-    )
-    try:
-        if sso:
-            resp = await client.login(
-                token=login_token, device_name=device_name
-            )
-            method = "SSO"
-
-        else:
-            pw = getpass.getpass()
-            resp = await client.login(pw, device_name=device_name)
-            method = "a password"
-
-        # check that we logged in succesfully
-        if isinstance(resp, LoginResponse):
-            # when writing, always write to primary location (e.g. .)
-            write_credentials_to_disk(
-                homeserver,
-                resp.user_id,
-                resp.device_id,
-                resp.access_token,
-                room_id,
-                gs.pa.credentials,
-            )
-            txt = f"""
-                Log in using {method} was successful.
-                Credentials were stored in file \"{gs.pa.credentials}\".
-                Run program \"{PROG_WITH_EXT}\" again to
-                login with credentials and to send a message.
-                If you plan on having many credential files, consider
-                moving them to directory \"{CREDENTIALS_DIR_LASTRESORT}\"."""
-            txt = textwrap.fill(textwrap.dedent(txt).strip(), width=79)
-            gs.log.info(txt)
-        else:
-            txt = f"The program {PROG_WITH_EXT} failed. "
-            "Most likely wrong credentials were entered. "
-            "Sorry. \n"
-            f'homeserver="{homeserver}"; user="{user_id}"; '
-            f'room_id="{room_id}"; '
-            f"failed to log in: {resp}"
-            gs.err_count += 1
-            raise MatrixCommanderError(txt)
-    finally:
-        await client.close()
-
-
 def login_using_credentials_file(
     credentials_file: Optional[str] = None, store_dir: Optional[str] = None
 ) -> (AsyncClient, dict):
@@ -4660,50 +4440,6 @@ async def listen_all(  # noqa: C901
                 gs.log.debug(
                     f"room_read_markers failed with response = {resp}."
                 )
-
-
-async def main_listen() -> None:
-    """Use credentials to log in and listen."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        gs.err_count += 1
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can listen.
-            Aborting due to missing or not-found credentials file."""
-        ) from None
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        # Sync encryption keys with the server
-        # Required for participating in encrypted rooms
-        if client.should_upload_keys:
-            await client.keys_upload()
-        gs.log.debug(f"Listening type: {gs.pa.listen}")
-        if gs.pa.listen == FOREVER:
-            await listen_forever(client)
-        elif gs.pa.listen == ONCE:
-            await listen_once(client)
-            # could use 'await listen_once_alternative(client)'
-            # as an alternative implementation
-        elif gs.pa.listen == TAIL:
-            await listen_tail(client, credentials)
-        elif gs.pa.listen == ALL:
-            await listen_all(client, credentials)
-        else:
-            gs.log.error(
-                f'Unrecognized listening type "{gs.pa.listen}". '
-                "Closing client."
-            )
-            gs.err_count += 1
-    finally:
-        if client:
-            await client.close()
 
 
 async def action_listen() -> None:
@@ -5737,7 +5473,7 @@ async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
     }
 
     The "m.login.sso" option would be useful, but I haven't implemented it
-    yet. It would be a bit similar as to the code in create_credentials_file().
+    yet. It would be a bit similar as to the code in action_login().
 
     The most common option is "m.login.password". This option is implemented.
     """
@@ -5848,122 +5584,6 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     print(whoami)
 
 
-async def main_roomsetget_action() -> None:  # todo: delete this function
-    """Use credentials to log in and perform actions on server."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        gs.err_count += 1
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can
-            perform any other actions.
-            Aborting due to missing or not-found credentials file."""
-        ) from None
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        # room_action
-        # we already checked args at the beginning, no need to check
-        # room and user argument combinations again.
-        # room set actions
-        if gs.pa.room_create:
-            await action_room_create(client, credentials)
-        if gs.pa.room_join:
-            await action_room_join(client, credentials)
-        if gs.pa.room_leave:
-            await action_room_leave(client, credentials)
-        if gs.pa.room_forget:
-            await action_room_forget(client, credentials)
-        if gs.pa.room_invite and gs.pa.user:
-            await action_room_invite(client, credentials)
-        if gs.pa.room_ban and gs.pa.user:
-            await action_room_ban(client, credentials)
-        if gs.pa.room_unban and gs.pa.user:
-            await action_room_unban(client, credentials)
-        if gs.pa.room_kick and gs.pa.user:
-            await action_room_kick(client, credentials)
-        if gs.pa.room_redact:
-            await action_room_redact(client, credentials)
-        if gs.pa.room_set_alias:
-            await action_room_set_alias(client, credentials)
-        if gs.pa.room_delete_alias:
-            await action_room_delete_alias(client, credentials)
-        # room get actions
-        if gs.pa.room_get_visibility is not None:  # empty [] must invoke func
-            await action_room_get_visibility(client, credentials)
-        if gs.pa.room_get_state is not None:  # empty list must invoke func
-            await action_room_get_state(client, credentials)
-        if gs.pa.room_resolve_alias:
-            await action_room_resolve_alias(client, credentials)
-        if gs.room_action:
-            gs.log.debug("Room action(s) were performed or attempted.")
-
-        # set_action
-        if gs.pa.set_display_name:
-            await action_set_display_name(client, credentials)
-        if gs.pa.set_device_name:
-            await action_set_device_name(client, credentials)
-        if gs.pa.set_presence:
-            await action_set_presence(client, credentials)
-        if gs.pa.upload:
-            await action_upload(client, credentials)
-        if gs.pa.delete_mxc:
-            await action_delete_mxc(client, credentials)
-        if gs.pa.delete_mxc_before:
-            await action_delete_mxc_before(client, credentials)
-        if gs.pa.rest:
-            await action_rest(client, credentials)
-        if gs.pa.set_avatar:
-            await action_set_avatar(client, credentials)
-        if gs.pa.import_keys:
-            await action_import_keys(client, credentials)
-        if gs.pa.delete_device:
-            await action_delete_device(client, credentials)
-        # get_action
-        if gs.pa.get_display_name:
-            await action_get_display_name(client, credentials)
-        if gs.pa.get_presence:
-            await action_get_presence(client, credentials)
-        if gs.pa.download:
-            await action_download(client, credentials)
-        if gs.pa.joined_rooms:
-            await action_joined_rooms(client, credentials)
-        if gs.pa.joined_members:
-            await action_joined_members(client, credentials)
-        if gs.pa.mxc_to_http:
-            await action_mxc_to_http(client, credentials)
-        if gs.pa.devices:
-            await action_devices(client, credentials)
-        if gs.pa.discovery_info:
-            await action_discovery_info(client, credentials)
-        if gs.pa.login_info:
-            await action_login_info(client, credentials)
-        if gs.pa.content_repository_config:
-            await action_content_repository_config(client, credentials)
-        if gs.pa.get_avatar is not None:  # empty list must invoke function
-            await action_get_avatar(client, credentials)
-        if gs.pa.get_profile is not None:  # empty list must invoke function
-            await action_get_profile(client, credentials)
-        if gs.pa.has_permission:
-            await action_has_permission(client, credentials)
-        if gs.pa.export_keys:
-            await action_export_keys(client, credentials)
-        if gs.pa.get_openid_token is not None:  # empty list must invoke func
-            await action_get_openid_token(client, credentials)
-        if gs.pa.whoami:
-            await action_whoami(client, credentials)
-        if gs.setget_action:
-            gs.log.debug("Set or get action(s) were performed or attempted.")
-    finally:
-        if client:
-            await client.close()
-
-
 async def action_roomsetget() -> None:
     """Perform room, get, set actions while being logged in."""
     if not gs.client and not gs.credentials:
@@ -6072,47 +5692,6 @@ async def action_roomsetget() -> None:
         gs.err_count += 1
 
 
-async def main_verify() -> None:
-    """Use credentials to log in and verify."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        gs.err_count += 1
-        raise MatrixCommanderError(
-            f"""Credentials file was not found.
-            Did you start {PROG_WITHOUT_EXT} in the wrong directory?
-            Did you specify the credentials options incorrectly?
-            Credentials file must be created first before one can verify.
-            Aborting due to missing or not-found credentials file."""
-        ) from None
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        # Set up event callbacks
-        callbacks = Callbacks(client)
-        client.add_to_device_callback(
-            callbacks.to_device_callback, (KeyVerificationEvent,)
-        )
-        # Sync encryption keys with the server
-        # Required for participating in encrypted rooms
-        if client.should_upload_keys:
-            await client.keys_upload()
-        print(
-            "This program is ready and waiting for the other party to "
-            "initiate an emoji verification with us by selecting "
-            '"Verify by Emoji"'
-            "in their Matrix client."
-        )
-        # the sync_loop will be terminated by user hitting Control-C
-        # to stop or by success with .stop()
-        await client.sync_forever(timeout=30000, full_state=True)
-    finally:
-        if client:
-            await client.close()
-
-
 async def action_verify() -> None:
     """Verify while already logged in."""
     if not gs.client and not gs.credentials:
@@ -6130,10 +5709,11 @@ async def action_verify() -> None:
         if gs.client.should_upload_keys:
             await gs.client.keys_upload()
         print(
-            "This program is ready and waiting for the other party to "
+            f"{PROG_WITHOUT_EXT} is ready and waiting for the other party to "
             "initiate an emoji verification with us by selecting "
-            '"Verify by Emoji"'
-            "in their Matrix client."
+            "'Verify by Emoji' "
+            "in their Matrix client. Read --verify instructions in --help "
+            "carefully to assist you in how to do this quickly."
         )
         # the sync_loop will be terminated by user hitting Control-C
         await gs.client.sync_forever(timeout=30000, full_state=True)
@@ -6145,40 +5725,6 @@ async def action_verify() -> None:
             "Error during verify. Continuing despite error. " f"Exception: {e}"
         )
         gs.err_count += 1
-
-
-async def main_send() -> None:
-    """Create credentials, or use credentials to log in and send messages."""
-    credentials_file = determine_credentials_file()
-    store_dir = determine_store_dir()
-    if not os.path.isfile(credentials_file):
-        gs.log.debug("Credentials file does not exist.")
-        await create_credentials_file(credentials_file, store_dir)
-        return
-    gs.log.debug("Credentials file does exist.")
-    try:
-        client, credentials = login_using_credentials_file(
-            credentials_file, store_dir
-        )
-        # a few more steps to prepare for sending messages
-        rooms = await determine_rooms(
-            credentials["room_id"], client, credentials
-        )
-        gs.log.debug(f"Rooms are: {rooms}")
-        # Sync encryption keys with the server
-        # Required for participating in encrypted rooms
-        if client.should_upload_keys:
-            await client.keys_upload()
-        # must sync first to get room ids for encrypted rooms
-        # since we only send a msg and then stop we can use sync() instead of
-        # sync_forever() (await client.sync_forever(30000, full_state=True))
-        await client.sync(timeout=30000, full_state=True)
-        # Now we can send messages as the user
-        await process_arguments_and_input(client, rooms)
-        gs.log.debug("Messages were sent. We close the client and quit")
-    finally:
-        if client:
-            await client.close()
 
 
 async def action_send() -> None:
@@ -6213,8 +5759,8 @@ async def action_send() -> None:
 
 
 async def action_login() -> None:
-    """Log in using SSO or password, create credentials file, and
-    remain logged in.
+    """Log in using SSO or password, create credentials file, create store,
+    and remain logged in.
     """
     credentials_file = determine_credentials_file()
     if credentials_exist(credentials_file):
@@ -6235,7 +5781,7 @@ async def action_login() -> None:
         gs.log.debug("--login has chosen SSO method for authentication")
     else:
         raise MatrixCommanderError(
-            "--login specifies invalid aythenticatin method "
+            "--login specifies invalid authenticatin method "
             f"'{method}'. Only 'password' and 'sso' allowed."
         ) from None
     if gs.pa.homeserver:
@@ -6335,7 +5881,7 @@ async def action_login() -> None:
             return
 
     # all the input required for login is collected,
-    # later we get user_id for SSO (returned at login)
+    # later we get user_id for SSO (returned at login API call)
 
     if gs.pa.proxy:
         gs.log.info(f"Proxy {gs.pa.proxy} will be used.")
@@ -6354,6 +5900,7 @@ async def action_login() -> None:
             gs.log.debug("Supported login flows: %r", flow_types)
 
             # token_available = "m.login.token" in flow_types
+            # m.login.token does not refer to std access-token login
             password_available = "m.login.password" in flow_types
             sso_available = (
                 "m.login.sso" in flow_types and "m.login.token" in flow_types
@@ -6369,12 +5916,6 @@ async def action_login() -> None:
             "Method 'password' was selected for --login but Matrix server "
             "does not support password login. Try --login with method 'sso'."
         ) from None
-    # if not token_available:
-    #     gs.log.warning(
-    #         "Access to server via access token is not supported by Matrix "
-    #         "server. This will cause problems later. Upgrade server!"
-    #     )
-    #     gs.warn_count += 1
 
     # SSO: Single Sign-On:
     # see https://matrix.org/docs/guides/sso-for-client-developers
@@ -6434,7 +5975,7 @@ async def action_login() -> None:
                     "completed. Sorry. If you think the browser and "
                     "SSO should work then try again. If you do not have "
                     "a browser or don't want SSO or want to login with a "
-                    "password instead, then use the '--no-sso' option in "
+                    "password instead, then use '--login password' in "
                     "the command line."
                 )
                 raise
@@ -6485,7 +6026,7 @@ async def action_login() -> None:
             write_credentials_to_disk(
                 homeserver,
                 resp.user_id,
-                resp.device_id,  # note the naming mistake in nio, id!
+                resp.device_id,  # note this is an id, not a name!
                 resp.access_token,
                 room_id,
                 gs.pa.credentials,
@@ -6522,8 +6063,9 @@ async def action_login() -> None:
             f"user='{user_id}'; room_id='{room_id}'. "
             f"Failed to log in: {e}"
         )
-        # gs.err_count += 1  # don't incremement since not MatrixCommanderError
+        # gs.err_count += 1  # don't increment since not MatrixCommanderError
         raise
+    # we are now authenticated, we are now logged in
     # gs now has client and credentials, needed by further actions
 
 
@@ -6566,20 +6108,18 @@ async def async_main() -> None:
             gs.log.debug(
                 "Keyboard interrupt received after Emoji verification."
             )
-        rooms_to_long_room_names()
+        rooms_to_long_room_names()  # complete room names
         if gs.room_action or gs.setget_action:
             await action_roomsetget()
         if gs.send_action:
             await action_send()
         if gs.listen_action:
             await action_listen()
-        if gs.client:
-            await gs.client.close()
     except Exception:
+        raise
+    finally:
         if gs.client:
             await gs.client.close()
-        raise
-    # todo: remove --no-sso option from interface
 
 
 def check_arg_files_readable() -> None:
@@ -6860,48 +6400,15 @@ def initial_check_of_args() -> None:  # noqa: C901
         )
     elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
         t = f'For --verify currently only "{EMOJI}" is allowed as keyword.'
-    elif gs.pa.verify and (
-        # gs.login_action allowed
-        # gs.send_action allowed  # todo
-        gs.pa.room
-        or gs.room_action
-        or gs.listen_action
-        or gs.setget_action
-    ):
-        t = (
-            "If --verify is specified, only verify can be done. "
-            "No messages, images, files or events can be sent."
-            "No listening or tailing allowed. "
-            "No other actions allowed."
-        )
-    # todo
-    # elif gs.pa.listen != NEVER and (
-    #     gs.send_action or gs.room_action or gs.pa.verify or gs.setget_action
-    # ):
-    #     t = (
-    #         "If --listen is specified, only listening can be done. "
-    #         "No messages, images, files or events can be sent. "
-    #         "No room or other actions allowed."
-    #     )
-    # todo
-    # elif gs.send_action and (
-    #     gs.room_action
-    #     or gs.listen_action
-    #     # or gs.pa.verify  # allow  # todo
-    #     # or gs.setget_action  # add more parallelism
-    # ):
-    #     t = (
-    #         "If sending (-m, -i, -a, -f, -e) is specified, only sending can "
-    #         "be done. No listening allowed. "
-    #         "No room or other actions allowed."
-    #     )
+    # allow verify with everything
+    # allow send with everything
+    # allow listen with everything
     elif gs.pa.set_device_name and (gs.pa.set_device_name.strip() == ""):
         t = "Don't use an empty name for --set-device-name."
     elif gs.pa.set_display_name and (gs.pa.set_display_name.strip() == ""):
         t = "Don't use an empty name for --set-display-name."
     elif (gs.pa.user) and not (
-        gs.login_action
-        or gs.send_action
+        gs.send_action
         or gs.room_action
         or gs.pa.get_display_name
         or gs.pa.get_presence
@@ -6979,7 +6486,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     else:
         gs.log.debug("All arguments are valid. All checks passed.")
         return  # all OK
-    # gs.err_count += 1 # wrong
+    # gs.err_count += 1 # do not increment for MatrixCommanderError
     raise MatrixCommanderError(t) from None
 
 
@@ -7073,7 +6580,6 @@ def main_inner(
         required=False,
         type=str,  # login method: password, sso, (access-token)
         help="Login to and authenticate with the Matrix homeserver. "
-        "***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.*** "
         "This requires exactly one argument, the login method. "
         "Currently two choices are offered: 'password' and 'sso'. "
         "Provide one of these methods. "
@@ -7093,7 +6599,13 @@ def main_inner(
         "--user-login to specify the log in user id, "
         "--device to specify a device name, "
         "--room-default to specify a default room for sending/listening. "
-        "See all the extra arguments for further explanations.",
+        "See all the extra arguments for further explanations. ----- "
+        "SSO (Single Sign-On) starts a web "
+        "browser and connects the user to a web page on the "
+        "server for login. SSO will only work if the server "
+        "supports it and if there is access to a browser. So, don't use SSO "
+        "on headless homeservers where there is no "
+        "browser installed or accessible.",
     )
     ap.add_argument(
         "-v",
@@ -7109,17 +6621,35 @@ def main_inner(
         f'Possible values are: "{EMOJI}". '
         "If verification is desired, run this program in the "
         "foreground (not as a service) and without a pipe. "
+        "While verification is optional it is highly recommended, and it "
+        "is recommended to be done right after (or together with) the "
+        "--login action. Verification is always interactive, i.e. it "
+        "required keyboard input. "
         "Verification questions "
         "will be printed on stdout and the user has to respond "
         "via the keyboard to accept or reject verification. "
-        "Once verification is complete, stop the program and "
-        "run it as a service again. Verification is best done by "
-        "opening e.g. Element in a browser, going to a room that "
-        "you are a member of, click 'Room Info' icon, click 'People', "
-        "click the appropriate user, click red 'Not Trusted' text "
-        "which indicated an untrusted device, click "
-        "'Interactively verify by Emoji' button. "
-        "Confirm on both sides (Yes, They Match, Got it), Click OK.",
+        "Once verification is complete, the program may be "
+        "run as a service. Verification is best done as follows: "
+        "Perform a cross-device verification, that means, perform a "
+        "verification between two devices of the *same* user. For that, "
+        "open (e.g.) Element in a browser, make sure Element is using the "
+        f"same user account as the {PROG_WITHOUT_EXT} user (specified with "
+        "--user-login at --login). Now in the Element webpage go to the room "
+        f"that is the {PROG_WITHOUT_EXT} default room (specified with "
+        "--room-default at --login). OK, in the web-browser you are now the "
+        f"same user and in the same room as {PROG_WITHOUT_EXT}. "
+        "Now click the round 'i' 'Room Info' icon, then click 'People', "
+        f"click the appropriate user (the {PROG_WITHOUT_EXT} user), "
+        "click red 'Not Trusted' text "
+        "which indicated an untrusted device, then click the square "
+        "'Interactively verify by Emoji' button (one of 3 button choices). "
+        f"At this point both web-page and {PROG_WITHOUT_EXT} in terminal "
+        "show a set of emoji icons and names. Compare them visually. "
+        "Confirm on both sides (Yes, They Match, Got it), finally click OK. "
+        "You should see a green shield and also see that the "
+        f"{PROG_WITHOUT_EXT} device is now green and verified in the webpage. "
+        "In the terminal you should see a text message indicating success. "
+        "You should now be verified across all devices and across all users.",
     )
     ap.add_argument(
         "-c",
@@ -8260,26 +7790,6 @@ def main_inner(
         "while using your own local SSL certificate. Specify the path and "
         'file to your SSL certificate. If used together with the "--no-ssl" '
         "parameter, this option is meaningless and an error will be raised.",
-    )
-    ap.add_argument(
-        # no single char flag
-        "--no-sso",  # no Single Sign-On
-        required=False,
-        action="store_true",
-        default=NO_SSO_UNUSED_DEFAULT,  # when option isn't used
-        help="This argument is optional. If it is not used, the default "
-        "login method will be used. This default login method is: "
-        "SSO (Single Sign-On). SSO starts a web browser and connects the "
-        "user to a web page on the server for login. SSO will only work if "
-        "the server supports it and if there is access to a browser. "
-        "If this argument is used, then SSO will be avoided. This is useful "
-        "on headless homeservers where there is no browser installed or "
-        "accessible. It is also useful if the user prefers to login via a "
-        "password. So, if SSO should be avoided and a password login is "
-        "preferred then set this option. This option is only meaningful "
-        f"on the first run that initializes {PROG_WITHOUT_EXT}. "
-        "Once credentials are established this option is irrelevant and "
-        "it will simply be ignored.",
     )
     ap.add_argument(
         "--file-name",

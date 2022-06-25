@@ -128,7 +128,7 @@ Use cases for this program could be
    visibility data? You want to collect profile data of 7000 enterprise or
    public users? `matrix-commander` has many admin capabilities and can
    automate many tasks completely. Many admin jobs can be reduced to running
-   a simple bash script or a simple Python program using `matrix-commander`. 
+   a simple bash script or a simple Python program using `matrix-commander`.
 - `reminder`: send yourself or others daily/weekly reminders via a cron job.
 - `surf report`: an addict surfer uses `matrix-commander` combined with a
    `cron` job to publish daily early morning surf reports for his 3 favorite
@@ -696,7 +696,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
                            [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
                            [--whoami] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE] [--no-sso]
+                           [--ssl-certificate SSL_CERTIFICATE]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
@@ -742,7 +742,6 @@ options:
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
   --login LOGIN         Login to and authenticate with the Matrix homeserver.
-                        ***THIS IS NOT YET IMPLEMENTED. PLEASE STAY TUNED.***
                         This requires exactly one argument, the login method.
                         Currently two choices are offered: 'password' and
                         'sso'. Provide one of these methods. If you have
@@ -761,23 +760,50 @@ options:
                         user id, --device to specify a device name, --room-
                         default to specify a default room for
                         sending/listening. See all the extra arguments for
-                        further explanations.
+                        further explanations. ----- SSO (Single Sign-On)
+                        starts a web browser and connects the user to a web
+                        page on the server for login. SSO will only work if
+                        the server supports it and if there is access to a
+                        browser. So, don't use SSO on headless homeservers
+                        where there is no browser installed or accessible.
   -v [VERIFY], --verify [VERIFY]
                         Perform verification. By default, no verification is
                         performed. Possible values are: "emoji". If
                         verification is desired, run this program in the
                         foreground (not as a service) and without a pipe.
-                        Verification questions will be printed on stdout and
-                        the user has to respond via the keyboard to accept or
-                        reject verification. Once verification is complete,
-                        stop the program and run it as a service again.
-                        Verification is best done by opening e.g. Element in a
-                        browser, going to a room that you are a member of,
-                        click 'Room Info' icon, click 'People', click the
-                        appropriate user, click red 'Not Trusted' text which
-                        indicated an untrusted device, click 'Interactively
-                        verify by Emoji' button. Confirm on both sides (Yes,
-                        They Match, Got it), Click OK.
+                        While verification is optional it is highly
+                        recommended, and it is recommended to be done right
+                        after (or together with) the --login action.
+                        Verification is always interactive, i.e. it required
+                        keyboard input. Verification questions will be printed
+                        on stdout and the user has to respond via the keyboard
+                        to accept or reject verification. Once verification is
+                        complete, the program may be run as a service.
+                        Verification is best done as follows: Perform a cross-
+                        device verification, that means, perform a
+                        verification between two devices of the *same* user.
+                        For that, open (e.g.) Element in a browser, make sure
+                        Element is using the same user account as the matrix-
+                        commander user (specified with --user-login at
+                        --login). Now in the Element webpage go to the room
+                        that is the matrix-commander default room (specified
+                        with --room-default at --login). OK, in the web-
+                        browser you are now the same user and in the same room
+                        as matrix-commander. Now click the round 'i' 'Room
+                        Info' icon, then click 'People', click the appropriate
+                        user (the matrix-commander user), click red 'Not
+                        Trusted' text which indicated an untrusted device,
+                        then click the square 'Interactively verify by Emoji'
+                        button (one of 3 button choices). At this point both
+                        web-page and matrix-commander in terminal show a set
+                        of emoji icons and names. Compare them visually.
+                        Confirm on both sides (Yes, They Match, Got it),
+                        finally click OK. You should see a green shield and
+                        also see that the matrix-commander device is now green
+                        and verified in the webpage. In the terminal you
+                        should see a text message indicating success. You
+                        should now be verified across all devices and across
+                        all users.
   -c CREDENTIALS, --credentials CREDENTIALS
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -1451,21 +1477,6 @@ options:
                         the path and file to your SSL certificate. If used
                         together with the "--no-ssl" parameter, this option is
                         meaningless and an error will be raised.
-  --no-sso              This argument is optional. If it is not used, the
-                        default login method will be used. This default login
-                        method is: SSO (Single Sign-On). SSO starts a web
-                        browser and connects the user to a web page on the
-                        server for login. SSO will only work if the server
-                        supports it and if there is access to a browser. If
-                        this argument is used, then SSO will be avoided. This
-                        is useful on headless homeservers where there is no
-                        browser installed or accessible. It is also useful if
-                        the user prefers to login via a password. So, if SSO
-                        should be avoided and a password login is preferred
-                        then set this option. This option is only meaningful
-                        on the first run that initializes matrix-commander.
-                        Once credentials are established this option is
-                        irrelevant and it will simply be ignored.
   --file-name FILE_NAME [FILE_NAME ...]
                         Specify one or multiple file names for some actions.
                         This is an optional argument. Use this option in
@@ -1522,8 +1533,8 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 2.38.1 2022-06-24. Enjoy, star on Github and
-contribute by submitting a Pull Request.
+You are running version 3.0.0 2022-06-25. Enjoy, star on Github and contribute
+by submitting a Pull Request.
 ```
 
 # Autocompletion
