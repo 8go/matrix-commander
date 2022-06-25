@@ -117,18 +117,43 @@ creating rooms, inviting, verifying, and so much more.
 
 Use cases for this program could be
 - a bot or part of a bot,
-- to send alerts,
-- combine it with `cron` to publish periodic data,
-- send yourself daily/weekly reminders via a cron job
-- send yourself a daily song from your music collection
-- a trivial way to fire off some instant messages from the command line
-- a trivial way to read messages in the terminal
 - to automate sending via programs and scripts
-- a "blogger" who frequently sends messages and images to the same
-  room(s) could use it
-- a person could write a diary or run a gratitude journal by
-  sending messages to her/his own room
-- as educational material that showcases the use of the `matrix-nio` SDK
+- `matrix-nio show case`: as educational material that showcases the use
+  of the `matrix-nio` SDK
+- `alerter`: to send all sorts of alerts,
+- `Gitlab CI automation tool`: some user uses it as Gitlab CI automation tool
+   to report build success/failure to their internal Matrix room.
+- `admin tool` or `automation tool`: you needs to create 175 room for the
+   roll-out within a company? You want to query some 9000 rooms for
+   visibility data? You want to collect profile data of 7000 enterprise or
+   public users? `matrix-commander` has many admin capabilities and can
+   automate many tasks completely. Many admin jobs can be reduced to running
+   a simple bash script or a simple Python program using `matrix-commander`. 
+- `reminder`: send yourself or others daily/weekly reminders via a cron job.
+- `surf report`: an addict surfer uses `matrix-commander` combined with a
+   `cron` job to publish daily early morning surf reports for his 3 favorite
+   surfing spots to his Element app.
+- `juke box`: a user told me he has a large collection of mp3 files on his
+  server. He uses `matrix-commander` to send himself a random song from
+  his music collection to brighten his day.
+- `ticker`: many people send themselves stock prices from one of the many
+  public ticker APIs. This is usually a single `curl` command piped into
+  `matrix-commander`.
+- `poor-man's Matrix client`: if you love the terminal and are too lazy to
+   start up an Element desktop app or an Element webpage,
+   `matrix-commander` is a a trivial way to fire off some instant
+   messages to your friends from the terminal.
+- `poor-man's importer or exporter`: you want to get things in and out of
+   Matrix?
+   Send those 39 holiday picture you have laying around in a holiday folder?
+   Or, your best friend just sent you 57 wedding pictures on Element and
+   you want to store them? `matrix-commander` can help with importing and
+   exporting data.
+- `poor man's blogger`: a "blogger" who frequently sends messages and
+  images to the same public room(s) could use `matrix-commander` to keep
+  his audience informed.
+- `poor man's diary`: a person could write a diary or run a gratitude
+  journal by sending messages to her/his own diary room or gratitude room.
 
 # Give it a Star
 
