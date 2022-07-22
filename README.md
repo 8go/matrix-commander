@@ -80,6 +80,7 @@ alt="get it on Docker Hub" height="100"></a>
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
+- new option: `--logout` to remove device and access-token validity
 
 # Summary, TLDR
 
@@ -1552,7 +1553,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.0.1 2022-06-25. Enjoy, star on Github and contribute
+You are running version 3.1.0 2022-07-22. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 

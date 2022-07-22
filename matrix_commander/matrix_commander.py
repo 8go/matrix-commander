@@ -87,6 +87,7 @@ alt="get it on Docker Hub" height="100"></a>
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
+- new option: `--logout` to remove device and access-token validity
 
 # Summary, TLDR
 
@@ -1559,7 +1560,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.0.1 2022-06-25. Enjoy, star on Github and contribute
+You are running version 3.1.0 2022-07-22. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1708,8 +1709,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-06-25"
-VERSIONNR = "3.0.1"
+VERSION = "2022-07-22"
+VERSIONNR = "3.1.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3573,21 +3574,26 @@ async def send_image(client, rooms, image):  # noqa: C901
     # "bmp", "gif", "jpg", "jpeg", "png", "pbm", "pgm", "ppm", "xbm", "xpm",
     # "tiff", "webp", "svg",
 
+    # svg files are not shown in Element, hence send SVG files as files with -f
     if not isPipe and not re.match(
-        "^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
+        "^.jpg$|^.jpeg$|^.gif$|^.png$",
         os.path.splitext(image)[1].lower(),
     ):
         gs.log.warning(
             f"Image file {image} is not an image file. Should be "
             ".jpg, .jpeg, .gif, or .png. "
-            f"[{os.path.splitext(image)[1].lower()}] "
-            "This image is being dropped and NOT sent."
+            f"Found [{os.path.splitext(image)[1].lower()}]. "
+            "This image is being dropped and NOT sent. "
+            "SVG files should be send as files via -f "
+            "due to Element not being able to preview SVG files."
         )
         gs.warn_count += 1
         return
 
     # 'application/pdf' "image/jpeg"
+    # svg mime-type is "image/svg+xml"
     mime_type = magic.from_file(image, mime=True)
+    gs.log.debug(f"Image file mime-type is {mime_type}")
     if not mime_type.startswith("image/"):
         gs.log.warning(
             f"Image file {image} does not have an image mime type. "
@@ -3598,7 +3604,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         gs.warn_count += 1
         return
 
-    im = Image.open(image)
+    im = Image.open(image)  # this will fail for SVG files
     (width, height) = im.size  # im.size returns (width,height) tuple
 
     # first do an upload of image, see upload() documentation
