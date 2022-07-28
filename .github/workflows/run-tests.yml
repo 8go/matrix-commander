@@ -54,8 +54,5 @@ jobs:
       - name: Test set/get
         run: ./tests/test-setget.sh
 
-      # - name: Test send
-      #   run: python ./tests/test-send.py
-
-      # - name: Test upload
-      #   run:  ./tests/test-upload.sh
+      - name: Test send
+        run: python ./tests/test-send.py
