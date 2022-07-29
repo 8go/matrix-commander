@@ -37,6 +37,7 @@ jobs:
       - name: Log in to matrix server
         env:
           MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
+          MATRIX_HOMESERVER_DOMAIN: ${{ secrets.MATRIX_HOMESERVER_DOMAIN }}
           MATRIX_ROOM: ${{ secrets.MATRIX_ROOM }}
           MATRIX_USERNAME: ${{ secrets.MATRIX_USERNAME }}
           MATRIX_PASSWORD: ${{ secrets.MATRIX_PASSWORD }}
