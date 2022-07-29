@@ -1,12 +1,18 @@
+[![PyPI - Python Version](
+https://img.shields.io/pypi/pyversions/matrix-commander?color=red)](
+https://www.python.org/)
 [![Built with matrix-nio](
-https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
+https://img.shields.io/badge/built%20with-matrix--nio-darkgreen)](
 https://github.com/poljar/matrix-nio)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](
 https://github.com/psf/black)
 [![Docker Pulls](https://img.shields.io/docker/pulls/matrixcommander/matrix-commander)](
 https://hub.docker.com/r/matrixcommander/matrix-commander/)
-[![PyPI - Version](https://img.shields.io/pypi/v/matrix-commander)](
+[![PyPI - Version](https://img.shields.io/pypi/v/matrix-commander?color=darkblue)](
 https://pypi.org/project/matrix-commander)
+[![PyPI - Downloads](
+https://img.shields.io/pypi/dm/matrix-commander?color=darkblue&label=PyPi%20Downloads
+)](https://pypi.org/project/matrix-commander)
 
 <p>
 <img
