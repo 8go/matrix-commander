@@ -1560,7 +1560,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.1.0 2022-07-22. Enjoy, star on Github and contribute
+You are running version 3.1.1 2022-07-29. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1709,8 +1709,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-07-22"
-VERSIONNR = "3.1.0"
+VERSION = "2022-07-29"
+VERSIONNR = "3.1.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1806,8 +1806,6 @@ class GlobalState:
         self.ssl: Union[None, SSLContext, bool] = None
         self.client: Union[None, AsyncClient] = None
         self.credentials: Union[None, dict] = None
-        self.login_action = False  # argv contains login action
-        self.verify_action = False  # argv contains verify action
         self.send_action = False  # argv contains send action
         self.listen_action = False  # argv contains listen action
         self.room_action = False  # argv contains room action
@@ -3576,16 +3574,14 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     # svg files are not shown in Element, hence send SVG files as files with -f
     if not isPipe and not re.match(
-        "^.jpg$|^.jpeg$|^.gif$|^.png$",
+        "^.jpg$|^.jpeg$|^.gif$|^.png$|^.svg$",
         os.path.splitext(image)[1].lower(),
     ):
         gs.log.warning(
             f"Image file {image} is not an image file. Should be "
             ".jpg, .jpeg, .gif, or .png. "
             f"Found [{os.path.splitext(image)[1].lower()}]. "
-            "This image is being dropped and NOT sent. "
-            "SVG files should be send as files via -f "
-            "due to Element not being able to preview SVG files."
+            "This image is being dropped and NOT sent."
         )
         gs.warn_count += 1
         return
@@ -3604,8 +3600,21 @@ async def send_image(client, rooms, image):  # noqa: C901
         gs.warn_count += 1
         return
 
-    im = Image.open(image)  # this will fail for SVG files
-    (width, height) = im.size  # im.size returns (width,height) tuple
+    if mime_type.startswith("image/svg"):
+        gs.log.warning(
+            "There is a bug in Element preventing previews of SVG images. "
+            "Alternatively you may send SVG files as files via -f."
+        )
+        width = 100  # in pixel
+        height = 100
+        # Python blurhash package does not work on SVG
+        # blurhash: some random colorful image
+        blurhash = "ULH_C:0HGF}B.$k:PLVG8z}$4;o?~IQ:9$yB"
+        blurhash = None  # shows turning circle forever in Element due to bug
+    else:
+        im = Image.open(image)  # this will fail for SVG files
+        (width, height) = im.size  # im.size returns (width,height) tuple
+        blurhash = None
 
     # first do an upload of image, see upload() documentation
     # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
@@ -3649,10 +3658,11 @@ async def send_image(client, rooms, image):  # noqa: C901
         "info": {
             "size": file_stat.st_size,
             "mimetype": mime_type,
-            "thumbnail_info": None,  # TODO
+            # "thumbnail_info": None,  # TODO
             "w": width,  # width in pixel
             "h": height,  # height in pixel
-            "thumbnail_url": None,  # TODO
+            # "thumbnail_url": None,  # TODO
+            "xyz.amorgan.blurhash": blurhash
             # "thumbnail_file": None,
         },
         "msgtype": "m.image",
@@ -6411,16 +6421,6 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.setget_action = True
     else:
         gs.setget_action = False
-
-    if gs.pa.login:
-        gs.login_action = True
-    else:
-        gs.login_action = False
-
-    if gs.pa.verify:
-        gs.verify_action = True
-    else:
-        gs.verify_action = False
 
     # only 2 SSL states allowed: None (SSL default on), False (SSL off)
     if gs.pa.no_ssl is not True:
