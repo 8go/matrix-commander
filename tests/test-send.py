@@ -13,23 +13,23 @@ can be called from a Python program.
 from datetime import datetime
 import sys
 
+# print(f"Default path is: {sys.path}")
 # importing matrix_commander module
 try:
     # if installed via pip
     import matrix_commander  # nopep8 # isort: skip
     from matrix_commander import (
         main,
-        MatrixCommanderError,
     )  # nopep8 # isort: skip
 except:
     # if not installed via pip. if installed via 'git clone' or file download
     # appending a local path to sys.path
-    sys.path.append("matrix_commander")
+    sys.path.append("./matrix_commander")
     sys.path.append("../matrix_commander")
+    # print(f"Expanded path is: {sys.path}")
     import matrix_commander  # nopep8 # isort: skip
     from matrix_commander import (
         main,
-        MatrixCommanderError,
     )  # nopep8 # isort: skip
 
 now = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -43,8 +43,12 @@ sys.argv.extend(["--message", f"Hello World @ {now}!"])
 sys.argv.extend(["--image", "tests/test.s.png"])
 print(f"Testing with these arguments: {sys.argv}")
 try:
-    matrix_commander.main()
-except MatrixCommanderError as e:
-    print(e)
+    ret = matrix_commander.main()
+    if ret == 0:
+        print("matrix_commander finished successfully.")
+    else:
+        print(
+            f"matrix_commander failed with {ret} error{'' if ret == 1 else 's'}."
+        )
 except Exception as e:
-    print(e)
+    print(f"Exception happened: {e}")

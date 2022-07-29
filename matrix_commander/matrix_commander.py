@@ -1560,7 +1560,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.1.1 2022-07-29. Enjoy, star on Github and contribute
+You are running version 3.2.0 2022-07-29. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1710,7 +1710,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-07-29"
-VERSIONNR = "3.1.1"
+VERSIONNR = "3.2.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
