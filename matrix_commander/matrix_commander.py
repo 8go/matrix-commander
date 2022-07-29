@@ -1560,7 +1560,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.2.1 2022-07-29. Enjoy, star on Github and contribute
+You are running version 3.3.0 2022-07-29. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1710,7 +1710,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-07-29"
-VERSIONNR = "3.2.1"
+VERSIONNR = "3.3.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3681,6 +3681,15 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     try:
         for room_id in rooms:
+            if is_room_alias(room_id):
+                resp = await client.room_resolve_alias(room_id)
+                if isinstance(resp, RoomResolveAliasError):
+                    print(f"room_resolve_alias failed with {resp}")
+                room_id = resp.room_id
+                gs.log.debug(
+                    f'Mapping room alias "{resp.room_alias}" to '
+                    f'room id "{resp.room_id}".'
+                )
             resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
