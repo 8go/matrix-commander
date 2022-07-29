@@ -12,6 +12,7 @@ can be called from a Python program.
 # isort: off
 from datetime import datetime
 import sys
+import os
 
 # print(f"Default path is: {sys.path}")
 # importing matrix_commander module
@@ -36,11 +37,14 @@ now = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 # set up some test arguments
 print(f"Running test program: {sys.argv[0]}")
+print(f"Current working directory is: {os.getcwd()}")
+print(f"Path is: {sys.path}")
 print(f"Arguments that are passed on to matrix-commander are: {sys.argv[1:]}")
 sys.argv[0] = "matrix-commander"
 sys.argv.extend(["--version"])
 sys.argv.extend(["--message", f"Hello World @ {now}!"])
-sys.argv.extend(["--image", "tests/test.s.png"])
+sys.argv.extend(["--image", "./tests/test.s.png"])
+sys.argv.extend(["--debug"])
 print(f"Testing with these arguments: {sys.argv}")
 try:
     ret = matrix_commander.main()
