@@ -1,6 +1,12 @@
 [![Built with matrix-nio](
 https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
 https://github.com/poljar/matrix-nio)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](
+https://github.com/psf/black)
+[![Docker Pulls](https://img.shields.io/docker/pulls/matrixcommander/matrix-commander)](
+https://hub.docker.com/r/matrixcommander/matrix-commander/)
+[![PyPI - Version](https://img.shields.io/pypi/v/matrix-commander)](
+https://pypi.org/project/matrix-commander)
 
 <p>
 <img
