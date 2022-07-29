@@ -44,7 +44,7 @@ sys.argv[0] = "matrix-commander"
 sys.argv.extend(["--version"])
 sys.argv.extend(["--message", f"Hello World @ {now}!"])
 sys.argv.extend(["--image", "./tests/test.s.png"])
-sys.argv.extend(["--debug"])
+# sys.argv.extend(["--debug"])  # will leak possibly sensitive data
 print(f"Testing with these arguments: {sys.argv}")
 try:
     ret = matrix_commander.main()
@@ -56,3 +56,5 @@ try:
         )
 except Exception as e:
     print(f"Exception happened: {e}")
+    ret = 99
+exit(ret)
