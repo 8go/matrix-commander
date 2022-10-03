@@ -105,6 +105,7 @@ alt="get it on Docker Hub" height="100"></a>
 - available as reproducible
   [Nix package](https://search.nixos.org/packages?query=matrix-commander)
   for NixOS, Debian, Fedora, etc.
+- new option: `--sync` to allow skipping sync when only sending
 
 # Summary, TLDR
 
@@ -649,6 +650,7 @@ $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
+$ matrix-commander --sync off -m Test -i image.svg # a faster send
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -733,7 +735,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
                            [--homeserver HOMESERVER] [--device DEVICE]
-                           [--version]
+                           [--sync SYNC] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -1570,11 +1572,22 @@ options:
                         have the same device name. In short, the same device
                         name can be assigned to multiple different devices if
                         desired.
+  --sync SYNC           This option decides on whether the program
+                        synchronizes the state with the server before a 'send'
+                        action. Currently two choices are offered: 'full' and
+                        'off'. Provide one of these choices. The default is
+                        'full'. If you want to use the default, then there is
+                        no need to use this option. If you have chosen 'full',
+                        the full state, all state events will be synchronized
+                        between this program and the server before a 'send'.
+                        If you have chosen 'off', synchronization will be
+                        skipped entirely before the 'send' which will improve
+                        performance.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.1 2022-10-03. Enjoy, star on Github and contribute
+You are running version 3.5.2 2022-10-03. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1724,7 +1737,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-03"
-VERSIONNR = "3.5.1"
+VERSIONNR = "3.5.2"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1790,6 +1803,10 @@ ACCESS_TOKEN_PLACEHOLDER = "__access_token__"
 USER_ID_PLACEHOLDER = "__user_id__"  # like @ mc: matrix.example.com
 DEVICE_ID_PLACEHOLDER = "__device_id__"
 ROOM_ID_PLACEHOLDER = "__room_id__"
+SYNC_FULL = "full"  # sync with full_state=True for send actions
+# SYNC_PARTIAL = "full" # sync with full_state=False for send actions
+SYNC_OFF = "off"  # no sync is done for send actions
+SYNC_DEFAULT = SYNC_FULL
 
 
 class MatrixCommanderError(Exception):
@@ -5846,16 +5863,53 @@ async def action_send() -> None:
             gs.credentials["room_id"], gs.client, gs.credentials
         )
         gs.log.debug(f"Rooms are: {rooms}")
+        gs.log.debug(f"gs.client.rooms are: {gs.client.rooms}")
         # Sync encryption keys with the server
         # Required for participating in encrypted rooms
         if gs.client.should_upload_keys:
+            gs.log.debug("Starting keys_upload")
             await gs.client.keys_upload()
-        # must sync first to get room ids for encrypted rooms
-        # since we only send a msg and then stop we can use sync() instead of
-        # sync_forever() (await client.sync_forever(30000, full_state=True))
-        await gs.client.sync(timeout=30000, full_state=True)
+            gs.log.debug("Finished keys_upload")
+        if gs.pa.sync == SYNC_OFF:
+            gs.log.debug(
+                f"Due to '--sync {SYNC_OFF}' option, sync() will be skipped."
+            )
+            # Prefill rooms as outlined in Issue #91
+            # Since sync() is not called we MUST fill in the rooms manually.
+            # This line was suggested as workaround:
+            # async_client.rooms[room_id] = nio.rooms.MatrixRoom(
+            #          room_id=room_id, own_user_id=user_id, encrypted=True)
+            # We must also map room aliases to room ids.
+            for room_id in rooms:
+                if is_room_alias(room_id):
+                    resp = await gs.client.room_resolve_alias(room_id)
+                    if isinstance(resp, RoomResolveAliasError):
+                        print(f"room_resolve_alias failed with {resp}")
+                    room_id = resp.room_id
+                    gs.log.debug(
+                        f'Mapping room alias "{resp.room_alias}" to '
+                        f'room id "{resp.room_id}".'
+                    )
+                gs.client.rooms[room_id] = MatrixRoom(
+                    room_id=room_id,
+                    own_user_id=gs.credentials["user_id"],
+                    encrypted=True,
+                )
+        else:  # SYNC_FULL
+            # Default case, standard:
+            # One must sync first to get room ids for encrypted rooms
+            # since we only send a msg and then stop,
+            # we can use sync() instead of sync_forever().
+            full_state = True
+            gs.log.debug(
+                f"Starting sync(full_state={full_state}) "
+                "to synchronize events with server."
+            )
+            await gs.client.sync(timeout=30000, full_state=full_state)
+            gs.log.debug("Finished sync() with server.")
         # Now we can send messages as the user
         await process_arguments_and_input(gs.client, rooms)
+        gs.log.debug(f"gs.client.rooms are: {gs.client.rooms}")
         gs.log.debug("Message send action finished.")
     except Exception as e:
         gs.log.error(
@@ -6387,6 +6441,8 @@ def initial_check_of_args() -> None:  # noqa: C901
     if gs.pa.listen == NEVER and gs.pa.tail != 0:
         gs.pa.listen = TAIL  # --tail turns on --listen TAIL
         gs.log.debug('--listen set to "tail" because "--tail" is used.')
+    if gs.pa.sync is not None:
+        gs.pa.sync = gs.pa.sync.lower()
 
     if (
         gs.pa.message
@@ -6557,6 +6613,19 @@ def initial_check_of_args() -> None:  # noqa: C901
             "--get-display-name, --get-presence, or --delete-device can be "
             "done. Adjust your arguments accordingly."
         )
+    elif (gs.pa.sync is not None) and not (gs.send_action):
+        t = (
+            "Only if a send action is provided is it meaningful to specify "
+            "--sync. Remove --sync or add a send action. "
+            "Adjust your arguments accordingly."
+        )
+    elif (gs.pa.sync is not None) and not (
+        gs.pa.sync == SYNC_FULL or gs.pa.sync == SYNC_OFF
+    ):
+        t = (
+            "Incorrect value given for --sync. "
+            f"Only '{SYNC_FULL}' and '{SYNC_OFF}' are allowed."
+        )
     elif not gs.pa.user and (
         gs.pa.room_invite
         or gs.pa.room_ban
@@ -6622,6 +6691,9 @@ def initial_check_of_args() -> None:  # noqa: C901
             "together. Use one or the other."
         )
     else:
+        if gs.pa.sync is None:
+            gs.pa.sync = SYNC_DEFAULT
+        gs.log.debug(f"Option --sync is set to {gs.pa.sync}.")
         gs.log.debug("All arguments are valid. All checks passed.")
         return  # all OK
     # gs.err_count += 1 # do not increment for MatrixCommanderError
@@ -8038,6 +8110,23 @@ def main_inner(
         "Multiple devices (with different device id) may have the same device "
         "name. In short, the same device name can be assigned to multiple "
         "different devices if desired.",
+    )
+    ap.add_argument(
+        "--sync",
+        required=False,
+        type=str,  # sync method: off, full, (partial)
+        help="This option decides on whether the program "
+        "synchronizes the state with the server before a 'send' action. "
+        f"Currently two choices are offered: '{SYNC_FULL}' and '{SYNC_OFF}'. "
+        "Provide one of these choices. "
+        f"The default is '{SYNC_DEFAULT}'. If you want to use the default, "
+        "then there is no need to use this option. "
+        f"If you have chosen '{SYNC_FULL}', "
+        "the full state, all state events will be synchronized between "
+        "this program and the server before a 'send'. "
+        f"If you have chosen '{SYNC_OFF}', "
+        "synchronization will be skipped entirely before the 'send' "
+        "which will improve performance.",
     )
     ap.add_argument(
         # no single char flag

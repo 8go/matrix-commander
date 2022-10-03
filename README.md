@@ -98,6 +98,7 @@ alt="get it on Docker Hub" height="100"></a>
 - available as reproducible
   [Nix package](https://search.nixos.org/packages?query=matrix-commander)
   for NixOS, Debian, Fedora, etc.
+- new option: `--sync` to allow skipping sync when only sending
 
 # Summary, TLDR
 
@@ -642,6 +643,7 @@ $ matrix-commander --devices # to list devices of matrix-commander
 $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
+$ matrix-commander --sync off -m Test -i image.svg # a faster send
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -726,7 +728,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
                            [--homeserver HOMESERVER] [--device DEVICE]
-                           [--version]
+                           [--sync SYNC] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -1563,11 +1565,22 @@ options:
                         have the same device name. In short, the same device
                         name can be assigned to multiple different devices if
                         desired.
+  --sync SYNC           This option decides on whether the program
+                        synchronizes the state with the server before a 'send'
+                        action. Currently two choices are offered: 'full' and
+                        'off'. Provide one of these choices. The default is
+                        'full'. If you want to use the default, then there is
+                        no need to use this option. If you have chosen 'full',
+                        the full state, all state events will be synchronized
+                        between this program and the server before a 'send'.
+                        If you have chosen 'off', synchronization will be
+                        skipped entirely before the 'send' which will improve
+                        performance.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.1 2022-10-03. Enjoy, star on Github and contribute
+You are running version 3.5.2 2022-10-03. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
