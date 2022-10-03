@@ -13,6 +13,8 @@ https://pypi.org/project/matrix-commander)
 [![PyPI - Downloads](
 https://img.shields.io/pypi/dm/matrix-commander?color=darkblue&label=PyPi%20Downloads
 )](https://pypi.org/project/matrix-commander)
+[![Nix: package](https://img.shields.io/badge/Nix-package-6fa8dc.svg)](
+https://search.nixos.org/packages?query=matrix-commander)
 
 <p>
 <img
@@ -93,6 +95,9 @@ alt="get it on Docker Hub" height="100"></a>
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
 - new option: `--logout` to remove device and access-token validity
+- available as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
+  for NixOS, Debian, Fedora, etc.
 
 # Summary, TLDR
 
@@ -136,6 +141,7 @@ Use cases for this program could be
 - `alerter`: to send all sorts of alerts,
 - `Gitlab CI automation tool`: some user uses it as Gitlab CI automation tool
    to report build success/failure to their internal Matrix room.
+   See [Issue #81](https://github.com/8go/matrix-commander/issues/81).
 - `admin tool` or `automation tool`: you needs to create 175 room for the
    roll-out within a company? You want to query some 9000 rooms for
    visibility data? You want to collect profile data of 7000 enterprise or
@@ -243,6 +249,8 @@ Please give it a :star: on Github right now so others find it more easily.
 - Easy installation, available as docker image on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
   (thanks to PR from @pataquets :clap:)
+- Easy installation, available in Nix repository as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
 - Callable from the terminal, from shells like `bash`, etc.
 - Callable from Python programs via the entry point (function) `main`.
 - Open source
@@ -1135,10 +1143,7 @@ options:
                         "all" gets all messages available, old and new. Unlike
                         "once" and "forever" that listen in ALL rooms, "tail"
                         and "all" listen only to the room specified in the
-                        credentials file or the --room options. Furthermore,
-                        when listening to messages, no messages will be sent.
-                        Hence, when listening, --message must not be used and
-                        piped input will be ignored.
+                        credentials file or the --room options.
   -t [TAIL], --tail [TAIL]
                         The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
@@ -1151,10 +1156,7 @@ options:
                         cases because N messages are obtained, but some of
                         them are discarded by default if they are from the
                         user itself. Look at --listen as this option is
-                        related to --tail.Furthermore, when tailing messages,
-                        no messages will be sent. Hence, when tailing or
-                        listening, --message must not be used and piped input
-                        will be ignored.
+                        related to --tail.
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
@@ -1565,7 +1567,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.0 2022-07-29. Enjoy, star on Github and contribute
+You are running version 3.5.1 2022-10-03. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 

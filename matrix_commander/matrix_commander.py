@@ -5,9 +5,23 @@ r"""matrix_commander.py.
 0123456789012345678901234567890123456789012345678901234567890123456789012345678
 0000000000111111111122222222223333333333444444444455555555556666666666777777777
 
+[![PyPI - Python Version](
+https://img.shields.io/pypi/pyversions/matrix-commander?color=red)](
+https://www.python.org/)
 [![Built with matrix-nio](
-https://img.shields.io/badge/built%20with-matrix--nio-brightgreen)](
+https://img.shields.io/badge/built%20with-matrix--nio-darkgreen)](
 https://github.com/poljar/matrix-nio)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](
+https://github.com/psf/black)
+[![Docker Pulls](https://img.shields.io/docker/pulls/matrixcommander/matrix-commander)](
+https://hub.docker.com/r/matrixcommander/matrix-commander/)
+[![PyPI - Version](https://img.shields.io/pypi/v/matrix-commander?color=darkblue)](
+https://pypi.org/project/matrix-commander)
+[![PyPI - Downloads](
+https://img.shields.io/pypi/dm/matrix-commander?color=darkblue&label=PyPi%20Downloads
+)](https://pypi.org/project/matrix-commander)
+[![Nix: package](https://img.shields.io/badge/Nix-package-6fa8dc.svg)](
+https://search.nixos.org/packages?query=matrix-commander)
 
 <p>
 <img
@@ -88,6 +102,9 @@ alt="get it on Docker Hub" height="100"></a>
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
 - new option: `--logout` to remove device and access-token validity
+- available as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
+  for NixOS, Debian, Fedora, etc.
 
 # Summary, TLDR
 
@@ -131,6 +148,7 @@ Use cases for this program could be
 - `alerter`: to send all sorts of alerts,
 - `Gitlab CI automation tool`: some user uses it as Gitlab CI automation tool
    to report build success/failure to their internal Matrix room.
+   See [Issue #81](https://github.com/8go/matrix-commander/issues/81).
 - `admin tool` or `automation tool`: you needs to create 175 room for the
    roll-out within a company? You want to query some 9000 rooms for
    visibility data? You want to collect profile data of 7000 enterprise or
@@ -238,6 +256,8 @@ Please give it a :star: on Github right now so others find it more easily.
 - Easy installation, available as docker image on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
   (thanks to PR from @pataquets :clap:)
+- Easy installation, available in Nix repository as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
 - Callable from the terminal, from shells like `bash`, etc.
 - Callable from Python programs via the entry point (function) `main`.
 - Open source
@@ -1130,10 +1150,7 @@ options:
                         "all" gets all messages available, old and new. Unlike
                         "once" and "forever" that listen in ALL rooms, "tail"
                         and "all" listen only to the room specified in the
-                        credentials file or the --room options. Furthermore,
-                        when listening to messages, no messages will be sent.
-                        Hence, when listening, --message must not be used and
-                        piped input will be ignored.
+                        credentials file or the --room options.
   -t [TAIL], --tail [TAIL]
                         The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
@@ -1146,10 +1163,7 @@ options:
                         cases because N messages are obtained, but some of
                         them are discarded by default if they are from the
                         user itself. Look at --listen as this option is
-                        related to --tail.Furthermore, when tailing messages,
-                        no messages will be sent. Hence, when tailing or
-                        listening, --message must not be used and piped input
-                        will be ignored.
+                        related to --tail.
   -y, --listen-self     If set and listening, then program will listen to and
                         print also the messages sent by its own user. By
                         default messages from oneself are not printed.
@@ -1560,7 +1574,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.0 2022-07-29. Enjoy, star on Github and contribute
+You are running version 3.5.1 2022-10-03. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1709,8 +1723,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-07-29"
-VERSIONNR = "3.5.0"
+VERSION = "2022-10-03"
+VERSIONNR = "3.5.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4349,7 +4363,7 @@ async def listen_tail(  # noqa: C901
             await callbacks.message_callback(room, event)
         if resp.chunk:  # list not empty
             # order is reversed, first element is timewise the newest
-            first_event = resp.chunk[1]
+            first_event = resp.chunk[0]
             resp = await client.room_read_markers(
                 room_id=room_id,
                 fully_read_event=first_event.event_id,
@@ -4391,13 +4405,37 @@ async def read_all_events_in_direction(
     """
     all_events = []
     current_start_token = start_token
+    # is capped at 1000 at server side
+    # 10 seems too small, i.e. too slow
+    # 100 to 500 seem good values, depends on network speed, server load, ...
+    # example run: 250-->7min30s, 500-->4min30s
+    max_msg_per_pull = 500
     while True:
-        resp = await client.room_messages(
-            room_id, current_start_token, limit=500, direction=direction
-        )
+        try:
+            resp = await client.room_messages(
+                room_id,
+                current_start_token,
+                limit=max_msg_per_pull,
+                direction=direction,
+            )
+        except Exception as e:
+            # during testing I observed that sometimes an exception is raised,
+            # but e is empty. Stacktrace had asyncio.exceptions.TimeoutError.
+            gs.log.error(
+                "Error during getting messages. "
+                "But program will continue anyway, despite the error. "
+                "Not all messages might have been retrieved from server. "
+                f"Be warned! Got {len(all_events)} messages so far."
+                f"Exception: {type(e)} {e}"
+            )
+            gs.err_count += 1
+            gs.log.debug(traceback.format_exc())
+            break
         if isinstance(resp, RoomMessagesError):
-            gs.log.debug(f"room_messages failed with resp = {resp}")
+            gs.err_count += 1
+            gs.log.error(f"room_messages failed with resp = {resp}")
             break  # skip to end of function
+        gs.log.debug(f"Got {len(all_events)+len(resp.chunk)} messages so far.")
         gs.log.debug(f"Received {len(resp.chunk)} events.")
         gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
         gs.log.debug(f"room_messages room_id = {resp.room_id}.")
@@ -4408,6 +4446,10 @@ async def read_all_events_in_direction(
         # chunk=[RoomMessageText(...)]
         current_start_token = resp.end
         if len(resp.chunk) == 0:
+            gs.log.debug(
+                "All messages have been retrieved from server successfully. "
+                f"{len(all_events)} messages were pulled from server."
+            )
             break
         all_events = all_events + resp.chunk
     return all_events
@@ -4539,6 +4581,7 @@ async def action_listen() -> None:
             "Error during listening. Continuing despite error. "
             f"Exception: {e}"
         )
+        gs.log.debug(traceback.format_exc())
         gs.err_count += 1
 
 
@@ -7291,10 +7334,7 @@ def main_inner(
         f'"{FOREVER}" that listen in ALL rooms, "{TAIL}" '
         f'and "{ALL}" listen '
         "only to the room specified in the credentials "
-        "file or the --room options. "
-        "Furthermore, when listening to messages, no messages "
-        "will be sent. Hence, when listening, --message must not "
-        "be used and piped input will be ignored. ",
+        "file or the --room options. ",
     )
     ap.add_argument(
         "-t",
@@ -7318,11 +7358,7 @@ def main_inner(
         "N messages in many cases because N messages are "
         "obtained, but some of them are discarded by default if "
         "they are from the user itself. "
-        "Look at --listen as this option is related to --tail."
-        "Furthermore, when tailing messages, no messages "
-        "will be sent. Hence, when tailing or listening, "
-        "--message  must not be used and piped input will "
-        "be ignored. ",
+        "Look at --listen as this option is related to --tail.",
     )
     ap.add_argument(
         "-y",
