@@ -51,53 +51,12 @@ alt="get it on Docker Hub" height="100"></a>
 - `matrix-commander` now available on
   [PyPi](https://pypi.org/project/matrix-commander/)
   and hence easy to install via `pip install matrix-commander`
-- Slight incompatibility: From now on instead of using `matrix-commander.py`
-  please call `matrix-commander`. `matrix-commander` is from now on the
-  preferred way to execute the program.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
-- new option `--joined-rooms` to list rooms you are a member of
-- new option `--joined-members` to list members of the specified rooms
-- new feature "DM" or "direct message" which allows you to send to
-  (or listen from) a room whose members are only you (the sender) and the
-  recipient by specifying the recipients name.
-- Minor incompatibility: From now `-u` is assigned to `--user` and no
-  longer to `--download-media`
-- new option `--whoami`
-- Minor incompatibility: `--rename-device` has been renamed to
-  `--set-device-name` and `-x` is no longer supported as shortcut.
-- new option `--get_displayname` for itself, or one or multiple users
-- new options `--set-presence` and `--get-presence` to set/get presence
-  of itself, or one or multiple users
-- new options `--upload` and `--download` to interact with the Matrix
-  content repository
-- new option `--separator` to customize the column separator in outputs
-- new option `--mxc-to-http`
-- new option `--devices` to list devices of current user
-- new option `--discovery-info` to print discovery info of homeserver
-- new option `--login-info` to get the available login methods from the server
-- new option `--delete-mxc` to delete objects from content repository
-- new option `--delete-mxc-before` to delete old objects from content repo
-- new option `--rest` to invoke the full Matrix REST API
-- new otions `--set-avatar` and `--get-avatar`
-- new otions `--import-keys` and `--export_keys`
-- new option `--get-openid-token` to provide to other websites for login
-- new option `--delete-device`
-- new option `--room-redact` to delete messages, images and other events
-- new option `--content-repository-config` to print content repo info
-- new option `--get-profile` to print user profile
-- incompatibility: new dependency `pyxdg`. Please install `pyxdg` if necessary.
-  Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
-  Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
-  See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
-- new option `--has-permission` (see also Issue #324 in matrix-nio)
-- new option `--room-get-visibility` to find out if room is private or public
 - new option `--room-set-alias` to add alias(es) to room(s)
   (see also Issue #328 in matrix-nio)
-- new option `--room-resolve-alias` to resolve room alias(es)
-- new option `--room-delete-alias` to delete room alias(es)
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
@@ -106,6 +65,7 @@ alt="get it on Docker Hub" height="100"></a>
   [Nix package](https://search.nixos.org/packages?query=matrix-commander)
   for NixOS, Debian, Fedora, etc.
 - new option: `--sync` to allow skipping sync when only sending
+- new option: `--output` to produce output in different formats (text, JSON)
 
 # Summary, TLDR
 
@@ -246,6 +206,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
 - Supports room aliases
+- Supports multiple output formats like `human` (text) and `raw` (JSON)
 - Provides PID files
 - Logging (at various levels)
 - In-source documentation
@@ -651,6 +612,8 @@ $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
+$ matrix-commander --joined-rooms --output raw | jq # get raw output in JSON
+$ matrix-commander --joined-rooms --output human # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -735,7 +698,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
                            [--homeserver HOMESERVER] [--device DEVICE]
-                           [--sync SYNC] [--version]
+                           [--sync SYNC] [--output OUTPUT] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -1583,11 +1546,29 @@ options:
                         If you have chosen 'off', synchronization will be
                         skipped entirely before the 'send' which will improve
                         performance.
+  --output OUTPUT       This option decides on how the output is presented.
+                        Currently offered choices are: 'human', 'raw' and
+                        'raw-details'. Provide one of these choices. The
+                        default is 'human'. If you want to use the default,
+                        then there is no need to use this option. If you have
+                        chosen 'human', the output will be formatted with the
+                        intention to be consumed by humans, i.e. readable
+                        text. If you have chosen 'raw-details', the output
+                        will be formatted as close to the data provided by the
+                        matrix-nio API. This output might have a lot more
+                        details and in most cases will be processed by other
+                        programs rather than read by humans. Option 'raw' is
+                        similar to 'raw-details' in format, but the amount is
+                        reduced to a sensible amount. In most cases will be
+                        processed by other programs rather than read by
+                        humans. ----- The '--output' option is only partially
+                        implemented yet. Over time more and more functions
+                        will support this option.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.2 2022-10-03. Enjoy, star on Github and contribute
+You are running version 3.5.3 2022-10-04. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1604,13 +1585,16 @@ Here is a sample snapshot of tab completion in action:
 - `matrix-commander` is written in Python and hence rather on the slow side
 - It is not thread-safe. One cannot just simply run multiple instances
   at the same time. However, with very careful set-up one can run
-  multiple instances, but that is not the target use case.
+  multiple instances, but that is not the target use case. See
+  [Issue #31](https://github.com/8go/matrix-commander/issues/31).
 - Where possible bundle several actions together into a single call.
   For example if one wants to send 8 images, then it is significantly faster
   to call `matrix-commander` once with `-i` specifying 8 images, than
   to call `matrix-commander` 8 times with one image each call. One needs
   to send 5 messages, 10 images, 5 audios, 3 PDF files and 7 events to
   the same user? Call `matrix-commander` once, not 30 times.
+- If you are sending something, then try the `--sync off` option and see
+  to what degree skipping the server sync for sending helps.
 
 # For Developers
 
@@ -1736,8 +1720,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-03"
-VERSIONNR = "3.5.2"
+VERSION = "2022-10-04"
+VERSIONNR = "3.5.3"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1807,6 +1791,12 @@ SYNC_FULL = "full"  # sync with full_state=True for send actions
 # SYNC_PARTIAL = "full" # sync with full_state=False for send actions
 SYNC_OFF = "off"  # no sync is done for send actions
 SYNC_DEFAULT = SYNC_FULL
+OUTPUT_HUMAN = "human"  # text, intended for human consumption
+# raw, as close to as what NIO API provides, maximum details
+OUTPUT_RAW_DETAILS = "raw-details"
+# raw, as close to as what NIO API provides, reduced info
+OUTPUT_RAW = "raw"
+OUTPUT_DEFAULT = OUTPUT_HUMAN
 
 
 class MatrixCommanderError(Exception):
@@ -1845,6 +1835,65 @@ class GlobalState:
         self.setget_action = False  # argv contains set or get action
         self.err_count = 0  # how many errors have occurred so far
         self.warn_count = 0  # how many warnings have occurred so far
+
+
+def get_qualifiedclassname(obj):
+    klass = obj.__class__
+    module = klass.__module__
+    if module == "builtins":
+        return klass.__qualname__  # avoid outputs like 'builtins.str'
+    return module + "." + klass.__qualname__
+
+
+def obj_to_dict(obj):
+    """Return dict of object
+
+    Useful for json.dump() dict-to-json conversion.
+    """
+    # print(obj.__class__)
+    # print(obj.__class__.__name__)
+    # print(get_qualifiedclassname(obj))
+    # summary: shortcut: just these 2: RequestInfo and ClientResponse
+    # if get_qualifiedclassname(obj) == "aiohttp.client_reqrep.RequestInfo":
+    #     return {obj.__class__.__name__: str(obj)}
+    # if get_qualifiedclassname(obj) == "aiohttp.client_reqrep.ClientResponse":
+    #    return {obj.__class__.__name__: str(obj)}
+    # details, one by one:
+    # if get_qualifiedclassname(obj) == "collections.deque":
+    #     return {obj.__class__.__name__: str(obj)}
+    # if get_qualifiedclassname(obj) == "aiohttp.helpers.TimerContext":
+    #     return {obj.__class__.__name__: str(obj)}
+    # if get_qualifiedclassname(obj) == "asyncio.events.TimerHandle":
+    #     return {obj.__class__.__name__: str(obj)}
+    # if get_qualifiedclassname(obj) == "multidict._multidict.CIMultiDictProxy":
+    #     return {obj.__class__.__name__: str(obj)}
+    # if get_qualifiedclassname(obj) == "aiosignal.Signal":
+    #     return {obj.__class__.__name__: str(obj)}
+    # this one is crucial, it make the serialization circular reference.
+    if get_qualifiedclassname(obj) == "aiohttp.streams.StreamReader":
+        return {obj.__class__.__name__: str(obj)}
+    # this one is crucial, it make the serialization circular reference.
+    if (
+        get_qualifiedclassname(obj)
+        == "asyncio.unix_events._UnixSelectorEventLoop"
+    ):
+        return {obj.__class__.__name__: str(obj)}
+    if get_qualifiedclassname(obj) == "aiohttp.tracing.Trace":
+        return {obj.__class__.__name__: str(obj)}
+    if get_qualifiedclassname(obj) == "aiohttp.tracing.TraceConfig":
+        return {obj.__class__.__name__: str(obj)}
+
+    if hasattr(obj, "__dict__"):
+        return obj.__dict__
+    else:
+        # gs.log.debug(
+        #     f"Object {obj} ({type(obj)}) has no class dictionary. "
+        #     "Cannot be converted to JSON object. "
+        #     "Will be converted to JSON string."
+        # )
+        # simple types like yarl.URL do not have a __dict__
+        # get the class name as string, create a dict with classname and value
+        return {obj.__class__.__name__: str(obj)}
 
 
 def choose_available_filename(filename):
@@ -2081,7 +2130,8 @@ class Callbacks(object):
                 f"{event_id_detail} | {fixed_msg}"
             )
             gs.log.debug(complete_msg)
-            print(complete_msg, flush=True)
+            # todo output format
+            print(complete_msg, flush=True)  # print the received message
             if gs.pa.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
                 notify(
@@ -2091,7 +2141,7 @@ class Callbacks(object):
                 )
 
         except BaseException:
-            gs.log.debug(traceback.format_exc())
+            gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
     # according to linter: function is too complex, C901
     async def to_device_callback(self, event):  # noqa: C901
@@ -2130,8 +2180,8 @@ class Callbacks(object):
                 """
 
                 if "emoji" not in event.short_authentication_string:
-                    print(
-                        "Other device does not support emoji verification "
+                    gs.log.error(
+                        "Other device does not support emoji verification. "
                         f"{event.short_authentication_string}."
                     )
                     return
@@ -2139,14 +2189,16 @@ class Callbacks(object):
                     event.transaction_id
                 )
                 if isinstance(resp, ToDeviceError):
-                    print(f"accept_key_verification failed with {resp}")
+                    gs.log.error(
+                        f"accept_key_verification failed with error '{resp}'."
+                    )
 
                 sas = client.key_verifications[event.transaction_id]
 
                 todevice_msg = sas.share_key()
                 resp = await client.to_device(todevice_msg)
                 if isinstance(resp, ToDeviceError):
-                    print(f"to_device failed with {resp}")
+                    gs.log.error(f"to_device failed with error '{resp}'.")
 
             elif isinstance(event, KeyVerificationCancel):  # anytime
                 """at any time: receive KeyVerificationCancel
@@ -2166,7 +2218,7 @@ class Callbacks(object):
                 # client.cancel_key_verification(tx_id, reject=False)
                 # here. The SAS flow is already cancelled.
                 # We only need to inform the user.
-                print(
+                gs.log.error(
                     f"Verification has been cancelled by {event.sender} "
                     f'for reason "{event.reason}".'
                 )
@@ -2186,36 +2238,55 @@ class Callbacks(object):
                 """
                 sas = client.key_verifications[event.transaction_id]
 
-                print(f"{sas.get_emoji()}")
+                print(
+                    f"{sas.get_emoji()}",
+                    file=sys.stdout,
+                    flush=True,
+                )
 
                 yn = input("Do the emojis match? (Y/N) (C for Cancel) ")
                 if yn.lower() == "y":
                     print(
                         "Match! The verification for this "
-                        "device will be accepted."
+                        "device will be accepted.",
+                        file=sys.stdout,
+                        flush=True,
                     )
                     resp = await client.confirm_short_auth_string(
                         event.transaction_id
                     )
                     if isinstance(resp, ToDeviceError):
-                        print(f"confirm_short_auth_string failed with {resp}")
+                        gs.log.error(
+                            "confirm_short_auth_string failed with "
+                            f"error '{resp}'."
+                        )
                 elif yn.lower() == "n":  # no, don't match, reject
                     print(
-                        "No match! Device will NOT be verified "
-                        "by rejecting verification."
+                        "No match! Device will NOT be verified. "
+                        "Verification will be rejected.",
+                        file=sys.stderr,
+                        flush=True,
                     )
                     resp = await client.cancel_key_verification(
                         event.transaction_id, reject=True
                     )
                     if isinstance(resp, ToDeviceError):
-                        print(f"cancel_key_verification failed with {resp}")
+                        gs.log.error(
+                            f"cancel_key_verification failed with '{resp}'."
+                        )
                 else:  # C or anything for cancel
-                    print("Cancelled by user! Verification will be cancelled.")
+                    print(
+                        "Cancelled by user! Verification will be cancelled.",
+                        file=sys.stderr,
+                        flush=True,
+                    )
                     resp = await client.cancel_key_verification(
                         event.transaction_id, reject=False
                     )
                     if isinstance(resp, ToDeviceError):
-                        print(f"cancel_key_verification failed with {resp}")
+                        gs.log.error(
+                            f"cancel_key_verification failed with '{resp}'."
+                        )
 
             elif isinstance(event, KeyVerificationMac):  # third step
                 """Third step is to receive KeyVerificationMac
@@ -2238,7 +2309,7 @@ class Callbacks(object):
                     todevice_msg = sas.get_mac()
                 except LocalProtocolError as e:
                     # e.g. it might have been cancelled by ourselves
-                    print(
+                    gs.log.error(
                         f"Cancelled or protocol error: Reason: {e}.\n"
                         f"Verification with {event.sender} not concluded. "
                         "Try again?"
@@ -2246,8 +2317,8 @@ class Callbacks(object):
                 else:
                     resp = await client.to_device(todevice_msg)
                     if isinstance(resp, ToDeviceError):
-                        print(f"to_device failed with {resp}")
-                    print(
+                        gs.log.error(f"to_device failed with error '{resp}'.")
+                    gs.log.info(
                         f"sas.we_started_it = {sas.we_started_it}\n"
                         f"sas.sas_accepted = {sas.sas_accepted}\n"
                         f"sas.canceled = {sas.canceled}\n"
@@ -2258,15 +2329,17 @@ class Callbacks(object):
                     print(
                         "Emoji verification was successful!\n"
                         "Verify with other devices or hit Control-C to "
-                        "continue."
+                        "continue.",
+                        file=sys.stdout,
+                        flush=True,
                     )
             else:
-                print(
+                gs.log.error(
                     f"Received unexpected event type {type(event)}. "
                     f"Event is {event}. Event will be ignored."
                 )
         except BaseException:
-            print(traceback.format_exc())
+            gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
 def notify(title: str, content: str, image_url: str):
@@ -3074,6 +3147,7 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                     f'Created room with room id "{resp.room_id}" '
                     f'and short alias "{alias}" and full alias "{full_alias}".'
                 )
+                # todo output format
                 print(f"{resp.room_id}{SEP}{full_alias}")
             index = index + 1
     except Exception:
@@ -3318,6 +3392,7 @@ async def send_event(client, rooms, event):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
+                # todo outout format
                 print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}")
             gs.log.debug(
                 f'This event was sent: "{event}" ({content}) '
@@ -3498,6 +3573,7 @@ async def send_file(client, rooms, file):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
+                # todo output format
                 print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}")
             gs.log.debug(
                 f'This file was sent: "{file}" to room "{room_id}". '
@@ -3715,7 +3791,9 @@ async def send_image(client, rooms, image):  # noqa: C901
             if is_room_alias(room_id):
                 resp = await client.room_resolve_alias(room_id)
                 if isinstance(resp, RoomResolveAliasError):
-                    print(f"room_resolve_alias failed with {resp}")
+                    gs.log.error(
+                        f"room_resolve_alias failed with error '{resp}'."
+                    )
                 room_id = resp.room_id
                 gs.log.debug(
                     f'Mapping room alias "{resp.room_alias}" to '
@@ -3730,6 +3808,7 @@ async def send_image(client, rooms, image):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
+                # todo output format
                 print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}")
             gs.log.debug(
                 f'This image file was sent: "{image}" '
@@ -3812,7 +3891,9 @@ async def send_message(client, rooms, message):  # noqa: C901
             if is_room_alias(room_id):
                 resp = await client.room_resolve_alias(room_id)
                 if isinstance(resp, RoomResolveAliasError):
-                    print(f"room_resolve_alias failed with {resp}")
+                    gs.log.error(
+                        f"room_resolve_alias failed with error '{resp}'."
+                    )
                 room_id = resp.room_id
                 gs.log.debug(
                     f'Mapping room alias "{resp.room_alias}" to '
@@ -3829,6 +3910,7 @@ async def send_message(client, rooms, message):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
+                # todo output format
                 print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}")
             gs.log.debug(
                 f'This message was sent: "{message}" to room "{room_id}". '
@@ -4151,10 +4233,11 @@ async def listen_forever(client: AsyncClient) -> None:
         ),
     )
     print(
-        "This program is ready and listening for its Matrix messages."
-        " To stop program type Control-C on keyboard or send signal"
-        f" to process {os.getpid()}. PID can also be found in "
+        "This program is ready and listening for its Matrix messages. "
+        "To stop program type Control-C on keyboard or send signal "
+        f"to process {os.getpid()}. PID can also be found in "
         f'file "{PID_FILE_DEFAULT}".',
+        file=sys.stderr,
         flush=True,
     )
     # the sync_loop will be terminated by user hitting Control-C to stop
@@ -4320,12 +4403,12 @@ async def listen_tail(  # noqa: C901
     except ClientConnectorError:
         gs.log.warning("sync() failed. Do you have connectivity to internet?")
         gs.warn_count += 1
-        gs.log.debug(traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
     except Exception:
         gs.log.warning("sync() failed.")
         gs.warn_count += 1
-        gs.log.debug(traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
         gs.log.warning(f"sync failed with resp = {resp_s}")
@@ -4446,7 +4529,7 @@ async def read_all_events_in_direction(
                 f"Exception: {type(e)} {e}"
             )
             gs.err_count += 1
-            gs.log.debug(traceback.format_exc())
+            gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
             break
         if isinstance(resp, RoomMessagesError):
             gs.err_count += 1
@@ -4497,12 +4580,12 @@ async def listen_all(  # noqa: C901
     except ClientConnectorError:
         gs.log.warning("sync() failed. Do you have connectivity to internet?")
         gs.warn_count += 1
-        gs.log.debug(traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
     except Exception:
         gs.log.warning("sync() failed.")
         gs.warn_count += 1
-        gs.log.debug(traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         return
     if isinstance(resp_s, SyncError):
         gs.log.warning(f"sync failed with resp = {resp_s}")
@@ -4598,7 +4681,7 @@ async def action_listen() -> None:
             "Error during listening. Continuing despite error. "
             f"Exception: {e}"
         )
-        gs.log.debug(traceback.format_exc())
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         gs.err_count += 1
 
 
@@ -4654,6 +4737,7 @@ async def action_get_display_name(
                 displayname = ""  # means no display name is set
             else:
                 displayname = resp.displayname
+            # todo output format
             print(f"{user}{SEP}{displayname}")
 
 
@@ -4699,6 +4783,7 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
                 status_msg = ""  # means no status_msg is set
             else:
                 status_msg = resp.status_msg
+            # todo output format
             print(
                 f"{resp.user_id}{SEP}{resp.presence}{SEP}{last_active_ago}"
                 f"{SEP}{currently_active}{SEP}{status_msg}"
@@ -4745,6 +4830,7 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             )
             # decryption_dict will be None in case of plain-text
             # the URI and keys will be needed later. So this print is a must
+            # todo output format
             print(f"{resp.content_uri}{SEP}{decryption_dict}")
 
 
@@ -4984,7 +5070,14 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
-        print(*resp.rooms, sep="\n")  # one per line
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_RAW_DETAILS or gs.pa.output == OUTPUT_RAW:
+            dic = resp.__dict__
+            if gs.pa.output == OUTPUT_RAW:
+                dic.pop("transport_response")
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_HUMAN:
+            print(*resp.rooms, sep="\n")  # one per line
 
 
 async def action_joined_members(
@@ -5019,29 +5112,44 @@ async def action_joined_members(
                 "Room list has been successfully overwritten with '*'"
             )
             rooms = resp.rooms  # overwrite args with full list
+    rlist = []  # list of raw objects
     for room in rooms:
+        room = room.replace(r"\!", "!")  # remove possible escape
         resp = await client.joined_members(room)
         if isinstance(resp, JoinedMembersError):
             gs.log.error(f"joined_members failed with {resp}")
             gs.err_count += 1
         else:
             gs.log.debug(f"joined_members successful with {resp}")
-            print(resp.room_id)
             # members = List[RoomMember] ; RoomMember
-            print(
-                *list(
-                    map(
-                        lambda member: SEP
-                        + member.user_id
-                        + SEP
-                        + member.display_name
-                        + SEP
-                        + member.avatar_url,
-                        resp.members,
-                    )
-                ),
-                sep="\n",
-            )
+            # todo output format ==> done
+            if (
+                gs.pa.output == OUTPUT_RAW_DETAILS
+                or gs.pa.output == OUTPUT_RAW
+            ):
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_RAW:
+                    dic.pop("transport_response")
+                rlist.append(dic)
+            else:  # default, gs.output == OUTPUT_HUMAN:
+                print(resp.room_id)
+                print(
+                    *list(
+                        map(
+                            lambda member: SEP
+                            + member.user_id
+                            + SEP
+                            + member.display_name
+                            + SEP
+                            + member.avatar_url,
+                            resp.members,
+                        )
+                    ),
+                    sep="\n",
+                )
+    # todo output format ==> done
+    if gs.pa.output == OUTPUT_RAW_DETAILS or gs.pa.output == OUTPUT_RAW:
+        print(json.dumps(rlist, default=obj_to_dict))
 
 
 async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
@@ -5049,6 +5157,7 @@ async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
     for mxc in gs.pa.mxc_to_http:
         mxc = mxc.strip()
         http = await client.mxc_to_http(mxc)  # returns None or str
+        # todo output format
         print(f"{mxc}{SEP}{http}")
 
 
@@ -5060,6 +5169,7 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"devices successful with {resp}")
+        # todo output format
         print(*resp.devices, sep="\n")  # one per line
 
 
@@ -5073,6 +5183,7 @@ async def action_discovery_info(
         gs.err_count += 1
     else:
         gs.log.debug(f"discovery_info successful with {resp}")
+        # todo output format
         print(resp)
 
 
@@ -5084,6 +5195,7 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"login_info successful with {resp}")
+        # todo output format
         print(*resp.flows, sep="\n")  # one per line
 
 
@@ -5097,6 +5209,7 @@ async def action_content_repository_config(
         gs.err_count += 1
     else:
         gs.log.debug(f"content_repository_config successful with {resp}")
+        # todo output format
         print(resp.upload_size)  # returns only 1 value
 
 
@@ -5230,6 +5343,7 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
                 f"Response is: {txt}. Input was: method={method} "
                 f"data={data}, url={url}."
             )
+            # todo output format
             print(f"{txt}")
 
 
@@ -5250,6 +5364,7 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
             gs.log.debug(
                 f"avatar_mxc is {avatar_mxc}. avatar_url is {avatar_url}"
             )
+            # todo output format
             print(f"{avatar_mxc}{SEP}{avatar_url}")
         else:
             gs.log.error(
@@ -5287,6 +5402,7 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
                 f"displayname is {displayname}. avatar_mxc is {avatar_mxc}. "
                 f"avatar_url is {avatar_url}. other_info is {resp.other_info}."
             )
+            # todo output format
             print(
                 f"{displayname}{SEP}{avatar_mxc}{SEP}{avatar_url}"
                 f"{SEP}{other_info}"
@@ -5327,12 +5443,14 @@ async def action_has_permission(
                 f"'{permission_type}' in room {room_id}. {resp}"
             )
             gs.err_count += 1
+            # todo output format
             print(f"Error{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
         else:
             gs.log.debug(
                 f"has_permission {user_id} for permission type "
                 f"'{permission_type}' in room {room_id}: {resp}"
             )
+            # todo output format
             print(f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
 
 
@@ -5457,10 +5575,12 @@ async def action_room_resolve_alias(
                 f"Successfully resolved room alias '{alias}' to "
                 f"{resp.room_id}."
             )
+            # todo output format
             print(f"{resp.room_alias}{SEP}{resp.room_id}{SEP}{resp.servers}")
         else:
             gs.log.error(f"Failed to resolve room alias '{alias}': {resp}")
             gs.err_count += 1
+            # todo output format
             print(f"{alias}{SEP}Error{SEP}[]")  # empty server list
 
 
@@ -5523,6 +5643,7 @@ async def action_get_openid_token(
                 f"Successfully obtained OpenId token "
                 f"{resp.access_token} for user {user_id}."
             )
+            # todo output format
             print(
                 f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
                 f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
@@ -5544,6 +5665,7 @@ async def action_room_get_visibility(
                 f"Successfully got visibility for room {resp.room_id}: "
                 f"{resp.visibility}."
             )
+            # todo output format
             print(f"{resp.visibility}{SEP}{room_id}")
         else:
             gs.log.error(
@@ -5551,6 +5673,7 @@ async def action_room_get_visibility(
             )
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
+            # todo output format
             print(f"{errmsg}{SEP}{room_id}")
 
 
@@ -5569,11 +5692,13 @@ async def action_room_get_state(
                 f"Successfully got state for room {resp.room_id}: "
                 f"{resp.events}."
             )
+            # todo output format
             print(f"{resp.events}{SEP}{room_id}")
         else:
             gs.log.error(f"Failed getting state for room {room_id}. {resp}")
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
+            # todo output format
             print(f"{errmsg}{SEP}{room_id}")
 
 
@@ -5705,6 +5830,7 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
     gs.log.debug(f"whoami: user id: {whoami}")
+    # todo output format
     print(whoami)
 
 
@@ -5837,7 +5963,9 @@ async def action_verify() -> None:
             "initiate an emoji verification with us by selecting "
             "'Verify by Emoji' "
             "in their Matrix client. Read --verify instructions in --help "
-            "carefully to assist you in how to do this quickly."
+            "carefully to assist you in how to do this quickly.",
+            file=sys.stdout,
+            flush=True,
         )
         # the sync_loop will be terminated by user hitting Control-C
         await gs.client.sync_forever(timeout=30000, full_state=True)
@@ -5884,7 +6012,9 @@ async def action_send() -> None:
                 if is_room_alias(room_id):
                     resp = await gs.client.room_resolve_alias(room_id)
                     if isinstance(resp, RoomResolveAliasError):
-                        print(f"room_resolve_alias failed with {resp}")
+                        gs.log.error(
+                            f"room_resolve_alias failed with error '{resp}'."
+                        )
                     room_id = resp.room_id
                     gs.log.debug(
                         f'Mapping room alias "{resp.room_alias}" to '
@@ -5909,7 +6039,7 @@ async def action_send() -> None:
             gs.log.debug("Finished sync() with server.")
         # Now we can send messages as the user
         await process_arguments_and_input(gs.client, rooms)
-        gs.log.debug(f"gs.client.rooms are: {gs.client.rooms}")
+        # gs.log.debug(f"gs.client.rooms are: {gs.client.rooms}")
         gs.log.debug("Message send action finished.")
     except Exception as e:
         gs.log.error(
@@ -6070,10 +6200,16 @@ async def action_login() -> None:
         # print(f"                            password='{password}'")
         print("                            password='***'")
         print(f"                            device name='{device_name}'")
-        print(f"                            room id='{room_id}'")
+        print(
+            f"                            room id='{room_id}'",
+            flush=True,
+        )
         confirm = input("Correct? (Yes or Ctrl-C to abort) ")
         if confirm.lower() != "yes" and confirm.lower() != "y":
-            print("")  # add newline to stdout to separate any log info
+            print(
+                "",
+                flush=True,
+            )  # add newline to stdout to separate any log info
             gs.log.info("Aborting due to user request.")
             return
 
@@ -6144,7 +6280,7 @@ async def action_login() -> None:
         await site.start()
 
         try:
-            print("Launching browser to complete SSO login.")
+            gs.log.info("Launching browser to complete SSO login.")
             if gs.pa.proxy:
                 gs.log.warning(
                     f"Specified proxy {gs.pa.proxy} cannot "
@@ -6443,6 +6579,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.log.debug('--listen set to "tail" because "--tail" is used.')
     if gs.pa.sync is not None:
         gs.pa.sync = gs.pa.sync.lower()
+    if gs.pa.output is not None:
+        gs.pa.output = gs.pa.output.lower()
 
     if (
         gs.pa.message
@@ -6625,6 +6763,16 @@ def initial_check_of_args() -> None:  # noqa: C901
         t = (
             "Incorrect value given for --sync. "
             f"Only '{SYNC_FULL}' and '{SYNC_OFF}' are allowed."
+        )
+    elif (
+        gs.pa.output != OUTPUT_HUMAN
+        and gs.pa.output != OUTPUT_RAW_DETAILS
+        and gs.pa.output != OUTPUT_RAW
+    ):
+        t = (
+            "Incorrect value given for --output. "
+            f"Only '{OUTPUT_HUMAN}', "
+            f"'{OUTPUT_RAW}' and '{OUTPUT_RAW_DETAILS}' are allowed."
         )
     elif not gs.pa.user and (
         gs.pa.room_invite
@@ -8127,6 +8275,34 @@ def main_inner(
         f"If you have chosen '{SYNC_OFF}', "
         "synchronization will be skipped entirely before the 'send' "
         "which will improve performance.",
+    )
+    ap.add_argument(
+        "--output",
+        required=False,
+        type=str,  # output method: human, raw, (possible future values)
+        default=OUTPUT_DEFAULT,  # when --output is not used
+        help="This option decides on how the output is presented. "
+        f"Currently offered choices are: '{OUTPUT_HUMAN}', '{OUTPUT_RAW}' and "
+        f"'{OUTPUT_RAW_DETAILS}'. "
+        "Provide one of these choices. "
+        f"The default is '{OUTPUT_DEFAULT}'. If you want to use the default, "
+        "then there is no need to use this option. "
+        f"If you have chosen '{OUTPUT_HUMAN}', "
+        "the output will be formatted with the intention to be "
+        "consumed by humans, i.e. readable text. "
+        f"If you have chosen '{OUTPUT_RAW_DETAILS}', "
+        "the output will be formatted as close to the data provided by the "
+        "matrix-nio API. This output might have a lot more details and in "
+        "most cases will be processed by other programs rather than read by "
+        "humans. "
+        f"Option '{OUTPUT_RAW}' is similar to '{OUTPUT_RAW_DETAILS}' in "
+        "format, "
+        "but the amount is reduced to a sensible amount. In most "
+        "cases will be processed by other programs rather than read by "
+        "humans. "
+        "----- The '--output' option is only partially implemented yet. "
+        "Over time "
+        "more and more functions will support this option.",
     )
     ap.add_argument(
         # no single char flag

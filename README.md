@@ -44,53 +44,12 @@ alt="get it on Docker Hub" height="100"></a>
 - `matrix-commander` now available on
   [PyPi](https://pypi.org/project/matrix-commander/)
   and hence easy to install via `pip install matrix-commander`
-- Slight incompatibility: From now on instead of using `matrix-commander.py`
-  please call `matrix-commander`. `matrix-commander` is from now on the
-  preferred way to execute the program.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
-- new option `--joined-rooms` to list rooms you are a member of
-- new option `--joined-members` to list members of the specified rooms
-- new feature "DM" or "direct message" which allows you to send to
-  (or listen from) a room whose members are only you (the sender) and the
-  recipient by specifying the recipients name.
-- Minor incompatibility: From now `-u` is assigned to `--user` and no
-  longer to `--download-media`
-- new option `--whoami`
-- Minor incompatibility: `--rename-device` has been renamed to
-  `--set-device-name` and `-x` is no longer supported as shortcut.
-- new option `--get_displayname` for itself, or one or multiple users
-- new options `--set-presence` and `--get-presence` to set/get presence
-  of itself, or one or multiple users
-- new options `--upload` and `--download` to interact with the Matrix
-  content repository
-- new option `--separator` to customize the column separator in outputs
-- new option `--mxc-to-http`
-- new option `--devices` to list devices of current user
-- new option `--discovery-info` to print discovery info of homeserver
-- new option `--login-info` to get the available login methods from the server
-- new option `--delete-mxc` to delete objects from content repository
-- new option `--delete-mxc-before` to delete old objects from content repo
-- new option `--rest` to invoke the full Matrix REST API
-- new otions `--set-avatar` and `--get-avatar`
-- new otions `--import-keys` and `--export_keys`
-- new option `--get-openid-token` to provide to other websites for login
-- new option `--delete-device`
-- new option `--room-redact` to delete messages, images and other events
-- new option `--content-repository-config` to print content repo info
-- new option `--get-profile` to print user profile
-- incompatibility: new dependency `pyxdg`. Please install `pyxdg` if necessary.
-  Instead of `~/.local/share` the variable `XDG_DATA_HOME` will be used.
-  Instead of `~/.config` the variable `XDG_CONFIG_HOME` will be used.
-  See https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html.
-- new option `--has-permission` (see also Issue #324 in matrix-nio)
-- new option `--room-get-visibility` to find out if room is private or public
 - new option `--room-set-alias` to add alias(es) to room(s)
   (see also Issue #328 in matrix-nio)
-- new option `--room-resolve-alias` to resolve room alias(es)
-- new option `--room-delete-alias` to delete room alias(es)
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
@@ -99,6 +58,7 @@ alt="get it on Docker Hub" height="100"></a>
   [Nix package](https://search.nixos.org/packages?query=matrix-commander)
   for NixOS, Debian, Fedora, etc.
 - new option: `--sync` to allow skipping sync when only sending
+- new option: `--output` to produce output in different formats (text, JSON)
 
 # Summary, TLDR
 
@@ -239,6 +199,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
 - Supports room aliases
+- Supports multiple output formats like `human` (text) and `raw` (JSON)
 - Provides PID files
 - Logging (at various levels)
 - In-source documentation
@@ -644,6 +605,8 @@ $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
+$ matrix-commander --joined-rooms --output raw | jq # get raw output in JSON
+$ matrix-commander --joined-rooms --output human # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -728,7 +691,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
                            [--homeserver HOMESERVER] [--device DEVICE]
-                           [--sync SYNC] [--version]
+                           [--sync SYNC] [--output OUTPUT] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -1576,11 +1539,29 @@ options:
                         If you have chosen 'off', synchronization will be
                         skipped entirely before the 'send' which will improve
                         performance.
+  --output OUTPUT       This option decides on how the output is presented.
+                        Currently offered choices are: 'human', 'raw' and
+                        'raw-details'. Provide one of these choices. The
+                        default is 'human'. If you want to use the default,
+                        then there is no need to use this option. If you have
+                        chosen 'human', the output will be formatted with the
+                        intention to be consumed by humans, i.e. readable
+                        text. If you have chosen 'raw-details', the output
+                        will be formatted as close to the data provided by the
+                        matrix-nio API. This output might have a lot more
+                        details and in most cases will be processed by other
+                        programs rather than read by humans. Option 'raw' is
+                        similar to 'raw-details' in format, but the amount is
+                        reduced to a sensible amount. In most cases will be
+                        processed by other programs rather than read by
+                        humans. ----- The '--output' option is only partially
+                        implemented yet. Over time more and more functions
+                        will support this option.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.2 2022-10-03. Enjoy, star on Github and contribute
+You are running version 3.5.3 2022-10-04. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1597,13 +1578,16 @@ Here is a sample snapshot of tab completion in action:
 - `matrix-commander` is written in Python and hence rather on the slow side
 - It is not thread-safe. One cannot just simply run multiple instances
   at the same time. However, with very careful set-up one can run
-  multiple instances, but that is not the target use case.
+  multiple instances, but that is not the target use case. See
+  [Issue #31](https://github.com/8go/matrix-commander/issues/31).
 - Where possible bundle several actions together into a single call.
   For example if one wants to send 8 images, then it is significantly faster
   to call `matrix-commander` once with `-i` specifying 8 images, than
   to call `matrix-commander` 8 times with one image each call. One needs
   to send 5 messages, 10 images, 5 audios, 3 PDF files and 7 events to
   the same user? Call `matrix-commander` once, not 30 times.
+- If you are sending something, then try the `--sync off` option and see
+  to what degree skipping the server sync for sending helps.
 
 # For Developers
 
