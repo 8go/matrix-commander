@@ -1568,7 +1568,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.3 2022-10-04. Enjoy, star on Github and contribute
+You are running version 3.5.4 2022-10-05. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1720,8 +1720,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-04"
-VERSIONNR = "3.5.3"
+VERSION = "2022-10-05"
+VERSIONNR = "3.5.4"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2131,7 +2131,17 @@ class Callbacks(object):
             )
             gs.log.debug(complete_msg)
             # todo output format
-            print(complete_msg, flush=True)  # print the received message
+            if (
+                gs.pa.output == OUTPUT_RAW_DETAILS
+                or gs.pa.output == OUTPUT_RAW
+            ):
+                if gs.pa.output == OUTPUT_RAW:
+                    dic = event.source
+                else:
+                    dic = event
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_HUMAN:
+                print(complete_msg, flush=True)  # print the received message
             if gs.pa.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
                 notify(
@@ -4444,7 +4454,11 @@ async def listen_tail(  # noqa: C901
             room_id, start=resp_s.next_batch, limit=limit
         )
         if isinstance(resp, RoomMessagesError):
-            gs.log.debug(f"room_messages failed with resp = {resp}")
+            gs.log.warning(
+                f"room_messages failed with resp = {resp}. "
+                "Processing continues."
+            )
+            gs.warn_count += 1
             continue  # skip this room
         gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
         gs.log.debug(f"room_messages room_id = {resp.room_id}.")
@@ -5112,7 +5126,6 @@ async def action_joined_members(
                 "Room list has been successfully overwritten with '*'"
             )
             rooms = resp.rooms  # overwrite args with full list
-    rlist = []  # list of raw objects
     for room in rooms:
         room = room.replace(r"\!", "!")  # remove possible escape
         resp = await client.joined_members(room)
@@ -5130,7 +5143,7 @@ async def action_joined_members(
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_RAW:
                     dic.pop("transport_response")
-                rlist.append(dic)
+                print(json.dumps(dic, default=obj_to_dict))
             else:  # default, gs.output == OUTPUT_HUMAN:
                 print(resp.room_id)
                 print(
@@ -5147,9 +5160,6 @@ async def action_joined_members(
                     ),
                     sep="\n",
                 )
-    # todo output format ==> done
-    if gs.pa.output == OUTPUT_RAW_DETAILS or gs.pa.output == OUTPUT_RAW:
-        print(json.dumps(rlist, default=obj_to_dict))
 
 
 async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
