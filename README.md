@@ -199,7 +199,8 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
 - Supports room aliases
-- Supports multiple output formats like `human` (text) and `raw` (JSON)
+- Supports multiple output formats like `text` (for human consumption)
+  and `json` (for machine consumption and further processing)
 - Provides PID files
 - Logging (at various levels)
 - In-source documentation
@@ -605,8 +606,9 @@ $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
-$ matrix-commander --joined-rooms --output raw | jq # get raw output in JSON
-$ matrix-commander --joined-rooms --output human # get human-readable output
+$ matrix-commander --joined-rooms --output json | jq # get json output in JSON
+$ matrix-commander --joined-rooms --output json-max | jq # full details
+$ matrix-commander --joined-rooms --output text # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -867,9 +869,9 @@ options:
                         you are not interested in an alias, provide an empty
                         string like "".The alias provided must be in canocial
                         local form, i.e. if you want a final full alias like
-                        '#SomeRoomAlias:matrix.example.comyou must provide the
-                        string 'SomeRoomAlias'. The user must be permitted to
-                        create rooms. Combine --room-create with --name and
+                        '#SomeRoomAlias:matrix.example.com you must provide
+                        the string 'SomeRoomAlias'. The user must be permitted
+                        to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
                         created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
@@ -1540,19 +1542,19 @@ options:
                         skipped entirely before the 'send' which will improve
                         performance.
   --output OUTPUT       This option decides on how the output is presented.
-                        Currently offered choices are: 'human', 'raw' and
-                        'raw-details'. Provide one of these choices. The
-                        default is 'human'. If you want to use the default,
-                        then there is no need to use this option. If you have
-                        chosen 'human', the output will be formatted with the
+                        Currently offered choices are: 'text', 'json' and
+                        'json-max'. Provide one of these choices. The default
+                        is 'text'. If you want to use the default, then there
+                        is no need to use this option. If you have chosen
+                        'text', the output will be formatted with the
                         intention to be consumed by humans, i.e. readable
-                        text. If you have chosen 'raw-details', the output
-                        will be formatted as close to the data provided by the
+                        text. If you have chosen 'json-max', the output will
+                        be formatted as close to the data provided by the
                         matrix-nio API. This output might have a lot more
                         details and in most cases will be processed by other
-                        programs rather than read by humans. Option 'raw' is
-                        similar to 'raw-details' in format, but the amount is
-                        reduced to a sensible amount. In most cases will be
+                        programs rather than read by humans. Option 'json' is
+                        similar to 'json-max' in format, but the amount is
+                        reduced to a sensible amount. In most cases it will be
                         processed by other programs rather than read by
                         humans. ----- The '--output' option is only partially
                         implemented yet. Over time more and more functions
@@ -1561,7 +1563,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.4 2022-10-05. Enjoy, star on Github and contribute
+You are running version 3.5.5 2022-10-06. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 

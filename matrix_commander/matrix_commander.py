@@ -206,7 +206,8 @@ Please give it a :star: on Github right now so others find it more easily.
 - Supports notification via OS of received messages
 - Supports periodic execution via crontab
 - Supports room aliases
-- Supports multiple output formats like `human` (text) and `raw` (JSON)
+- Supports multiple output formats like `text` (for human consumption)
+  and `json` (for machine consumption and further processing)
 - Provides PID files
 - Logging (at various levels)
 - In-source documentation
@@ -612,8 +613,9 @@ $ matrix-commander --discovery-info # print discovery info of homeserver
 $ matrix-commander --login-info # list login methods
 $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
-$ matrix-commander --joined-rooms --output raw | jq # get raw output in JSON
-$ matrix-commander --joined-rooms --output human # get human-readable output
+$ matrix-commander --joined-rooms --output json | jq # get json output in JSON
+$ matrix-commander --joined-rooms --output json-max | jq # full details
+$ matrix-commander --joined-rooms --output text # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
 $ echo "Some text" | matrix-commander -m - # long form to send text via pipe
@@ -874,9 +876,9 @@ options:
                         you are not interested in an alias, provide an empty
                         string like "".The alias provided must be in canocial
                         local form, i.e. if you want a final full alias like
-                        '#SomeRoomAlias:matrix.example.comyou must provide the
-                        string 'SomeRoomAlias'. The user must be permitted to
-                        create rooms. Combine --room-create with --name and
+                        '#SomeRoomAlias:matrix.example.com you must provide
+                        the string 'SomeRoomAlias'. The user must be permitted
+                        to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
                         created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
@@ -1547,19 +1549,19 @@ options:
                         skipped entirely before the 'send' which will improve
                         performance.
   --output OUTPUT       This option decides on how the output is presented.
-                        Currently offered choices are: 'human', 'raw' and
-                        'raw-details'. Provide one of these choices. The
-                        default is 'human'. If you want to use the default,
-                        then there is no need to use this option. If you have
-                        chosen 'human', the output will be formatted with the
+                        Currently offered choices are: 'text', 'json' and
+                        'json-max'. Provide one of these choices. The default
+                        is 'text'. If you want to use the default, then there
+                        is no need to use this option. If you have chosen
+                        'text', the output will be formatted with the
                         intention to be consumed by humans, i.e. readable
-                        text. If you have chosen 'raw-details', the output
-                        will be formatted as close to the data provided by the
+                        text. If you have chosen 'json-max', the output will
+                        be formatted as close to the data provided by the
                         matrix-nio API. This output might have a lot more
                         details and in most cases will be processed by other
-                        programs rather than read by humans. Option 'raw' is
-                        similar to 'raw-details' in format, but the amount is
-                        reduced to a sensible amount. In most cases will be
+                        programs rather than read by humans. Option 'json' is
+                        similar to 'json-max' in format, but the amount is
+                        reduced to a sensible amount. In most cases it will be
                         processed by other programs rather than read by
                         humans. ----- The '--output' option is only partially
                         implemented yet. Over time more and more functions
@@ -1568,7 +1570,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.4 2022-10-05. Enjoy, star on Github and contribute
+You are running version 3.5.5 2022-10-06. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1699,9 +1701,10 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RoomMessagesError, RoomMessageText, RoomMessageUnknown,
                  RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
                  RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
-                 RoomResolveAliasResponse, RoomUnbanError, SyncError,
-                 SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
-                 UploadError, UploadResponse, crypto, responses)
+                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto,
+                 responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1720,8 +1723,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-05"
-VERSIONNR = "3.5.4"
+VERSION = "2022-10-06"
+VERSIONNR = "3.5.5"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1791,12 +1794,12 @@ SYNC_FULL = "full"  # sync with full_state=True for send actions
 # SYNC_PARTIAL = "full" # sync with full_state=False for send actions
 SYNC_OFF = "off"  # no sync is done for send actions
 SYNC_DEFAULT = SYNC_FULL
-OUTPUT_HUMAN = "human"  # text, intended for human consumption
-# raw, as close to as what NIO API provides, maximum details
-OUTPUT_RAW_DETAILS = "raw-details"
+OUTPUT_TEXT = "text"  # text, intended for human consumption
+# json, as close to as what NIO API provides, maximum details
+OUTPUT_JSON_MAX = "json-max"
 # raw, as close to as what NIO API provides, reduced info
-OUTPUT_RAW = "raw"
-OUTPUT_DEFAULT = OUTPUT_HUMAN
+OUTPUT_JSON = "json"
+OUTPUT_DEFAULT = OUTPUT_TEXT
 
 
 class MatrixCommanderError(Exception):
@@ -1872,7 +1875,7 @@ def obj_to_dict(obj):
     # this one is crucial, it make the serialization circular reference.
     if get_qualifiedclassname(obj) == "aiohttp.streams.StreamReader":
         return {obj.__class__.__name__: str(obj)}
-    # this one is crucial, it make the serialization circular reference.
+    # these four are crucial, they make the serialization circular reference.
     if (
         get_qualifiedclassname(obj)
         == "asyncio.unix_events._UnixSelectorEventLoop"
@@ -1920,11 +1923,50 @@ def choose_available_filename(filename):
         return filename
 
 
-async def download_mxc(client: AsyncClient, url: str):
-    """Download MXC resource."""
-    mxc = urlparse(url)
-    response = await client.download(mxc.netloc, mxc.path.strip("/"))
-    return response.body
+async def download_mxc(
+    client: AsyncClient, mxc: str, filename: Optional[str] = None
+):
+    """Download MXC resource.
+
+    Arguments:
+    ---------
+    client : Client
+    mxc : str
+        string representing URL like mxc://matrix.org/someRandomKey
+    filename : str
+        optional name of file for storing download
+    """
+    nio_version = pkg_resources.get_distribution("matrix-nio").version
+    # version incompatibility between matrix-nio 0.19.0 and 0.20+
+    # https://mtrx.sytes.net/OIukKBUUpPsAbBGBxuKVIEo
+    # server_name = "mtrx.sytes.net"
+    # media_id = "OIukKBUUpPsAbBEGBxuKVIEo"
+    # matrix-nio v0.19.0 has: download(server_name: str, media_id: str, ..)
+    # convert mxc to server_name and media_id
+    # v0.20+ : resp = await client.download(mxc=mxc, filename=filename)
+    # v0.19- : resp = await client.download(
+    #                     server_name=server_name, media_id=media_id,
+    #                     filename=filename)
+    gs.log.debug(f"download_mxc input mxc is {mxc}.")
+    if nio_version.startswith("0.1"):  # like 0.19
+        gs.log.info(
+            f"You are running matrix-nio version {nio_version}. "
+            "You should be running version 0.20+. Update if necessary. "
+        )
+        url = urlparse(mxc)
+        gs.log.debug(f"download_mxc input url is {url}.")
+        response = await client.download(
+            server_name=url.netloc,
+            media_id=url.path.strip("/"),
+            filename=filename,
+        )
+    else:
+        gs.log.debug(
+            f"You are running matrix-nio version {nio_version}. Great!"
+        )
+        response = await client.download(mxc=mxc, filename=filename)
+    gs.log.debug(f"download_mxc response is {response}.")
+    return response
 
 
 class Callbacks(object):
@@ -1968,55 +2010,76 @@ class Callbacks(object):
             gs.log.debug(f"event_datetime = {event_datetime}")
 
             if isinstance(event, RoomMessageMedia):  # for all media events
-                media_mxc = event.url
-                media_url = await self.client.mxc_to_http(media_mxc)
-                gs.log.debug(f"HTTP URL of media is : {media_url}")
-                msg_url = " [" + media_url + "]"
+                mxc = event.url  # media mxc
+                url = await self.client.mxc_to_http(mxc)  # media url
+                gs.log.debug(f"HTTP URL of media is : {url}")
+                msg_url = " [" + url + "]"
                 if gs.pa.download_media != "":
                     # download unencrypted media file
-                    media_data = await download_mxc(self.client, media_mxc)
-                    filename = choose_available_filename(
-                        os.path.join(gs.pa.download_media, event.body)
-                    )
-                    async with aiofiles.open(filename, "wb") as f:
-                        await f.write(media_data)
-                        # Set atime and mtime of file to event timestamp
-                        os.utime(
-                            filename,
-                            ns=((event.server_timestamp * 1000000,) * 2),
+                    resp = await download_mxc(self.client, mxc)
+                    if isinstance(resp, DownloadError):
+                        gs.log.error(
+                            f"download of URI '{mxc}' to local file "
+                            f"failed with response {resp}"
                         )
-                    msg_url += f" [Downloaded media file to {filename}]"
+                        gs.err_count += 1
+                        msg_url += " [Download of media file failed]"
+                    else:
+                        media_data = resp.body
+                        filename = choose_available_filename(
+                            os.path.join(gs.pa.download_media, event.body)
+                        )
+                        async with aiofiles.open(filename, "wb") as f:
+                            await f.write(media_data)
+                            # Set atime and mtime of file to event timestamp
+                            os.utime(
+                                filename,
+                                ns=((event.server_timestamp * 1000000,) * 2),
+                            )
+                        msg_url += f" [Downloaded media file to {filename}]"
 
             if isinstance(event, RoomEncryptedMedia):  # for all e2e media
-                media_mxc = event.url
-                media_url = await self.client.mxc_to_http(media_mxc)
-                gs.log.debug(f"HTTP URL of media is : {media_url}")
-                msg_url = " [" + media_url + "]"
+                mxc = event.url  # media mxc
+                url = await self.client.mxc_to_http(mxc)  # media url
+                gs.log.debug(f"HTTP URL of media is : {url}")
+                msg_url = " [" + url + "]"
                 if gs.pa.download_media != "":
                     # download encrypted media file
-                    media_data = await download_mxc(self.client, media_mxc)
-                    filename = choose_available_filename(
-                        os.path.join(gs.pa.download_media, event.body)
-                    )
-                    async with aiofiles.open(filename, "wb") as f:
-                        await f.write(
-                            crypto.attachments.decrypt_attachment(
-                                media_data,
-                                event.source["content"]["file"]["key"]["k"],
-                                event.source["content"]["file"]["hashes"][
-                                    "sha256"
-                                ],
-                                event.source["content"]["file"]["iv"],
+                    resp = await download_mxc(self.client, mxc)
+                    if isinstance(resp, DownloadError):
+                        gs.log.error(
+                            f"download of URI '{mxc}' to local file "
+                            f"failed with response {resp}"
+                        )
+                        gs.err_count += 1
+                        msg_url += " [Download of media file failed]"
+                    else:
+                        media_data = resp.body
+                        filename = choose_available_filename(
+                            os.path.join(gs.pa.download_media, event.body)
+                        )
+                        async with aiofiles.open(filename, "wb") as f:
+                            await f.write(
+                                crypto.attachments.decrypt_attachment(
+                                    media_data,
+                                    event.source["content"]["file"]["key"][
+                                        "k"
+                                    ],
+                                    event.source["content"]["file"]["hashes"][
+                                        "sha256"
+                                    ],
+                                    event.source["content"]["file"]["iv"],
+                                )
                             )
+                            # Set atime and mtime of file to event timestamp
+                            os.utime(
+                                filename,
+                                ns=((event.server_timestamp * 1000000,) * 2),
+                            )
+                        msg_url += (
+                            " [Downloaded and decrypted media "
+                            f"file to {filename}]"
                         )
-                        # Set atime and mtime of file to event timestamp
-                        os.utime(
-                            filename,
-                            ns=((event.server_timestamp * 1000000,) * 2),
-                        )
-                    msg_url += (
-                        f" [Downloaded and decrypted media file to {filename}]"
-                    )
 
             if isinstance(event, RoomMessageAudio):
                 msg = "Received audio: " + event.body + msg_url
@@ -2130,17 +2193,19 @@ class Callbacks(object):
                 f"{event_id_detail} | {fixed_msg}"
             )
             gs.log.debug(complete_msg)
-            # todo output format
-            if (
-                gs.pa.output == OUTPUT_RAW_DETAILS
-                or gs.pa.output == OUTPUT_RAW
-            ):
-                if gs.pa.output == OUTPUT_RAW:
-                    dic = event.source
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                if gs.pa.output == OUTPUT_JSON:
+                    # add the source layer to make it same as OUTPUT_JSON_MAX
+                    dic = {"source": event.source}
                 else:
-                    dic = event
+                    dic = event.__dict__
+                dic.update({"room": room})
+                dic.update({"room_display_name": room.display_name})
+                dic.update({"sender_nick": sender_nick})
+                dic.update({"event_datetime": event_datetime})
                 print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_HUMAN:
+            else:  # default, gs.output == OUTPUT_TEXT:
                 print(complete_msg, flush=True)  # print the received message
             if gs.pa.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
@@ -3157,8 +3222,22 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                     f'Created room with room id "{resp.room_id}" '
                     f'and short alias "{alias}" and full alias "{full_alias}".'
                 )
-                # todo output format
-                print(f"{resp.room_id}{SEP}{full_alias}")
+                # todo output format ==> done
+                if (
+                    gs.pa.output == OUTPUT_JSON_MAX
+                    or gs.pa.output == OUTPUT_JSON
+                ):
+                    dic = resp.__dict__
+                    # resp has only 1 useful useful member: room_id
+                    dic.update({"alias": alias})  # add dict items
+                    dic.update({"alias_full": full_alias})
+                    dic.update({"name": name})
+                    dic.update({"topic": topic})
+                    if gs.pa.output == OUTPUT_JSON:
+                        dic.pop("transport_response")
+                    print(json.dumps(dic, default=obj_to_dict))
+                else:  # default, gs.output == OUTPUT_TEXT:
+                    print(f"{resp.room_id}{SEP}{full_alias}")
             index = index + 1
     except Exception:
         gs.log.error("Room creation failed. Sorry.")
@@ -3397,13 +3476,27 @@ async def send_event(client, rooms, event):  # noqa: C901
             resp = await client.room_send(
                 room_id, message_type=message_type, content=content
             )
+            if isinstance(resp, RoomSendError):
+                gs.log.error(f"room_send failed with error '{resp}'.")
+                # gs.err_count += 1 # not needed, will raise exception
+                # in following line of code
             gs.log.info(
                 f'This event was sent: "{event}" to room "{resp.room_id}" '
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo outout format
-                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}")
+                # todo outout format ==> done
+                if (
+                    gs.pa.output == OUTPUT_JSON_MAX
+                    or gs.pa.output == OUTPUT_JSON
+                ):
+                    dic = resp.__dict__
+                    if gs.pa.output == OUTPUT_JSON:
+                        dic.pop("transport_response")
+                    dic.update({"event": event})
+                    print(json.dumps(dic, default=obj_to_dict))
+                else:  # default, gs.output == OUTPUT_TEXT:
+                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}")
             gs.log.debug(
                 f'This event was sent: "{event}" ({content}) '
                 f'to room "{room_id}". '
@@ -3578,13 +3671,27 @@ async def send_file(client, rooms, file):  # noqa: C901
             resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
+            if isinstance(resp, RoomSendError):
+                gs.log.error(f"room_send failed with error '{resp}'.")
+                # gs.err_count += 1 # not needed, will raise exception
+                # in following line of code
             gs.log.info(
                 f'This file was sent: "{file}" to room "{resp.room_id}" '
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format
-                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}")
+                # todo output format ==> done
+                if (
+                    gs.pa.output == OUTPUT_JSON_MAX
+                    or gs.pa.output == OUTPUT_JSON
+                ):
+                    dic = resp.__dict__
+                    if gs.pa.output == OUTPUT_JSON:
+                        dic.pop("transport_response")
+                    dic.update({"file": file})
+                    print(json.dumps(dic, default=obj_to_dict))
+                else:  # default, gs.output == OUTPUT_TEXT:
+                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}")
             gs.log.debug(
                 f'This file was sent: "{file}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
@@ -3812,14 +3919,28 @@ async def send_image(client, rooms, image):  # noqa: C901
             resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
+            if isinstance(resp, RoomSendError):
+                gs.log.error(f"room_send failed with error '{resp}'.")
+                # gs.err_count += 1 # not needed, will raise exception
+                # in following line of code
             gs.log.info(
                 f'This image file was sent: "{image}" '
                 f'to room "{resp.room_id}" '
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format
-                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}")
+                # todo output format ==> done
+                if (
+                    gs.pa.output == OUTPUT_JSON_MAX
+                    or gs.pa.output == OUTPUT_JSON
+                ):
+                    dic = resp.__dict__
+                    if gs.pa.output == OUTPUT_JSON:
+                        dic.pop("transport_response")
+                    dic.update({"image": image})
+                    print(json.dumps(dic, default=obj_to_dict))
+                else:  # default, gs.output == OUTPUT_TEXT:
+                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}")
             gs.log.debug(
                 f'This image file was sent: "{image}" '
                 f'to room "{room_id}". '
@@ -3915,13 +4036,27 @@ async def send_message(client, rooms, message):  # noqa: C901
                 content=content,
                 ignore_unverified_devices=True,
             )
+            if isinstance(resp, RoomSendError):
+                gs.log.error(f"room_send failed with error '{resp}'.")
+                # gs.err_count += 1 # not needed, will raise exception
+                # in following line of code
             gs.log.info(
                 f'This message was sent: "{message}" to room "{resp.room_id}" '
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format
-                print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}")
+                # todo output format ==> done
+                if (
+                    gs.pa.output == OUTPUT_JSON_MAX
+                    or gs.pa.output == OUTPUT_JSON
+                ):
+                    dic = resp.__dict__
+                    if gs.pa.output == OUTPUT_JSON:
+                        dic.pop("transport_response")
+                    dic.update({"message": message})
+                    print(json.dumps(dic, default=obj_to_dict))
+                else:  # default, gs.output == OUTPUT_TEXT:
+                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}")
             gs.log.debug(
                 f'This message was sent: "{message}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
@@ -4751,8 +4886,15 @@ async def action_get_display_name(
                 displayname = ""  # means no display name is set
             else:
                 displayname = resp.displayname
-            # todo output format
-            print(f"{user}{SEP}{displayname}")
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                dic.update({"user": user})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{user}{SEP}{displayname}")
 
 
 async def action_set_presence(client: AsyncClient, credentials: dict) -> None:
@@ -4797,11 +4939,17 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
                 status_msg = ""  # means no status_msg is set
             else:
                 status_msg = resp.status_msg
-            # todo output format
-            print(
-                f"{resp.user_id}{SEP}{resp.presence}{SEP}{last_active_ago}"
-                f"{SEP}{currently_active}{SEP}{status_msg}"
-            )
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(
+                    f"{resp.user_id}{SEP}{resp.presence}{SEP}{last_active_ago}"
+                    f"{SEP}{currently_active}{SEP}{status_msg}"
+                )
 
 
 async def action_upload(client: AsyncClient, credentials: dict) -> None:
@@ -4844,8 +4992,15 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             )
             # decryption_dict will be None in case of plain-text
             # the URI and keys will be needed later. So this print is a must
-            # todo output format
-            print(f"{resp.content_uri}{SEP}{decryption_dict}")
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                dic.update({"decryption_dict": decryption_dict})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{resp.content_uri}{SEP}{decryption_dict}")
 
 
 async def action_delete_mxc(client: AsyncClient, credentials: dict) -> None:
@@ -5014,27 +5169,7 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
                 "(i.e. plain-text). No decryption will be attempted."
             )
         mxc = download
-        # version incompatibility between matrix-nio 0.19.0 and 0.19.1+
-        # https://mtrx.sytes.net/OIukKBUUpPsPXkEGBxuKVIEo
-        # server_name = "mtrx.sytes.net"
-        # media_id = "OIukKBUUpPsPXkEGBxuKVIEo"
-        # matrix-nio v0.19.0 has: download(server_name: str, media_id: str, ..)
-        # convert mxc to server_name and media_id
-        url = urlparse(mxc)
-        server_name = url.netloc
-        media_id = url.path.replace("/", "")
-        nio_version = pkg_resources.get_distribution("matrix-nio").version
-        gs.log.debug(
-            f"You are running matrix-nio version {nio_version}. "
-            f"You should be running version 0.19.0+. Update if necessary. "
-            f"Converted mxc {mxc} to server_name {server_name} and "
-            f"media_id {media_id}."
-        )
-        # v0.19.1+: resp = await client.download(mxc=mxc, filename=filename)
-        # v0.19.0:
-        resp = await client.download(
-            server_name=server_name, media_id=media_id, filename=filename
-        )
+        resp = await download_mxc(client, mxc=mxc, filename=filename)
         if isinstance(resp, DownloadError):
             gs.log.error(
                 f"download of URI '{mxc}' to local file '{filename}' "
@@ -5042,6 +5177,8 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
             )
             gs.err_count += 1
         else:
+            url = urlparse(mxc)
+            media_id = url.path.strip("/")
             if filename == "":
                 filename = "mxc-" + MXC_ID_PLACEHOLDER
             if not filename:
@@ -5085,12 +5222,12 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
         # todo output format ==> done
-        if gs.pa.output == OUTPUT_RAW_DETAILS or gs.pa.output == OUTPUT_RAW:
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
-            if gs.pa.output == OUTPUT_RAW:
+            if gs.pa.output == OUTPUT_JSON:
                 dic.pop("transport_response")
             print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_HUMAN:
+        else:  # default, gs.output == OUTPUT_TEXT:
             print(*resp.rooms, sep="\n")  # one per line
 
 
@@ -5136,15 +5273,12 @@ async def action_joined_members(
             gs.log.debug(f"joined_members successful with {resp}")
             # members = List[RoomMember] ; RoomMember
             # todo output format ==> done
-            if (
-                gs.pa.output == OUTPUT_RAW_DETAILS
-                or gs.pa.output == OUTPUT_RAW
-            ):
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
-                if gs.pa.output == OUTPUT_RAW:
+                if gs.pa.output == OUTPUT_JSON:
                     dic.pop("transport_response")
                 print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_HUMAN:
+            else:  # default, gs.output == OUTPUT_TEXT:
                 print(resp.room_id)
                 print(
                     *list(
@@ -5167,8 +5301,14 @@ async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
     for mxc in gs.pa.mxc_to_http:
         mxc = mxc.strip()
         http = await client.mxc_to_http(mxc)  # returns None or str
-        # todo output format
-        print(f"{mxc}{SEP}{http}")
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+            dic = {}
+            dic.update({"mxc": mxc})
+            dic.update({"http": http})
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_TEXT:
+            print(f"{mxc}{SEP}{http}")
 
 
 async def action_devices(client: AsyncClient, credentials: dict) -> None:
@@ -5179,8 +5319,14 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"devices successful with {resp}")
-        # todo output format
-        print(*resp.devices, sep="\n")  # one per line
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+            dic = resp.__dict__
+            if gs.pa.output == OUTPUT_JSON:
+                dic.pop("transport_response")
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_TEXT:
+            print(*resp.devices, sep="\n")  # one per line
 
 
 async def action_discovery_info(
@@ -5193,8 +5339,14 @@ async def action_discovery_info(
         gs.err_count += 1
     else:
         gs.log.debug(f"discovery_info successful with {resp}")
-        # todo output format
-        print(resp)
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+            dic = resp.__dict__
+            if gs.pa.output == OUTPUT_JSON:
+                dic.pop("transport_response")
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_TEXT:
+            print(f"{resp.homeserver_url}{SEP}{resp.identity_server_url}")
 
 
 async def action_login_info(client: AsyncClient, credentials: dict) -> None:
@@ -5205,8 +5357,14 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"login_info successful with {resp}")
-        # todo output format
-        print(*resp.flows, sep="\n")  # one per line
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+            dic = resp.__dict__
+            if gs.pa.output == OUTPUT_JSON:
+                dic.pop("transport_response")
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_TEXT:
+            print(*resp.flows, sep="\n")  # one per line
 
 
 async def action_content_repository_config(
@@ -5219,8 +5377,14 @@ async def action_content_repository_config(
         gs.err_count += 1
     else:
         gs.log.debug(f"content_repository_config successful with {resp}")
-        # todo output format
-        print(resp.upload_size)  # returns only 1 value
+        # todo output format ==> done
+        if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+            dic = resp.__dict__
+            if gs.pa.output == OUTPUT_JSON:
+                dic.pop("transport_response")
+            print(json.dumps(dic, default=obj_to_dict))
+        else:  # default, gs.output == OUTPUT_TEXT:
+            print(resp.upload_size)  # returns only 1 value
 
 
 async def action_rest(client: AsyncClient, credentials: dict) -> None:
@@ -5353,8 +5517,15 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
                 f"Response is: {txt}. Input was: method={method} "
                 f"data={data}, url={url}."
             )
-            # todo output format
-            print(f"{txt}")
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                # if gs.pa.output == OUTPUT_JSON:
+                #     dic.pop("transport_response") # does not exist
+                dic.update({"response": txt})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{txt}")
 
 
 async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
@@ -5374,8 +5545,15 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
             gs.log.debug(
                 f"avatar_mxc is {avatar_mxc}. avatar_url is {avatar_url}"
             )
-            # todo output format
-            print(f"{avatar_mxc}{SEP}{avatar_url}")
+            # todo output format ==> done
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                dic.update({"avatar_http": avatar_url})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{avatar_mxc}{SEP}{avatar_url}")
         else:
             gs.log.error(
                 f"Failed getting avatar for user {user_id} "
@@ -6775,14 +6953,14 @@ def initial_check_of_args() -> None:  # noqa: C901
             f"Only '{SYNC_FULL}' and '{SYNC_OFF}' are allowed."
         )
     elif (
-        gs.pa.output != OUTPUT_HUMAN
-        and gs.pa.output != OUTPUT_RAW_DETAILS
-        and gs.pa.output != OUTPUT_RAW
+        gs.pa.output != OUTPUT_TEXT
+        and gs.pa.output != OUTPUT_JSON_MAX
+        and gs.pa.output != OUTPUT_JSON
     ):
         t = (
             "Incorrect value given for --output. "
-            f"Only '{OUTPUT_HUMAN}', "
-            f"'{OUTPUT_RAW}' and '{OUTPUT_RAW_DETAILS}' are allowed."
+            f"Only '{OUTPUT_TEXT}', "
+            f"'{OUTPUT_JSON}' and '{OUTPUT_JSON_MAX}' are allowed."
         )
     elif not gs.pa.user and (
         gs.pa.room_invite
@@ -7133,7 +7311,7 @@ def main_inner(
         'alias, provide an empty string like "".'
         "The alias provided must be in canocial local form, i.e. "
         "if you want a final full alias like "
-        "'#SomeRoomAlias:matrix.example.com"
+        "'#SomeRoomAlias:matrix.example.com "
         "you must provide the string 'SomeRoomAlias'. "
         "The user must be permitted to create rooms. "
         "Combine --room-create with --name and --topic to add "
@@ -8289,26 +8467,26 @@ def main_inner(
     ap.add_argument(
         "--output",
         required=False,
-        type=str,  # output method: human, raw, (possible future values)
+        type=str,  # output method: text, json, json-max, ...
         default=OUTPUT_DEFAULT,  # when --output is not used
         help="This option decides on how the output is presented. "
-        f"Currently offered choices are: '{OUTPUT_HUMAN}', '{OUTPUT_RAW}' and "
-        f"'{OUTPUT_RAW_DETAILS}'. "
+        f"Currently offered choices are: '{OUTPUT_TEXT}', '{OUTPUT_JSON}' and "
+        f"'{OUTPUT_JSON_MAX}'. "
         "Provide one of these choices. "
         f"The default is '{OUTPUT_DEFAULT}'. If you want to use the default, "
         "then there is no need to use this option. "
-        f"If you have chosen '{OUTPUT_HUMAN}', "
+        f"If you have chosen '{OUTPUT_TEXT}', "
         "the output will be formatted with the intention to be "
         "consumed by humans, i.e. readable text. "
-        f"If you have chosen '{OUTPUT_RAW_DETAILS}', "
+        f"If you have chosen '{OUTPUT_JSON_MAX}', "
         "the output will be formatted as close to the data provided by the "
         "matrix-nio API. This output might have a lot more details and in "
         "most cases will be processed by other programs rather than read by "
         "humans. "
-        f"Option '{OUTPUT_RAW}' is similar to '{OUTPUT_RAW_DETAILS}' in "
+        f"Option '{OUTPUT_JSON}' is similar to '{OUTPUT_JSON_MAX}' in "
         "format, "
         "but the amount is reduced to a sensible amount. In most "
-        "cases will be processed by other programs rather than read by "
+        "cases it will be processed by other programs rather than read by "
         "humans. "
         "----- The '--output' option is only partially implemented yet. "
         "Over time "
