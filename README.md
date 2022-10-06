@@ -59,6 +59,8 @@ alt="get it on Docker Hub" height="100"></a>
   for NixOS, Debian, Fedora, etc.
 - new option: `--sync` to allow skipping sync when only sending
 - new option: `--output` to produce output in different formats (text, JSON)
+- new option: `--get-room-info` to get room info such as the
+  room display name, room alias, etc. for a given room id
 
 # Summary, TLDR
 
@@ -517,6 +519,9 @@ $ matrix-commander --set-avatar mxc://... # set its own avatar MXC URI
 $ # for more examples of --set_avatar see tests/test-setget.sh
 $ matrix-commander --get-profile # get its own user profile
 $ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
+$ matrix-commander --get-room-info # get its default room info
+$ matrix-commander --get-room-info '\!room1:example.com' \
+    '\!room2:example.com' # get room info for multiple rooms
 $ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
@@ -675,6 +680,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
                            [--get-avatar [GET_AVATAR ...]]
                            [--get-profile [GET_PROFILE ...]]
+                           [--get-room-info [GET_ROOM_INFO ...]]
                            [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
@@ -1158,11 +1164,16 @@ options:
                         Set or rename the display name for the current user to
                         the display name provided. Send, listen and verify
                         operations are allowed when setting the display name.
+                        Do not confuse this option with the option '--get-
+                        room-info' which gets the room display name, not the
+                        user display name.
   --get-display-name    Get the display name of matrix-commander (itself), or
                         of one or multiple users. Specify user(s) with the
                         --user option. If no user is specified get the display
                         name of itself. Send, listen and verify operations are
-                        allowed when getting display name(s).
+                        allowed when getting display name(s). Do not confuse
+                        this option with the option '--get-room-info' which
+                        gets the room display name, not the user display name.
   --set-presence SET_PRESENCE
                         Set presence of matrix-commander to the given value.
                         Must be one of these values: “online”, “offline”,
@@ -1312,6 +1323,22 @@ options:
                         URI as well as possible additional profile information
                         (if present) will be printed. One line per user will
                         be printed.
+  --get-room-info [GET_ROOM_INFO ...]
+                        Get the room information such as room display name,
+                        room alias, room creator, etc. for one or multiple
+                        specified rooms. The included room 'display name' is
+                        also referred to as 'room name' or incorrectly even as
+                        room title. If one or more room ids are given, the
+                        room informations of these rooms will be fetched. If
+                        no room is specified, the room information for the
+                        default room configured for matrix-commander is
+                        fetched. As response room id, room display name, room
+                        canonical alias, room topic, room creator, room
+                        encryption are printed. One line per room will be
+                        printed. Do not confuse this option with the options '
+                        --get-display-name' and '--set-display-name', which
+                        get/set the user display name, not the room display
+                        name.
   --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
@@ -1563,7 +1590,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.5 2022-10-06. Enjoy, star on Github and contribute
+You are running version 3.5.6 2022-10-06. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
