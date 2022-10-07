@@ -522,6 +522,10 @@ $ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
 $ matrix-commander --get-room-info # get its default room info
 $ matrix-commander --get-room-info '\!room1:example.com' \
     '\!room2:example.com' # get room info for multiple rooms
+$ # map from room id to room alias
+$ matrix-commander --get-room-info '\!roomId1:example.com'
+$ # map from room alias to room id
+$ matrix-commander --get-room-info '#roomAlias1:example.com'
 $ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
@@ -875,7 +879,7 @@ options:
                         you are not interested in an alias, provide an empty
                         string like "".The alias provided must be in canocial
                         local form, i.e. if you want a final full alias like
-                        '#SomeRoomAlias:matrix.example.com you must provide
+                        "#SomeRoomAlias:matrix.example.com" you must provide
                         the string 'SomeRoomAlias'. The user must be permitted
                         to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
@@ -1328,17 +1332,25 @@ options:
                         room alias, room creator, etc. for one or multiple
                         specified rooms. The included room 'display name' is
                         also referred to as 'room name' or incorrectly even as
-                        room title. If one or more room ids are given, the
-                        room informations of these rooms will be fetched. If
-                        no room is specified, the room information for the
+                        room title. If one or more room are given, the room
+                        informations of these rooms will be fetched. If no
+                        room is specified, the room information for the
                         default room configured for matrix-commander is
-                        fetched. As response room id, room display name, room
-                        canonical alias, room topic, room creator, room
-                        encryption are printed. One line per room will be
-                        printed. Do not confuse this option with the options '
-                        --get-display-name' and '--set-display-name', which
-                        get/set the user display name, not the room display
-                        name.
+                        fetched. Rooms can be given via room id (e.g.
+                        '\!SomeRoomId:matrix.example.com'), canonical (full)
+                        room alias (e.g. '#SomeRoomAlias:matrix.example.com'),
+                        or short alias (e.g. 'SomeRoomAlias' or
+                        '#SomeRoomAlias'). As response room id, room display
+                        name, room canonical alias, room topic, room creator,
+                        and room encryption are printed. One line per room
+                        will be printed. Since either room id or room alias
+                        are accepted as input and both room id and room alias
+                        are given as output, one can hence use this option to
+                        map from room id to room alias as well as vice versa
+                        from room alias to room id. Do not confuse this option
+                        with the options '--get-display-name' and '--set-
+                        display-name', which get/set the user display name,
+                        not the room display name.
   --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
@@ -1382,25 +1394,25 @@ options:
                         have multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
                         like this: '#someRoomAlias:matrix.example.org'. Short
-                        aliases like 'someRoomAlias' are also accepted. In
-                        case of a short alias, it will be automatically
-                        prefixed with '#' and the homeserver will be
-                        automatically appended. Adding the same alias multiple
-                        times to the same room results in an error. --room-
-                        put-alias is eqivalent to --room-set-alias.
+                        aliases like 'someRoomAlias' or '#someRoomAlias' are
+                        also accepted. In case of a short alias, it will be
+                        automatically prefixed with '#' and the homeserver
+                        will be automatically appended. Adding the same alias
+                        multiple times to the same room results in an error.
+                        --room-put-alias is eqivalent to --room-set-alias.
   --room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
                         looks like this: '#someRoomAlias:matrix.example.org'.
-                        Short aliases like 'someRoomAlias' are also accepted.
-                        In case of a short alias, it will be automatically
-                        prefixed with '#' and the homeserver from the default
-                        room of matrix-commander (as found in credentials
-                        file) will be automatically appended. Resolving an
-                        alias that does not exist results in an error. For
-                        each room alias one line will be printed to stdout
-                        with the result.
+                        Short aliases like 'someRoomAlias' or '#someRoomAlias'
+                        are also accepted. In case of a short alias, it will
+                        be automatically prefixed with '#' and the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Resolving an alias that does not exist results in an
+                        error. For each room alias one line will be printed to
+                        stdout with the result.
   --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
                         Delete one or multiple rooms aliases. Provide one or
                         multiple room aliases. You can have multiple room
@@ -1408,12 +1420,13 @@ options:
                         from the same room or from different rooms. A room
                         alias looks like this:
                         '#someRoomAlias:matrix.example.org'. Short aliases
-                        like 'someRoomAlias' are also accepted. In case of a
-                        short alias, it will be automatically prefixed with
-                        '#' and the homeserver from the default room of
-                        matrix-commander (as found in credentials file) will
-                        be automatically appended. Deleting an alias that does
-                        not exist results in an error.
+                        like 'someRoomAlias' or '#someRoomAlias' are also
+                        accepted. In case of a short alias, it will be
+                        automatically prefixed with '#' and the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Deleting an alias that does not exist results in an
+                        error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1590,7 +1603,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.6 2022-10-06. Enjoy, star on Github and contribute
+You are running version 3.5.7 2022-10-07. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 

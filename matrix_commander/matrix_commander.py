@@ -529,6 +529,10 @@ $ matrix-commander --get-profile '@user1:example.com' '@user2:example.com'
 $ matrix-commander --get-room-info # get its default room info
 $ matrix-commander --get-room-info '\!room1:example.com' \
     '\!room2:example.com' # get room info for multiple rooms
+$ # map from room id to room alias
+$ matrix-commander --get-room-info '\!roomId1:example.com'
+$ # map from room alias to room id
+$ matrix-commander --get-room-info '#roomAlias1:example.com'
 $ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
@@ -882,7 +886,7 @@ options:
                         you are not interested in an alias, provide an empty
                         string like "".The alias provided must be in canocial
                         local form, i.e. if you want a final full alias like
-                        '#SomeRoomAlias:matrix.example.com you must provide
+                        "#SomeRoomAlias:matrix.example.com" you must provide
                         the string 'SomeRoomAlias'. The user must be permitted
                         to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
@@ -1335,17 +1339,25 @@ options:
                         room alias, room creator, etc. for one or multiple
                         specified rooms. The included room 'display name' is
                         also referred to as 'room name' or incorrectly even as
-                        room title. If one or more room ids are given, the
-                        room informations of these rooms will be fetched. If
-                        no room is specified, the room information for the
+                        room title. If one or more room are given, the room
+                        informations of these rooms will be fetched. If no
+                        room is specified, the room information for the
                         default room configured for matrix-commander is
-                        fetched. As response room id, room display name, room
-                        canonical alias, room topic, room creator, room
-                        encryption are printed. One line per room will be
-                        printed. Do not confuse this option with the options '
-                        --get-display-name' and '--set-display-name', which
-                        get/set the user display name, not the room display
-                        name.
+                        fetched. Rooms can be given via room id (e.g.
+                        '\!SomeRoomId:matrix.example.com'), canonical (full)
+                        room alias (e.g. '#SomeRoomAlias:matrix.example.com'),
+                        or short alias (e.g. 'SomeRoomAlias' or
+                        '#SomeRoomAlias'). As response room id, room display
+                        name, room canonical alias, room topic, room creator,
+                        and room encryption are printed. One line per room
+                        will be printed. Since either room id or room alias
+                        are accepted as input and both room id and room alias
+                        are given as output, one can hence use this option to
+                        map from room id to room alias as well as vice versa
+                        from room alias to room id. Do not confuse this option
+                        with the options '--get-display-name' and '--set-
+                        display-name', which get/set the user display name,
+                        not the room display name.
   --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
@@ -1389,25 +1401,25 @@ options:
                         have multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
                         like this: '#someRoomAlias:matrix.example.org'. Short
-                        aliases like 'someRoomAlias' are also accepted. In
-                        case of a short alias, it will be automatically
-                        prefixed with '#' and the homeserver will be
-                        automatically appended. Adding the same alias multiple
-                        times to the same room results in an error. --room-
-                        put-alias is eqivalent to --room-set-alias.
+                        aliases like 'someRoomAlias' or '#someRoomAlias' are
+                        also accepted. In case of a short alias, it will be
+                        automatically prefixed with '#' and the homeserver
+                        will be automatically appended. Adding the same alias
+                        multiple times to the same room results in an error.
+                        --room-put-alias is eqivalent to --room-set-alias.
   --room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
                         looks like this: '#someRoomAlias:matrix.example.org'.
-                        Short aliases like 'someRoomAlias' are also accepted.
-                        In case of a short alias, it will be automatically
-                        prefixed with '#' and the homeserver from the default
-                        room of matrix-commander (as found in credentials
-                        file) will be automatically appended. Resolving an
-                        alias that does not exist results in an error. For
-                        each room alias one line will be printed to stdout
-                        with the result.
+                        Short aliases like 'someRoomAlias' or '#someRoomAlias'
+                        are also accepted. In case of a short alias, it will
+                        be automatically prefixed with '#' and the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Resolving an alias that does not exist results in an
+                        error. For each room alias one line will be printed to
+                        stdout with the result.
   --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
                         Delete one or multiple rooms aliases. Provide one or
                         multiple room aliases. You can have multiple room
@@ -1415,12 +1427,13 @@ options:
                         from the same room or from different rooms. A room
                         alias looks like this:
                         '#someRoomAlias:matrix.example.org'. Short aliases
-                        like 'someRoomAlias' are also accepted. In case of a
-                        short alias, it will be automatically prefixed with
-                        '#' and the homeserver from the default room of
-                        matrix-commander (as found in credentials file) will
-                        be automatically appended. Deleting an alias that does
-                        not exist results in an error.
+                        like 'someRoomAlias' or '#someRoomAlias' are also
+                        accepted. In case of a short alias, it will be
+                        automatically prefixed with '#' and the homeserver
+                        from the default room of matrix-commander (as found in
+                        credentials file) will be automatically appended.
+                        Deleting an alias that does not exist results in an
+                        error.
   --get-openid-token [GET_OPENID_TOKEN ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
@@ -1597,7 +1610,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.6 2022-10-06. Enjoy, star on Github and contribute
+You are running version 3.5.7 2022-10-07. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1750,8 +1763,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-06"
-VERSIONNR = "3.5.6"
+VERSION = "2022-10-07"
+VERSIONNR = "3.5.7"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1948,6 +1961,34 @@ def choose_available_filename(filename):
         return f"{start}_{i}.{ext}"
     else:
         return filename
+
+
+async def synchronize(client: AsyncClient) -> SyncResponse:
+    """Synchronize with server, e.g. in order to get rooms.
+
+    Arguments:
+    ---------
+    client : Client
+
+    Returns: None
+
+    Raises exception on error.
+    """
+    try:
+        resp = await client.sync(timeout=10000, full_state=True)
+    except ClientConnectorError as e:
+        err = (
+            "sync() failed. Do you have connectivity to internet? "
+            f"ClientConnectorError {e}"
+        )
+        raise MatrixCommanderError(err) from e
+    except Exception as e:
+        err = f"sync() failed. Exception {e}"
+        raise MatrixCommanderError(err) from e
+    if isinstance(resp, SyncError):
+        err = f"sync failed with resp = {resp}"
+        raise MatrixCommanderError(err) from None
+    return resp
 
 
 async def download_mxc(
@@ -2972,6 +3013,55 @@ async def determine_rooms(
     return rooms
 
 
+async def map_roominfo_to_roomid(client: AsyncClient, info: str) -> str:
+    """Attempt to convert room info to room_id.
+
+    Arguments:
+    ---------
+    client : nio client
+    info : str
+        can be a canonical alias in the form of '#someRoomAlias:example.com'
+        can be a canonical room_id in the form of '!someRoomId:example.com'
+        can be a short alias in the form of 'someRoomAlias'
+        can be a short alias in the form of '#someRoomAlias'
+        can be a short room id in the form of '!someRoomId'
+
+    Return corresponding full room_id (!id:sample.com) or or raises exception.
+
+    """
+    ri = info.strip()
+    ri = ri.replace(r"\!", "!")  # remove possible escape
+    if (
+        ri is None
+        or ri == ""
+        or ri == "!"
+        or ri == "#"
+        or ri.startswith(":")
+        or ri.count(":") > 1
+        or ri.startswith("@")
+        or "#" in ri[1:]
+        or any(elem in ri for elem in "[]{} ")  # does it contain bad chars?
+        or (
+            not ri.startswith("!") and not ri.startswith("#") and ":" in ri
+        )  # alias:sample.com
+    ):
+        err = (
+            f"Invalid room specification. '{info}' ({ri}) is neither "
+            "a valid room id nor a valid room alias."
+        )
+        raise MatrixCommanderError(err) from None
+    if not ri.startswith("!"):
+        # 'someRoomAlias' or '#someRoomAlias' or '#someRoomAlias:sample.com'
+        if ":" not in ri:  # 'someRoomAlias' or '#someRoomAlias'
+            ri = short_room_alias_to_room_alias(ri, gs.credentials)
+        ri = await map_roomalias_to_roomid(client, ri)
+        return ri
+    if ":" not in ri:
+        # '!someRoomId'
+        ri = ri + ":" + default_homeserver(gs.credentials)
+    return ri
+
+
 async def map_roomalias_to_roomid(client, alias) -> str:
     """Attempt to convert room alias to room_id.
 
@@ -3021,7 +3111,14 @@ def short_room_alias_to_room_alias(short_room_alias: str, credentials: dict):
     """Convert 'SomeRoomAlias' to ''#SomeToomAlias:matrix.example.com'.
     Converts short canonical local room alias to full room alias.
     """
-    return "#" + short_room_alias + ":" + default_homeserver(credentials)
+    if short_room_alias is None or short_room_alias == "":
+        err = "Invalid room alias. Alias is none or empty."
+        raise MatrixCommanderError(err) from None
+    if short_room_alias[0] == "#":
+        ret = short_room_alias + ":" + default_homeserver(credentials)
+    else:
+        ret = "#" + short_room_alias + ":" + default_homeserver(credentials)
+    return ret
 
 
 def room_alias_to_short_room_alias(room_alias: str, credentials: dict):
@@ -3056,8 +3153,11 @@ def is_room_alias(room_id: str) -> bool:
         room_id
         and len(room_id) > 3
         and (room_id[0] == "#")
+        and ("#" not in room_id[1:])
         and (":" in room_id)
+        and room_id.count(":") == 1
         and (" " not in room_id)
+        and not any(elem in room_id for elem in "[]{} ")  # contains bad chars?
     ):
         return True
     else:
@@ -3075,9 +3175,10 @@ def is_room_id(room_id: str) -> bool:
         room_id
         and len(room_id) > 3
         and (room_id[0] == "!")
-        and (":" in room_id)
-        and (" " not in room_id)
         and ("#" not in room_id)
+        and (":" in room_id)
+        and room_id.count(":") == 1
+        and (" " not in room_id)
     ):
         return True
     else:
@@ -3098,13 +3199,17 @@ def is_short_room_alias(room_id: str) -> bool:
 
     Local parts of canonical room aliases are of syntax: somealias
 
+    Now also allowing #somealias
+
     """
     if (
         room_id
         and len(room_id) > 0
+        and room_id != "#"
         and (":" not in room_id)
-        and ("#" not in room_id)
-        and ("!" not in room_id)
+        and ("#" not in room_id[1:])
+        and (not room_id.startswith("!"))
+        and (not room_id.startswith("@"))
         and (" " not in room_id)
     ):
         return True
@@ -4570,22 +4675,7 @@ async def listen_tail(  # noqa: C901
     """
     # we call sync() to get the next_batch marker
     # we set full_state=True to get all room_ids
-    try:
-        resp_s = await client.sync(timeout=10000, full_state=True)
-    except ClientConnectorError:
-        gs.log.warning("sync() failed. Do you have connectivity to internet?")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    except Exception:
-        gs.log.warning("sync() failed.")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    if isinstance(resp_s, SyncError):
-        gs.log.warning(f"sync failed with resp = {resp_s}")
-        gs.warn_count += 1
-        return
+    resp_s = await synchronize(client)  # sync() to get rooms
     # this prints a summary of all new messages currently waiting in the queue
     gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
     gs.log.debug(f"client.next_batch after = (str) {client.next_batch}")
@@ -4751,22 +4841,7 @@ async def listen_all(  # noqa: C901
     """
     # we call sync() to get the next_batch marker
     # we set full_state=True to get all room_ids
-    try:
-        resp_s = await client.sync(timeout=10000, full_state=True)
-    except ClientConnectorError:
-        gs.log.warning("sync() failed. Do you have connectivity to internet?")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    except Exception:
-        gs.log.warning("sync() failed.")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    if isinstance(resp_s, SyncError):
-        gs.log.warning(f"sync failed with resp = {resp_s}")
-        gs.warn_count += 1
-        return
+    resp_s = await synchronize(client)  # sync() to get rooms
     # this prints a summary of all new messages currently waiting in the queue
     gs.log.debug(f"sync response = {type(resp_s)} :: {resp_s}")
     gs.log.debug(f"client.next_batch after = (str) {client.next_batch}")
@@ -5631,26 +5706,10 @@ async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
     gs.log.debug(
         "Getting room display names for these rooms: " f"{gs.pa.get_room_info}"
     )
-    # sync() to get room info
-    try:
-        resp_s = await client.sync(timeout=10000, full_state=True)
-    except ClientConnectorError:
-        gs.log.warning("sync() failed. Do you have connectivity to internet?")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    except Exception:
-        gs.log.warning("sync() failed.")
-        gs.warn_count += 1
-        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
-        return
-    if isinstance(resp_s, SyncError):
-        gs.log.warning(f"sync failed with resp = {resp_s}")
-        gs.warn_count += 1
-        return
+    await synchronize(client)  # sync() to get rooms
     # user_id = credentials["user_id"]
     for room_id in gs.pa.get_room_info:
-        room_id = room_id.strip()
+        room_id = await map_roominfo_to_roomid(client, room_id)
         try:
             room = client.rooms[room_id]
             room_displayname = room.display_name
@@ -5801,7 +5860,8 @@ async def action_room_set_alias(
             gs.log.error(
                 f"Invalid alias '{alias}'. This is neither a full room alias "
                 "nor a short room alias. It should either be "
-                "'#SomeRoomAlias:matrix.example.com' or 'SomeRoomAlias'."
+                "'#SomeRoomAlias:matrix.example.com' or "
+                "'#SomeRoomAlias' or 'SomeRoomAlias'."
             )
             gs.err_count += 1
             continue
@@ -5809,7 +5869,9 @@ async def action_room_set_alias(
             # Do NOT use short_room_alias_to_room_alias().
             # We want this to be based on provided room_id not the default
             # homeserver!
-            alias = "#" + alias + ":" + room_id.split(":")[1]
+            if alias[0] != "#":
+                alias = "#" + alias
+            alias = alias + ":" + room_id.split(":")[1]
         resp = await client.room_put_alias(alias, room_id)
         if isinstance(resp, RoomPutAliasResponse):
             gs.log.debug(f"room_put_alias successful. Response is: {resp}")
@@ -5835,7 +5897,8 @@ async def action_room_resolve_alias(
             gs.log.error(
                 f"Invalid alias '{alias}'. This is neither a full room alias "
                 "nor a short room alias. It should either be "
-                "'#SomeRoomAlias:matrix.example.com' or 'SomeRoomAlias'."
+                "'#SomeRoomAlias:matrix.example.com' or "
+                "'#SomeRoomAlias' or 'SomeRoomAlias'."
             )
             gs.err_count += 1
             continue
@@ -6215,6 +6278,7 @@ async def action_roomsetget() -> None:
             "Error during room, set, get actions. Continuing despite error. "
             f"Exception: {e}"
         )
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
         gs.err_count += 1
 
 
@@ -6458,7 +6522,9 @@ async def action_login() -> None:
                 "Specify correct user id."
             ) from None
     if is_short_room_alias(room_id):
-        room_id = "#" + room_id + ":" + homeserver_short  # dont use fn
+        if room_id[0] != "#":
+            room_id = "#" + room_id
+        room_id = room_id + ":" + homeserver_short  # dont use fn
     if not is_room(room_id):
         raise MatrixCommanderError(
             f"Room id '{room_id}' for --login is invalid. "
@@ -7400,7 +7466,7 @@ def main_inner(
         'alias, provide an empty string like "".'
         "The alias provided must be in canocial local form, i.e. "
         "if you want a final full alias like "
-        "'#SomeRoomAlias:matrix.example.com "
+        '"#SomeRoomAlias:matrix.example.com" '
         "you must provide the string 'SomeRoomAlias'. "
         "The user must be permitted to create rooms. "
         "Combine --room-create with --name and --topic to add "
@@ -8209,14 +8275,23 @@ def main_inner(
         "room alias, room creator, etc. for "
         "one or multiple specified rooms. The included room 'display name' is "
         "also referred to as 'room name' or incorrectly even as room title. "
-        "If one or more room ids are given, the room "
+        "If one or more room are given, the room "
         "informations of these rooms will be fetched. "
         "If no room is specified, the room information for the "
         f"default room configured for {PROG_WITHOUT_EXT} is fetched. "
+        "Rooms can be given via "
+        "room id (e.g. '\\!SomeRoomId:matrix.example.com'), "
+        "canonical (full) room alias "
+        "(e.g. '#SomeRoomAlias:matrix.example.com'), "
+        "or short alias (e.g. 'SomeRoomAlias' or '#SomeRoomAlias'). "
         "As response "
         "room id, room display name, room canonical alias, room topic, "
-        "room creator, room encryption "
+        "room creator, and room encryption "
         "are printed. One line per room will be printed. "
+        "Since either room id or room alias are accepted as input and both "
+        "room id and room alias are given as output, one can hence use this "
+        "option to map from room id to room alias "
+        "as well as vice versa from room alias to room id. "
         "Do not confuse this option with the options '--get-display-name' "
         "and '--set-display-name', which get/set the user display name, not "
         "the room display name.",
@@ -8285,7 +8360,8 @@ def main_inner(
         "you may add multiple aliases to the same room. "
         "A room alias looks like this: "
         "'#someRoomAlias:matrix.example.org'. Short aliases like "
-        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "'someRoomAlias' or '#someRoomAlias' are also accepted. "
+        "In case of a short alias, "
         "it will be automatically prefixed with '#' and the "
         "homeserver will be automatically appended. "
         "Adding the same alias "
@@ -8303,7 +8379,8 @@ def main_inner(
         "Provide one or multiple room aliases. "
         "A room alias looks like this: "
         "'#someRoomAlias:matrix.example.org'. Short aliases like "
-        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "'someRoomAlias' or '#someRoomAlias' are also accepted. "
+        "In case of a short alias, "
         "it will be automatically prefixed with '#' and the "
         f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
         "in credentials file) will be automatically appended. "
@@ -8324,7 +8401,8 @@ def main_inner(
         "rooms. "
         "A room alias looks like this: "
         "'#someRoomAlias:matrix.example.org'. Short aliases like "
-        "'someRoomAlias' are also accepted. In case of a short alias, "
+        "'someRoomAlias' or '#someRoomAlias' are also accepted. "
+        "In case of a short alias, "
         "it will be automatically prefixed with '#' and the "
         f"homeserver from the default room of {PROG_WITHOUT_EXT} (as found "
         "in credentials file) will be automatically appended. "
