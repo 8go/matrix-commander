@@ -68,6 +68,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new option: `--output` to produce output in different formats (text, JSON)
 - new option: `--get-room-info` to get room info such as the
   room display name, room alias, etc. for a given room id
+- new option: `--get-client-info` to get client info
 
 # Summary, TLDR
 
@@ -533,6 +534,7 @@ $ # map from room id to room alias
 $ matrix-commander --get-room-info '\!roomId1:example.com'
 $ # map from room alias to room id
 $ matrix-commander --get-room-info '#roomAlias1:example.com'
+$ matrix-commander --get-client-info # get client info
 $ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
@@ -692,6 +694,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-avatar [GET_AVATAR ...]]
                            [--get-profile [GET_PROFILE ...]]
                            [--get-room-info [GET_ROOM_INFO ...]]
+                           [--get-client-info]
                            [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
@@ -1358,6 +1361,8 @@ options:
                         with the options '--get-display-name' and '--set-
                         display-name', which get/set the user display name,
                         not the room display name.
+  --get-client-info     Print information kept in the client, i.e. matrix-
+                        commander. Output is printed in JSON format.
   --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
@@ -1595,22 +1600,25 @@ options:
                         is no need to use this option. If you have chosen
                         'text', the output will be formatted with the
                         intention to be consumed by humans, i.e. readable
-                        text. If you have chosen 'json-max', the output will
-                        be formatted as close to the data provided by the
-                        matrix-nio API. This output might have a lot more
-                        details and in most cases will be processed by other
-                        programs rather than read by humans. Option 'json' is
-                        similar to 'json-max' in format, but the amount is
-                        reduced to a sensible amount. In most cases it will be
-                        processed by other programs rather than read by
-                        humans. ----- The '--output' option is only partially
-                        implemented yet. Over time more and more functions
-                        will support this option.
+                        text. If you have chosen 'json', the output will be
+                        formatted as JSON. The content of the JSON object
+                        matches the data provided by the matrix-nio API. In
+                        some occassions the output is enhanced by having added
+                        a few data items for convenience. These convenient
+                        data items are added to the data from matrix-nio. In
+                        most cases the output will be processed by other
+                        programs rather than read by humans. Option 'json-max'
+                        is practically the same as '{OUTPUT_JSON}', but yet
+                        another additional field has been added. The data item
+                        'transport_response' which gives information on how
+                        the data was obtained and transported is being added.
+                        In most cases the output will be processed by other
+                        programs rather than read by humans.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.7 2022-10-07. Enjoy, star on Github and contribute
+You are running version 3.5.8 2022-10-07. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1764,7 +1772,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-07"
-VERSIONNR = "3.5.7"
+VERSIONNR = "3.5.8"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1908,7 +1916,7 @@ def obj_to_dict(obj):
     #     return {obj.__class__.__name__: str(obj)}
     # if get_qualifiedclassname(obj) == "asyncio.events.TimerHandle":
     #     return {obj.__class__.__name__: str(obj)}
-    # if get_qualifiedclassname(obj) == "multidict._multidict.CIMultiDictProxy":
+    # if get_qualifiedclassname(obj) =="multidict._multidict.CIMultiDictProxy":
     #     return {obj.__class__.__name__: str(obj)}
     # if get_qualifiedclassname(obj) == "aiosignal.Signal":
     #     return {obj.__class__.__name__: str(obj)}
@@ -1925,8 +1933,61 @@ def obj_to_dict(obj):
         return {obj.__class__.__name__: str(obj)}
     if get_qualifiedclassname(obj) == "aiohttp.tracing.TraceConfig":
         return {obj.__class__.__name__: str(obj)}
+    # avoid "keys must be str, int, float, bool or None" errors
+    if get_qualifiedclassname(obj) == "aiohttp.connector.TCPConnector":
+        return {obj.__class__.__name__: str(obj)}
 
     if hasattr(obj, "__dict__"):
+        if (
+            "inbound_group_store" in obj.__dict__
+            and "session_store" in obj.__dict__
+            and "outbound_group_sessions" in obj.__dict__
+        ):
+            # "olm" is hige, 1MB+, 20K lines of JSON
+            # grab only some items
+            # "olm": {
+            #   "user_id": "@xxx:xxx.xxx.xxx",
+            #   "device_id": "xxx",
+            #   "uploaded_key_count": 50,
+            #   "users_for_key_query": {
+            #     "set": "..."
+            #   },
+            #   "device_store": {
+            #       ... want
+            #   },
+            #   "session_store": {
+            #       ... dont want, too long
+            #   },
+            #   "inbound_group_store": {
+            #       ... dont want, 20K lines, too long
+            #   },
+            #   "outbound_group_sessions": {},
+            #   "tracked_users": {
+            #     "set": "set()"
+            #   },
+            dictcopy = {}
+            for key in [
+                "user_id",
+                "device_id",
+                "uploaded_key_count",
+                "users_for_key_query",
+                "device_store",
+                "outbound_group_sessions",
+                "tracked_users",
+                "outgoing_key_requests",
+                "received_key_requests",
+                "key_requests_waiting_for_session",
+                "key_request_devices_no_session",
+                "key_request_from_untrusted",
+                "wedged_devices",
+                "key_re_requests_events",
+                "key_verifications",
+                "outgoing_to_device_messages",
+                "message_index_store",
+                "store",
+            ]:
+                dictcopy.update({key: obj.__dict__[key]})
+            return dictcopy
         return obj.__dict__
     else:
         # gs.log.debug(
@@ -2261,7 +2322,7 @@ class Callbacks(object):
                 f"{event_id_detail} | {fixed_msg}"
             )
             gs.log.debug(complete_msg)
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 if gs.pa.output == OUTPUT_JSON:
                     # add the source layer to make it same as OUTPUT_JSON_MAX
@@ -3354,7 +3415,7 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                     f'Created room with room id "{resp.room_id}" '
                     f'and short alias "{alias}" and full alias "{full_alias}".'
                 )
-                # todo output format ==> done
+                # output format controlled via --output
                 if (
                     gs.pa.output == OUTPUT_JSON_MAX
                     or gs.pa.output == OUTPUT_JSON
@@ -3812,7 +3873,7 @@ async def send_file(client, rooms, file):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format ==> done
+                # output format controlled via --output
                 if (
                     gs.pa.output == OUTPUT_JSON_MAX
                     or gs.pa.output == OUTPUT_JSON
@@ -4061,7 +4122,7 @@ async def send_image(client, rooms, image):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format ==> done
+                # output format controlled via --output
                 if (
                     gs.pa.output == OUTPUT_JSON_MAX
                     or gs.pa.output == OUTPUT_JSON
@@ -4177,7 +4238,7 @@ async def send_message(client, rooms, message):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo output format ==> done
+                # output format controlled via --output
                 if (
                     gs.pa.output == OUTPUT_JSON_MAX
                     or gs.pa.output == OUTPUT_JSON
@@ -4988,7 +5049,7 @@ async def action_get_display_name(
                 displayname = ""  # means no display name is set
             else:
                 displayname = resp.displayname
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_JSON:
@@ -5041,7 +5102,7 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
                 status_msg = ""  # means no status_msg is set
             else:
                 status_msg = resp.status_msg
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_JSON:
@@ -5094,7 +5155,7 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             )
             # decryption_dict will be None in case of plain-text
             # the URI and keys will be needed later. So this print is a must
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_JSON:
@@ -5323,7 +5384,7 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
             if gs.pa.output == OUTPUT_JSON:
@@ -5374,7 +5435,7 @@ async def action_joined_members(
         else:
             gs.log.debug(f"joined_members successful with {resp}")
             # members = List[RoomMember] ; RoomMember
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_JSON:
@@ -5403,7 +5464,7 @@ async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
     for mxc in gs.pa.mxc_to_http:
         mxc = mxc.strip()
         http = await client.mxc_to_http(mxc)  # returns None or str
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = {}
             dic.update({"mxc": mxc})
@@ -5421,7 +5482,7 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"devices successful with {resp}")
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
             if gs.pa.output == OUTPUT_JSON:
@@ -5441,7 +5502,7 @@ async def action_discovery_info(
         gs.err_count += 1
     else:
         gs.log.debug(f"discovery_info successful with {resp}")
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
             if gs.pa.output == OUTPUT_JSON:
@@ -5459,7 +5520,7 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"login_info successful with {resp}")
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
             if gs.pa.output == OUTPUT_JSON:
@@ -5479,7 +5540,7 @@ async def action_content_repository_config(
         gs.err_count += 1
     else:
         gs.log.debug(f"content_repository_config successful with {resp}")
-        # todo output format ==> done
+        # output format controlled via --output
         if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
             dic = resp.__dict__
             if gs.pa.output == OUTPUT_JSON:
@@ -5619,7 +5680,7 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
                 f"Response is: {txt}. Input was: method={method} "
                 f"data={data}, url={url}."
             )
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 # if gs.pa.output == OUTPUT_JSON:
@@ -5647,7 +5708,7 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
             gs.log.debug(
                 f"avatar_mxc is {avatar_mxc}. avatar_url is {avatar_url}"
             )
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = resp.__dict__
                 if gs.pa.output == OUTPUT_JSON:
@@ -5692,11 +5753,27 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
                 f"displayname is {displayname}. avatar_mxc is {avatar_mxc}. "
                 f"avatar_url is {avatar_url}. other_info is {resp.other_info}."
             )
-            # todo output format
-            print(
-                f"{displayname}{SEP}{avatar_mxc}{SEP}{avatar_url}"
-                f"{SEP}{other_info}"
-            )
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                dic.update({"avatar_http": avatar_url})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(
+                    f"{displayname}{SEP}{avatar_mxc}{SEP}{avatar_url}"
+                    f"{SEP}{other_info}"
+                )
+
+
+async def action_get_client_info(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get client info while already logged in."""
+    gs.log.debug("Getting client info.")
+    await synchronize(client)  # sync() to get rooms
+    print(json.dumps(client.__dict__, default=obj_to_dict))
 
 
 async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
@@ -5727,7 +5804,7 @@ async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
                 f"room display name is {room_displayname}, "
                 f"room is {room}. "
             )
-            # todo output format ==> done
+            # output format controlled via --output
             if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
                 dic = room.__dict__
                 dic.update({"display_name": room_displayname})
@@ -5757,6 +5834,7 @@ async def action_has_permission(
     for ii in range(len(gs.pa.has_permission) // 2):
         room_id = gs.pa.has_permission[ii * 2 + 0]
         room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        room_id = await map_roominfo_to_roomid(client, room_id)
         permission_type = gs.pa.has_permission[ii * 2 + 1].strip()
         gs.log.debug(
             "Preparing to ask about permission for permission type "
@@ -5775,15 +5853,35 @@ async def action_has_permission(
                 f"'{permission_type}' in room {room_id}. {resp}"
             )
             gs.err_count += 1
-            # todo output format
-            print(f"Error{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                # for JSON the user can determine which one from the list
+                # was successful and which one failed. For 4 inputs there
+                # might only be 3 output JSON objects if there was 1 error.
+                pass
+            else:  # default, gs.output == OUTPUT_TEXT:
+                # in text mode we print this line, so that for 4 inputs there
+                # will be 4 output lines
+                print(
+                    f"Error{SEP}{user_id}{SEP}{room_id}"
+                    f"{SEP}{permission_type}"
+                )
         else:
             gs.log.debug(
                 f"has_permission {user_id} for permission type "
                 f"'{permission_type}' in room {room_id}: {resp}"
             )
-            # todo output format
-            print(f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}{permission_type}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(
+                    f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}"
+                    f"{permission_type}"
+                )
 
 
 async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
@@ -5911,13 +6009,30 @@ async def action_room_resolve_alias(
                 f"Successfully resolved room alias '{alias}' to "
                 f"{resp.room_id}."
             )
-            # todo output format
-            print(f"{resp.room_alias}{SEP}{resp.room_id}{SEP}{resp.servers}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(
+                    f"{resp.room_alias}{SEP}{resp.room_id}{SEP}"
+                    f"{resp.servers}"
+                )
         else:
             gs.log.error(f"Failed to resolve room alias '{alias}': {resp}")
             gs.err_count += 1
-            # todo output format
-            print(f"{alias}{SEP}Error{SEP}[]")  # empty server list
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                # for JSON the user can determine which one from the list
+                # was successful and which one failed. For 4 inputs there
+                # might only be 3 output JSON objects if there was 1 error.
+                pass
+            else:  # default, gs.output == OUTPUT_TEXT:
+                # in text mode we print this line, so that for 4 inputs there
+                # will be 4 output lines
+                print(f"{alias}{SEP}Error{SEP}[]")  # empty server list
 
 
 async def action_room_delete_alias(
@@ -5979,11 +6094,18 @@ async def action_get_openid_token(
                 f"Successfully obtained OpenId token "
                 f"{resp.access_token} for user {user_id}."
             )
-            # todo output format
-            print(
-                f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
-                f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
-            )
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                dic.update({"user_id": user_id})
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(
+                    f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
+                    f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
+                )
 
 
 async def action_room_get_visibility(
@@ -6001,16 +6123,30 @@ async def action_room_get_visibility(
                 f"Successfully got visibility for room {resp.room_id}: "
                 f"{resp.visibility}."
             )
-            # todo output format
-            print(f"{resp.visibility}{SEP}{room_id}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{resp.visibility}{SEP}{room_id}")
         else:
             gs.log.error(
                 f"Failed getting visibility for room {room_id}. {resp}"
             )
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
-            # todo output format
-            print(f"{errmsg}{SEP}{room_id}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                # for JSON the user can determine which one from the list
+                # was successful and which one failed. For 4 inputs there
+                # might only be 3 output JSON objects if there was 1 error.
+                pass
+            else:  # default, gs.output == OUTPUT_TEXT:
+                # in text mode we print this line, so that for 4 inputs there
+                # will be 4 output lines
+                print(f"{errmsg}{SEP}{room_id}")
 
 
 async def action_room_get_state(
@@ -6028,14 +6164,28 @@ async def action_room_get_state(
                 f"Successfully got state for room {resp.room_id}: "
                 f"{resp.events}."
             )
-            # todo output format
-            print(f"{resp.events}{SEP}{room_id}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                dic = resp.__dict__
+                if gs.pa.output == OUTPUT_JSON:
+                    dic.pop("transport_response")
+                print(json.dumps(dic, default=obj_to_dict))
+            else:  # default, gs.output == OUTPUT_TEXT:
+                print(f"{resp.events}{SEP}{room_id}")
         else:
             gs.log.error(f"Failed getting state for room {room_id}. {resp}")
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
-            # todo output format
-            print(f"{errmsg}{SEP}{room_id}")
+            # output format controlled via --output
+            if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+                # for JSON the user can determine which one from the list
+                # was successful and which one failed. For 4 inputs there
+                # might only be 3 output JSON objects if there was 1 error.
+                pass
+            else:  # default, gs.output == OUTPUT_TEXT:
+                # in text mode we print this line, so that for 4 inputs there
+                # will be 4 output lines
+                print(f"{errmsg}{SEP}{room_id}")
 
 
 async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
@@ -6166,8 +6316,11 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
     gs.log.debug(f"whoami: user id: {whoami}")
-    # todo output format
-    print(whoami)
+    # output format controlled via --output
+    if gs.pa.output == OUTPUT_JSON_MAX or gs.pa.output == OUTPUT_JSON:
+        print(json.dumps({"user_id": whoami}, default=obj_to_dict))
+    else:  # default, gs.output == OUTPUT_TEXT:
+        print(whoami)
 
 
 async def action_roomsetget() -> None:
@@ -6260,9 +6413,10 @@ async def action_roomsetget() -> None:
             await action_get_avatar(gs.client, gs.credentials)
         if gs.pa.get_profile is not None:  # empty list must invoke function
             await action_get_profile(gs.client, gs.credentials)
-        # empty list must invoke function
-        if gs.pa.get_room_info is not None:
+        if gs.pa.get_room_info is not None:  # empty list must invoke function
             await action_get_room_info(gs.client, gs.credentials)
+        if gs.pa.get_client_info:
+            await action_get_client_info(gs.client, gs.credentials)
         if gs.pa.has_permission:
             await action_has_permission(gs.client, gs.credentials)
         if gs.pa.export_keys:
@@ -6997,6 +7151,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.get_avatar is not None  # empty list must invoke function
         or gs.pa.get_profile is not None  # empty list must invoke function
         or gs.pa.get_room_info is not None  # empty list must invoke function
+        or gs.pa.get_client_info is not None
         or gs.pa.has_permission
         or gs.pa.export_keys
         or gs.pa.get_openid_token is not None  # empty list must invoke func
@@ -8297,6 +8452,13 @@ def main_inner(
         "the room display name.",
     )
     ap.add_argument(
+        "--get-client-info",
+        required=False,
+        action="store_true",
+        help=f"Print information kept in the client, i.e. {PROG_WITHOUT_EXT}. "
+        "Output is printed in JSON format.",
+    )
+    ap.add_argument(
         "--has-permission",
         required=False,
         action="extend",
@@ -8671,19 +8833,21 @@ def main_inner(
         f"If you have chosen '{OUTPUT_TEXT}', "
         "the output will be formatted with the intention to be "
         "consumed by humans, i.e. readable text. "
-        f"If you have chosen '{OUTPUT_JSON_MAX}', "
-        "the output will be formatted as close to the data provided by the "
-        "matrix-nio API. This output might have a lot more details and in "
-        "most cases will be processed by other programs rather than read by "
-        "humans. "
-        f"Option '{OUTPUT_JSON}' is similar to '{OUTPUT_JSON_MAX}' in "
-        "format, "
-        "but the amount is reduced to a sensible amount. In most "
-        "cases it will be processed by other programs rather than read by "
-        "humans. "
-        "----- The '--output' option is only partially implemented yet. "
-        "Over time "
-        "more and more functions will support this option.",
+        f"If you have chosen '{OUTPUT_JSON}', "
+        "the output will be formatted as JSON. "
+        "The content of the JSON object matches the data provided by the "
+        "matrix-nio API. In some occassions the output is enhanced "
+        "by having added a few data items for convenience. These convenient "
+        "data items are added to the data from matrix-nio. "
+        "In most cases the output will be processed by other programs "
+        "rather than read by humans. "
+        f"Option '{OUTPUT_JSON_MAX}' is practically the same as "
+        "'{OUTPUT_JSON}', "
+        "but yet another additional field has been added. "
+        "The data item 'transport_response' which gives information on "
+        "how the data was obtained and transported is being added. "
+        "In most cases the output will be processed by other programs "
+        "rather than read by humans. ",
     )
     ap.add_argument(
         # no single char flag

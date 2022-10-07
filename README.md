@@ -61,6 +61,7 @@ alt="get it on Docker Hub" height="100"></a>
 - new option: `--output` to produce output in different formats (text, JSON)
 - new option: `--get-room-info` to get room info such as the
   room display name, room alias, etc. for a given room id
+- new option: `--get-client-info` to get client info
 
 # Summary, TLDR
 
@@ -526,6 +527,7 @@ $ # map from room id to room alias
 $ matrix-commander --get-room-info '\!roomId1:example.com'
 $ # map from room alias to room id
 $ matrix-commander --get-room-info '#roomAlias1:example.com'
+$ matrix-commander --get-client-info # get client info
 $ matrix-commander --has-permission '!someroomId1:example.com' 'ban'
 $ matrix-commander --export-keys mykeys "my passphrase" # export keys
 $ matrix-commander --import-keys mykeys "my passphrase" # import keys
@@ -685,6 +687,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--get-avatar [GET_AVATAR ...]]
                            [--get-profile [GET_PROFILE ...]]
                            [--get-room-info [GET_ROOM_INFO ...]]
+                           [--get-client-info]
                            [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
@@ -1351,6 +1354,8 @@ options:
                         with the options '--get-display-name' and '--set-
                         display-name', which get/set the user display name,
                         not the room display name.
+  --get-client-info     Print information kept in the client, i.e. matrix-
+                        commander. Output is printed in JSON format.
   --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
@@ -1588,22 +1593,25 @@ options:
                         is no need to use this option. If you have chosen
                         'text', the output will be formatted with the
                         intention to be consumed by humans, i.e. readable
-                        text. If you have chosen 'json-max', the output will
-                        be formatted as close to the data provided by the
-                        matrix-nio API. This output might have a lot more
-                        details and in most cases will be processed by other
-                        programs rather than read by humans. Option 'json' is
-                        similar to 'json-max' in format, but the amount is
-                        reduced to a sensible amount. In most cases it will be
-                        processed by other programs rather than read by
-                        humans. ----- The '--output' option is only partially
-                        implemented yet. Over time more and more functions
-                        will support this option.
+                        text. If you have chosen 'json', the output will be
+                        formatted as JSON. The content of the JSON object
+                        matches the data provided by the matrix-nio API. In
+                        some occassions the output is enhanced by having added
+                        a few data items for convenience. These convenient
+                        data items are added to the data from matrix-nio. In
+                        most cases the output will be processed by other
+                        programs rather than read by humans. Option 'json-max'
+                        is practically the same as '{OUTPUT_JSON}', but yet
+                        another additional field has been added. The data item
+                        'transport_response' which gives information on how
+                        the data was obtained and transported is being added.
+                        In most cases the output will be processed by other
+                        programs rather than read by humans.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.7 2022-10-07. Enjoy, star on Github and contribute
+You are running version 3.5.8 2022-10-07. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
