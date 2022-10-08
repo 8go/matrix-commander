@@ -619,6 +619,7 @@ $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
 $ matrix-commander --joined-rooms --output json | jq # get json output in JSON
 $ matrix-commander --joined-rooms --output json-max | jq # full details
+$ matrix-commander --joined-rooms --output json-spec | jq # as specification
 $ matrix-commander --joined-rooms --output text # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
@@ -1587,11 +1588,11 @@ options:
                         skipped entirely before the 'send' which will improve
                         performance.
   --output OUTPUT       This option decides on how the output is presented.
-                        Currently offered choices are: 'text', 'json' and
-                        'json-max'. Provide one of these choices. The default
-                        is 'text'. If you want to use the default, then there
-                        is no need to use this option. If you have chosen
-                        'text', the output will be formatted with the
+                        Currently offered choices are: 'text', 'json', 'json-
+                        max', and 'json-spec'. Provide one of these choices.
+                        The default is 'text'. If you want to use the default,
+                        then there is no need to use this option. If you have
+                        chosen 'text', the output will be formatted with the
                         intention to be consumed by humans, i.e. readable
                         text. If you have chosen 'json', the output will be
                         formatted as JSON. The content of the JSON object
@@ -1600,9 +1601,11 @@ options:
                         a few data items for convenience. These convenient
                         data items are added to the data from matrix-nio. In
                         most cases the output will be processed by other
-                        programs rather than read by humans. Option 'json-max'
-                        is practically the same as '{OUTPUT_JSON}', but yet
-                        another additional field has been added. The data item
+                        programs rather than read by humans. Option 'json-
+                        spec' is practically the same as 'json', but no
+                        additional fields are added. Option 'json-max' is
+                        practically the same as 'json', but yet another
+                        additional field is added. The data item
                         'transport_response' which gives information on how
                         the data was obtained and transported is being added.
                         In most cases the output will be processed by other
@@ -1611,7 +1614,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.8 2022-10-07. Enjoy, star on Github and contribute
+You are running version 3.5.9 2022-10-08. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
