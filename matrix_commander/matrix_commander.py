@@ -51,24 +51,23 @@ alt="get it on Docker Hub" height="100"></a>
 - `matrix-commander` now available on
   [PyPi](https://pypi.org/project/matrix-commander/)
   and hence easy to install via `pip install matrix-commander`
+- available as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
+  for NixOS, Debian, Fedora, etc.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
-- new option `--room-set-alias` to add alias(es) to room(s)
-  (see also Issue #328 in matrix-nio)
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
 - new option: `--logout` to remove device and access-token validity
-- available as reproducible
-  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
-  for NixOS, Debian, Fedora, etc.
 - new option: `--sync` to allow skipping sync when only sending
 - new option: `--output` to produce output in different formats (text, JSON)
 - new option: `--get-room-info` to get room info such as the
   room display name, room alias, etc. for a given room id
 - new option: `--get-client-info` to get client info
+- new option: `--verbose` to specify debugging verbosity
 
 # Summary, TLDR
 
@@ -419,7 +418,15 @@ $ # The other device will issue a "verify by emoji" request
 $ matrix-commander --verify
 $ # Now program is both configured and verified, let us send the first message
 $ matrix-commander -m "First message!"
-$ matrix-commander --debug # turn debugging on
+$ matrix-commander --debug -m "First message!" # turn debugging on
+$ # turn debugging on also for submodules
+$ matrix-commander --debug --debug -m "First message!"
+$ # turn debugging on, high verbosity
+$ matrix-commander --debug --verbose -m "First message!"
+$ # turn debugging on, very high verbosity
+$ matrix-commander --debug --verbose --verbose -m "First message!"
+$ # maximum debugging info
+$ matrix-commander --debug --debug --verbose --verbose -m "First message!"
 $ matrix-commander --help # print help
 $ matrix-commander # this will ask user for message to send
 $ matrix-commander --message "Hello World!" # sends provided message
@@ -658,9 +665,9 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--login LOGIN] [-v [VERIFY]] [--logout LOGOUT]
-                           [-c CREDENTIALS] [-s STORE] [-r ROOM [ROOM ...]]
-                           [--room-default ROOM_DEFAULT]
+                           [--verbose] [--login LOGIN] [-v [VERIFY]]
+                           [--logout LOGOUT] [-c CREDENTIALS] [-s STORE]
+                           [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -743,7 +750,8 @@ options:
                         matrix-commander and underlying modules are set to
                         DEBUG. "-d" is a shortcut for "--log-level DEBUG". See
                         also --log-level. "-d" takes precedence over "--log-
-                        level".
+                        level". Additionally, have a look also at the option "
+                        --verbose".
   --log-level LOG_LEVEL [LOG_LEVEL ...]
                         Set the log level(s). Possible values are "DEBUG",
                         "INFO", "WARNING", "ERROR", and "CRITICAL". If
@@ -753,6 +761,12 @@ options:
                         (e.g. "--log-level WARNING ERROR") then log levels of
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
+  --verbose             Set the verbosity level. If not used, then verbosity
+                        will be set to low. If used once, verbosity will be
+                        high. If used more than once, verbosity will be very
+                        high. Verbosity only affects the debug information.
+                        So, if '--debug' is not used then '--verbose' will be
+                        ignored.
   --login LOGIN         Login to and authenticate with the Matrix homeserver.
                         This requires exactly one argument, the login method.
                         Currently two choices are offered: 'password' and
@@ -1621,8 +1635,8 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.9 2022-10-08. Enjoy, star on Github and contribute
-by submitting a Pull Request.
+You are running version 3.5.10 2022-10-08. Enjoy, star on Github and
+contribute by submitting a Pull Request.
 ```
 
 # Autocompletion
@@ -1775,7 +1789,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-08"
-VERSIONNR = "3.5.9"
+VERSIONNR = "3.5.10"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1909,9 +1923,10 @@ def obj_to_dict(obj):
 
     Useful for json.dump() dict-to-json conversion.
     """
-    # print(obj.__class__)
-    # print(obj.__class__.__name__)
-    # print(get_qualifiedclassname(obj))
+    if gs.pa.verbose > 1:  # 2+
+        gs.log.debug(f"obj_to_dict: {obj.__class__}")
+        gs.log.debug(f"obj_to_dict: {obj.__class__.__name__}")
+        gs.log.debug(f"obj_to_dict: {get_qualifiedclassname(obj)}")
     # summary: shortcut: just these 2: RequestInfo and ClientResponse
     # if get_qualifiedclassname(obj) == "aiohttp.client_reqrep.RequestInfo":
     #     return {obj.__class__.__name__: str(obj)}
@@ -1995,7 +2010,16 @@ def obj_to_dict(obj):
                 "store",
             ]:
                 dictcopy.update({key: obj.__dict__[key]})
+            if gs.pa.verbose > 1:  # 2+
+                gs.log.debug(
+                    f"{obj} is not serializable, simplifying to {dictcopy}."
+                )
             return dictcopy
+        if gs.pa.verbose > 1:  # 2+
+            gs.log.debug(
+                f"{obj} is not serializable, using its available dictionary "
+                f"{obj.__dict__}."
+            )
         return obj.__dict__
     else:
         # gs.log.debug(
@@ -2005,6 +2029,11 @@ def obj_to_dict(obj):
         # )
         # simple types like yarl.URL do not have a __dict__
         # get the class name as string, create a dict with classname and value
+        if gs.pa.verbose > 1:  # 2+
+            gs.log.debug(
+                f"{obj} is not serializable, simplifying to key value pair "
+                f"key '{obj.__class__.__name__}' and value '{str(obj)}'."
+            )
         return {obj.__class__.__name__: str(obj)}
 
 
@@ -3469,9 +3498,9 @@ async def action_room_join(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            gs.log.debug(f'Joining room with room alias "{room_id}".')
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to join room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Joining room "{room_id}".')
             resp = await client.join(room_id)
             if isinstance(resp, JoinError):
                 gs.log.error(f"join failed with {resp}")
@@ -3490,9 +3519,9 @@ async def action_room_leave(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            gs.log.debug(f'Leaving room with room alias "{room_id}".')
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to leave room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Leaving room "{room_id}".')
             resp = await client.room_leave(room_id)
             if isinstance(resp, RoomLeaveError):
                 gs.log.error(f"Leave failed with {resp}")
@@ -3511,9 +3540,9 @@ async def action_room_forget(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            gs.log.debug(f'Forgetting room with room alias "{room_id}".')
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to forget room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Forgetting room "{room_id}".')
             resp = await client.room_forget(room_id)
             if isinstance(resp, RoomForgetError):
                 gs.log.error(f"Forget failed with {resp}")
@@ -3532,8 +3561,9 @@ async def action_room_invite(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to invite to room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Inviting to room "{room_id}".')
             for user in users:
                 gs.log.debug(
                     f'Inviting user "{user}" to room with '
@@ -3560,8 +3590,9 @@ async def action_room_ban(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to ban in room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Banning to room "{room_id}".')
             for user in users:
                 gs.log.debug(
                     f'Banning user "{user}" from room with '
@@ -3588,8 +3619,9 @@ async def action_room_unban(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to unban in room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Unbanning to room "{room_id}".')
             for user in users:
                 gs.log.debug(
                     f'Unbanning user "{user}" from room with '
@@ -3617,8 +3649,9 @@ async def action_room_kick(client, credentials):
     try:
         for room_id in rooms:
             # room_id can be #roomAlias or !roomId
-            room_id = room_id.replace(r"\!", "!")  # remove possible escape
-            room_id = await map_roomalias_to_roomid(client, room_id)
+            gs.log.debug(f'Preparing to kicking off room "{room_id}".')
+            room_id = await map_roominfo_to_roomid(client, room_id)
+            gs.log.debug(f'Kicking off room "{room_id}".')
             for user in users:
                 gs.log.debug(
                     f'Kicking user "{user}" from room with '
@@ -7705,7 +7738,8 @@ def main_inner(
         'If used twice ("-d -d" or "-dd") then '
         f"log levels of both {PROG_WITHOUT_EXT} and underlying modules are "
         'set to DEBUG. "-d" is a shortcut for "--log-level DEBUG". '
-        'See also --log-level. "-d" takes precedence over "--log-level". ',
+        'See also --log-level. "-d" takes precedence over "--log-level". '
+        'Additionally, have a look also at the option "--verbose". ',
     )
     ap.add_argument(
         "--log-level",
@@ -7722,6 +7756,16 @@ def main_inner(
         f"log levels of both {PROG_WITHOUT_EXT} and underlying modules are "
         "set to the specified values. "
         "See also --debug.",
+    )
+    ap.add_argument(
+        "--verbose",
+        action="count",
+        default=0,
+        help="Set the verbosity level. If not used, then verbosity will be "
+        "set to low. If used once, verbosity will be high. "
+        "If used more than once, verbosity will be very high. "
+        "Verbosity only affects the debug information. "
+        "So, if '--debug' is not used then '--verbose' will be ignored.",
     )
     ap.add_argument(
         "--login",

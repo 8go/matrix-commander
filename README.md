@@ -44,24 +44,23 @@ alt="get it on Docker Hub" height="100"></a>
 - `matrix-commander` now available on
   [PyPi](https://pypi.org/project/matrix-commander/)
   and hence easy to install via `pip install matrix-commander`
+- available as reproducible
+  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
+  for NixOS, Debian, Fedora, etc.
 - `matrix-commander` is now callable from a Python program as well.
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
-- new option `--room-set-alias` to add alias(es) to room(s)
-  (see also Issue #328 in matrix-nio)
 - incompatibility: login (authentication) must now be done explicitly
   with `--login` on the first run of `matrix-commander`
 - new option: `--login`, supports login methods `password` and `sso`
 - new option: `--logout` to remove device and access-token validity
-- available as reproducible
-  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
-  for NixOS, Debian, Fedora, etc.
 - new option: `--sync` to allow skipping sync when only sending
 - new option: `--output` to produce output in different formats (text, JSON)
 - new option: `--get-room-info` to get room info such as the
   room display name, room alias, etc. for a given room id
 - new option: `--get-client-info` to get client info
+- new option: `--verbose` to specify debugging verbosity
 
 # Summary, TLDR
 
@@ -412,7 +411,15 @@ $ # The other device will issue a "verify by emoji" request
 $ matrix-commander --verify
 $ # Now program is both configured and verified, let us send the first message
 $ matrix-commander -m "First message!"
-$ matrix-commander --debug # turn debugging on
+$ matrix-commander --debug -m "First message!" # turn debugging on
+$ # turn debugging on also for submodules
+$ matrix-commander --debug --debug -m "First message!"
+$ # turn debugging on, high verbosity
+$ matrix-commander --debug --verbose -m "First message!"
+$ # turn debugging on, very high verbosity
+$ matrix-commander --debug --verbose --verbose -m "First message!"
+$ # maximum debugging info
+$ matrix-commander --debug --debug --verbose --verbose -m "First message!"
 $ matrix-commander --help # print help
 $ matrix-commander # this will ask user for message to send
 $ matrix-commander --message "Hello World!" # sends provided message
@@ -651,9 +658,9 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--login LOGIN] [-v [VERIFY]] [--logout LOGOUT]
-                           [-c CREDENTIALS] [-s STORE] [-r ROOM [ROOM ...]]
-                           [--room-default ROOM_DEFAULT]
+                           [--verbose] [--login LOGIN] [-v [VERIFY]]
+                           [--logout LOGOUT] [-c CREDENTIALS] [-s STORE]
+                           [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
@@ -736,7 +743,8 @@ options:
                         matrix-commander and underlying modules are set to
                         DEBUG. "-d" is a shortcut for "--log-level DEBUG". See
                         also --log-level. "-d" takes precedence over "--log-
-                        level".
+                        level". Additionally, have a look also at the option "
+                        --verbose".
   --log-level LOG_LEVEL [LOG_LEVEL ...]
                         Set the log level(s). Possible values are "DEBUG",
                         "INFO", "WARNING", "ERROR", and "CRITICAL". If
@@ -746,6 +754,12 @@ options:
                         (e.g. "--log-level WARNING ERROR") then log levels of
                         both matrix-commander and underlying modules are set
                         to the specified values. See also --debug.
+  --verbose             Set the verbosity level. If not used, then verbosity
+                        will be set to low. If used once, verbosity will be
+                        high. If used more than once, verbosity will be very
+                        high. Verbosity only affects the debug information.
+                        So, if '--debug' is not used then '--verbose' will be
+                        ignored.
   --login LOGIN         Login to and authenticate with the Matrix homeserver.
                         This requires exactly one argument, the login method.
                         Currently two choices are offered: 'password' and
@@ -1614,8 +1628,8 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.9 2022-10-08. Enjoy, star on Github and contribute
-by submitting a Pull Request.
+You are running version 3.5.10 2022-10-08. Enjoy, star on Github and
+contribute by submitting a Pull Request.
 ```
 
 # Autocompletion
