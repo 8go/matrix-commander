@@ -1628,7 +1628,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.10 2022-10-08. Enjoy, star on Github and
+You are running version 3.5.11 2022-10-10. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 

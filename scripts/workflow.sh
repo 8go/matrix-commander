@@ -220,7 +220,7 @@ done
 PS3='Please enter your choice: '
 echo "Watch Actions workflows on Github, if any."
 echo "Now double-check if everything is in order."
-OPT1="git tag --list -n --sort=-refname # list tags"
+OPT1="git tag --list -n --sort=-refname | head -n 15 # list tags"
 OPT2="git log --pretty=oneline -n 7 # now it shows tag in commit hash"
 OPT3="git log -1 --pretty=%B # details of last commit"
 OPT4="git tag --list -n20 $(git describe) # details of last tag"
