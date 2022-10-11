@@ -1,46 +1,8 @@
-
-Skip to content
-Pull requests
-Issues
-Marketplace
-Explore
-@8go
-8go /
-matrix-commander
-Public
-
-Code
-Issues 8
-Pull requests
-Discussions
-Actions
-Projects
-Wiki
-Security
-Insights
-
-    Settings
-
-matrix-commander/.github/workflows/run-tests.yml
-@dependabot
-dependabot Bump actions/setup-python from 3 to 4
-Latest commit c688371 on Aug 1
-History
-3 contributors
-@8go
-@xurizaemon
-@dependabot
-62 lines (45 sloc) 1.84 KB
 # This is a basic workflow to perform automated tests with Actions
 
-name: Run tests from tests directory
+name: Run REST test from tests directory manually
 
 on:
-  push:
-    branches: [ "master", "*" ]
-  pull_request:
-    branches: [ "master" ]
-
   workflow_dispatch:
 
 jobs:
@@ -76,9 +38,11 @@ jobs:
           MATRIX_PASSWORD: ${{ secrets.MATRIX_PASSWORD }}
         run: matrix-commander --login password --user-login "${MATRIX_USERNAME}" --password "${MATRIX_PASSWORD}" --homeserver "${MATRIX_HOMESERVER}" --device "ci" --room-default "${MATRIX_ROOM}" -m "matrix-commander posted from CI (${GITHUB_REPOSITORY} / ${GITHUB_REF})"
 
+      - name: Python version
+        run:  python --version
+
       - name: Test REST
         run:  ./tests/test-rest.sh
 
       - name: Log out of matrix server
         run: matrix-commander -m "matrix-commander CI log out" --logout me
-matrix-commander/run-tests.yml at master · 8go/matrix-commander
