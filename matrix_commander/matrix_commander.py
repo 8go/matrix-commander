@@ -68,6 +68,11 @@ alt="get it on Docker Hub" height="100"></a>
   room display name, room alias, etc. for a given room id
 - new option: `--get-client-info` to get client info
 - new option: `--verbose` to specify debugging verbosity
+- announcing `matrix-commander-rs` :crab:, `matrix-commander` but in Rust.
+  See [matrix-commander-rs](https://github.com/8go/matrix-commander-rs).
+  Please :star: it if you like the idea. Please contribute if you can,
+  please :pray: write some code to make this vision happen. Thank you!
+  :heart:
 
 # Summary, TLDR
 
@@ -633,7 +638,7 @@ $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
 $ matrix-commander --joined-rooms --output json | jq # get json output in JSON
 $ matrix-commander --joined-rooms --output json-max | jq # full details
-$ matrix-commander --joined-rooms --output json-spec | jq # as specification
+$ matrix-commander --tail 10 --output json-spec | jq # as specification
 $ matrix-commander --joined-rooms --output text # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
@@ -1617,25 +1622,31 @@ options:
                         intention to be consumed by humans, i.e. readable
                         text. If you have chosen 'json', the output will be
                         formatted as JSON. The content of the JSON object
-                        matches the data provided by the matrix-nio API. In
-                        some occassions the output is enhanced by having added
-                        a few data items for convenience. These convenient
-                        data items are added to the data from matrix-nio. In
-                        most cases the output will be processed by other
-                        programs rather than read by humans. Option 'json-
-                        spec' is practically the same as 'json', but no
-                        additional fields are added. Option 'json-max' is
-                        practically the same as 'json', but yet another
-                        additional field is added. The data item
-                        'transport_response' which gives information on how
-                        the data was obtained and transported is being added.
-                        In most cases the output will be processed by other
-                        programs rather than read by humans.
+                        matches the data provided by the matrix-nio SDK. In
+                        some occassions the output is enhanced by having a few
+                        extra data items added for convenience. In most cases
+                        the output will be processed by other programs rather
+                        than read by humans. Option 'json-max' is practically
+                        the same as 'json', but yet another additional field
+                        is added. The data item 'transport_response' which
+                        gives information on how the data was obtained and
+                        transported is also being added. For '--listen' a few
+                        more fields are added. In most cases the output will
+                        be processed by other programs rather than read by
+                        humans. Option 'json-spec' only prints information
+                        that adheres 1-to-1 to the Matrix Specification.
+                        Currently only the events on '--listen' and '--tail'
+                        provide data exactly as in the Matrix Specification.
+                        If no data is available that corresponds exactly with
+                        the Matrix Specification, no data will be printed. In
+                        short, currently '--json-spec' only provides outputs
+                        for '--listen' and '--tail'. All other arguments like
+                        '--get-room-info' will print no output.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.11 2022-10-10. Enjoy, star on Github and
+You are running version 3.5.12 2022-10-11. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1734,7 +1745,7 @@ import uuid
 from os import R_OK, access
 from os.path import isfile
 from ssl import SSLContext
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 from urllib.parse import quote, urlparse
 
 import aiofiles
@@ -1788,8 +1799,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-10"
-VERSIONNR = "3.5.11"
+VERSION = "2022-10-11"
+VERSIONNR = "3.5.12"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1866,8 +1877,9 @@ OUTPUT_TEXT = "text"
 OUTPUT_JSON = "json"
 # json-max, json format, like "json" but with transport_response object added
 OUTPUT_JSON_MAX = "json-max"
-# json-spec, json format, like "json" but without convenient fields added,
-# also without the transport_response object added
+# json-spec, json format, if and only if output adheres 100% to Matrix
+# Specification will the data be printed. Currently, only --listen (--tail)
+# adhere to Spec and hence print a JSON object. All other print nothing.
 OUTPUT_JSON_SPEC = "json-spec"
 OUTPUT_DEFAULT = OUTPUT_TEXT
 
@@ -1916,6 +1928,37 @@ def get_qualifiedclassname(obj):
     if module == "builtins":
         return klass.__qualname__  # avoid outputs like 'builtins.str'
     return module + "." + klass.__qualname__
+
+
+def print_output(
+    option: Literal["text", "json", "json-max", "json-spec"],
+    *,
+    text: str,
+    json_: dict = None,
+    json_max: dict = None,
+    json_spec: dict = None,
+) -> None:
+    """Print output according to which option is specified with --output"""
+    # json_ has the underscore to avoid a name clash with the module json
+    results = {
+        OUTPUT_TEXT: text,
+        OUTPUT_JSON: json_,
+        OUTPUT_JSON_MAX: json_max,
+        OUTPUT_JSON_SPEC: json_spec,
+    }
+    if results[option] is None:
+        if option == OUTPUT_JSON_SPEC:
+            gs.log.debug(
+                "Are you sure you wanted to use --output json-spec? "
+                "Most outputs will be empty."
+            )
+        return
+    if option == OUTPUT_TEXT:
+        print(results[option], flush=True)
+    elif option == OUTPUT_JSON_SPEC:
+        print(json.dumps(results[option]), flush=True)
+    else:  # OUTPUT_JSON or OUTPUT_JSON_MAX
+        print(json.dumps(results[option], default=obj_to_dict), flush=True)
 
 
 def obj_to_dict(obj):
@@ -2359,30 +2402,27 @@ class Callbacks(object):
                 f"{event_id_detail} | {fixed_msg}"
             )
             gs.log.debug(complete_msg)
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                if gs.pa.output == OUTPUT_JSON:
-                    # add the source layer to make it same as OUTPUT_JSON_MAX
-                    dic = {"source": event.source}
-                elif gs.pa.output == OUTPUT_JSON_SPEC:
-                    pass
-                else:  # OUTPUT_JSON_MAX
-                    dic = event.__dict__
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"room": room})
-                    dic.update({"room_display_name": room.display_name})
-                    dic.update({"sender_nick": sender_nick})
-                    dic.update({"event_datetime": event_datetime})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(event.source))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(complete_msg, flush=True)  # print the received message
+            # output format controlled via --output flag
+            text = complete_msg  # print the received message
+            json_ = {"source": event.source}
+            json_ |= {"room": room}
+            json_ |= {"room_display_name": room.display_name}
+            json_ |= {"sender_nick": sender_nick}
+            json_ |= {"event_datetime": event_datetime}
+            json_max = event.__dict__
+            json_max |= {"room": room}
+            json_max |= {"room_display_name": room.display_name}
+            json_max |= {"sender_nick": sender_nick}
+            json_max |= {"event_datetime": event_datetime}
+            json_spec = event.source
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
+
             if gs.pa.os_notify:
                 avatar_url = await get_avatar_url(self.client, event.sender)
                 notify(
@@ -3459,29 +3499,26 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                     f'Created room with room id "{resp.room_id}" '
                     f'and short alias "{alias}" and full alias "{full_alias}".'
                 )
-                # output format controlled via --output
-                if gs.pa.output in (
-                    OUTPUT_JSON,
-                    OUTPUT_JSON_SPEC,
-                    OUTPUT_JSON_MAX,
-                ):
-                    # Object of type RoomCreateResponse is not JSON
-                    # serializable, hence we use the dictionary.
-                    dic = resp.__dict__
-                    if gs.pa.output != OUTPUT_JSON_MAX:
-                        dic.pop("transport_response")
-                    if gs.pa.output != OUTPUT_JSON_SPEC:
-                        # resp has only 1 useful useful member: room_id
-                        dic.update({"alias": alias})  # add dict items
-                        dic.update({"alias_full": full_alias})
-                        dic.update({"name": name})
-                        dic.update({"topic": topic})
-                    if gs.pa.output == OUTPUT_JSON_SPEC:
-                        print(json.dumps(dic))
-                    else:
-                        print(json.dumps(dic, default=obj_to_dict))
-                else:  # default, gs.output == OUTPUT_TEXT:
-                    print(f"{resp.room_id}{SEP}{full_alias}")
+                # output format controlled via --output flag
+                text = f"{resp.room_id}{SEP}{full_alias}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                # resp has only 1 useful useful member: room_id
+                json_max |= {"alias": alias}  # add dict items
+                json_max |= {"alias_full": full_alias}
+                json_max |= {"name": name}
+                json_max |= {"topic": topic}
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
             index = index + 1
     except Exception:
         gs.log.error("Room creation failed. Sorry.")
@@ -3925,25 +3962,22 @@ async def send_file(client, rooms, file):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # output format controlled via --output
-                if gs.pa.output in (
-                    OUTPUT_JSON,
-                    OUTPUT_JSON_SPEC,
-                    OUTPUT_JSON_MAX,
-                ):
-                    # Object of type xxxResponse is not JSON
-                    # serializable, hence we use the dictionary.
-                    dic = resp.__dict__
-                    if gs.pa.output != OUTPUT_JSON_MAX:
-                        dic.pop("transport_response")
-                    if gs.pa.output != OUTPUT_JSON_SPEC:
-                        dic.update({"file": file})
-                    if gs.pa.output == OUTPUT_JSON_SPEC:
-                        print(json.dumps(dic))
-                    else:
-                        print(json.dumps(dic, default=obj_to_dict))
-                else:  # default, gs.output == OUTPUT_TEXT:
-                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}")
+                # output format controlled via --output flag
+                text = f"{resp.event_id}{SEP}{resp.room_id}{SEP}{file}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                json_max |= {"file": file}  # add dict items
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
             gs.log.debug(
                 f'This file was sent: "{file}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
@@ -4181,25 +4215,22 @@ async def send_image(client, rooms, image):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # output format controlled via --output
-                if gs.pa.output in (
-                    OUTPUT_JSON,
-                    OUTPUT_JSON_SPEC,
-                    OUTPUT_JSON_MAX,
-                ):
-                    # Object of type xxxResponse is not JSON
-                    # serializable, hence we use the dictionary.
-                    dic = resp.__dict__
-                    if gs.pa.output != OUTPUT_JSON_MAX:
-                        dic.pop("transport_response")
-                    if gs.pa.output != OUTPUT_JSON_SPEC:
-                        dic.update({"image": image})
-                    if gs.pa.output == OUTPUT_JSON_SPEC:
-                        print(json.dumps(dic))
-                    else:
-                        print(json.dumps(dic, default=obj_to_dict))
-                else:  # default, gs.output == OUTPUT_TEXT:
-                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}")
+                # output format controlled via --output flag
+                text = f"{resp.event_id}{SEP}{resp.room_id}{SEP}{image}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                json_max |= {"image": image}  # add dict items
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
             gs.log.debug(
                 f'This image file was sent: "{image}" '
                 f'to room "{room_id}". '
@@ -4304,25 +4335,22 @@ async def send_message(client, rooms, message):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # output format controlled via --output
-                if gs.pa.output in (
-                    OUTPUT_JSON,
-                    OUTPUT_JSON_SPEC,
-                    OUTPUT_JSON_MAX,
-                ):
-                    # Object of type xxxResponse is not JSON
-                    # serializable, hence we use the dictionary.
-                    dic = resp.__dict__
-                    if gs.pa.output != OUTPUT_JSON_MAX:
-                        dic.pop("transport_response")
-                    if gs.pa.output != OUTPUT_JSON_SPEC:
-                        dic.update({"message": message})
-                    if gs.pa.output == OUTPUT_JSON_SPEC:
-                        print(json.dumps(dic))
-                    else:
-                        print(json.dumps(dic, default=obj_to_dict))
-                else:  # default, gs.output == OUTPUT_TEXT:
-                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}")
+                # output format controlled via --output flag
+                text = f"{resp.event_id}{SEP}{resp.room_id}{SEP}{message}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                json_max |= {"message": message}  # add dict items
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
             gs.log.debug(
                 f'This message was sent: "{message}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
@@ -5121,25 +5149,22 @@ async def action_get_display_name(
                 displayname = ""  # means no display name is set
             else:
                 displayname = resp.displayname
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"user": user})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{user}{SEP}{displayname}")
+            # output format controlled via --output flag
+            text = f"{user}{SEP}{displayname}"
+            # Object of type RoomCreateResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"user": user}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_set_presence(client: AsyncClient, credentials: dict) -> None:
@@ -5184,29 +5209,25 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
                 status_msg = ""  # means no status_msg is set
             else:
                 status_msg = resp.status_msg
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    # nothing to add
-                    pass
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{resp.user_id}{SEP}{resp.presence}{SEP}{last_active_ago}"
-                    f"{SEP}{currently_active}{SEP}{status_msg}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{resp.user_id}{SEP}{resp.presence}{SEP}{last_active_ago}"
+                f"{SEP}{currently_active}{SEP}{status_msg}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_upload(client: AsyncClient, credentials: dict) -> None:
@@ -5249,25 +5270,22 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             )
             # decryption_dict will be None in case of plain-text
             # the URI and keys will be needed later. So this print is a must
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"decryption_dict": decryption_dict})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{resp.content_uri}{SEP}{decryption_dict}")
+            # output format controlled via --output flag
+            text = f"{resp.content_uri}{SEP}{decryption_dict}"
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"decryption_dict": decryption_dict}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_delete_mxc(client: AsyncClient, credentials: dict) -> None:
@@ -5488,22 +5506,25 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"joined_rooms successful with {resp}")
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            # Object of type xxxResponse is not JSON
-            # serializable, hence we use the dictionary.
-            dic = resp.__dict__
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                dic.pop("transport_response")
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(*resp.rooms, sep="\n")  # one per line
+        # output format controlled via --output flag
+        text = ""
+        for rr in resp.rooms:
+            text += rr + "\n"
+        text = text.strip()
+        # Object of type xxxResponse is not JSON
+        # serializable, hence we use the dictionary.
+        json_max = resp.__dict__
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        json_.pop("transport_response")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_joined_members(
@@ -5547,40 +5568,33 @@ async def action_joined_members(
         else:
             gs.log.debug(f"joined_members successful with {resp}")
             # members = List[RoomMember] ; RoomMember
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    # nothing to add
-                    pass
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(resp.room_id)
-                print(
-                    *list(
-                        map(
-                            lambda member: SEP
-                            + member.user_id
-                            + SEP
-                            + member.display_name
-                            + SEP
-                            + member.avatar_url,
-                            resp.members,
-                        )
-                    ),
-                    sep="\n",
+            # output format controlled via --output flag
+            text = resp.room_id + "\n"
+            for member in resp.members:
+                text += (
+                    SEP
+                    + member.user_id
+                    + SEP
+                    + member.display_name
+                    + SEP
+                    + member.avatar_url
+                    + "\n"
                 )
+            text = text.strip()
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
@@ -5588,23 +5602,20 @@ async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
     for mxc in gs.pa.mxc_to_http:
         mxc = mxc.strip()
         http = await client.mxc_to_http(mxc)  # returns None or str
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            dic = {}
-            dic.update({"mxc": mxc})
-            dic.update({"http": http})
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                # nothing to remove
-                pass
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(f"{mxc}{SEP}{http}")
+        # output format controlled via --output flag
+        text = f"{mxc}{SEP}{http}"
+        json_max = {"mxc": mxc, "http": http}
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        # json_.pop("key")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_devices(client: AsyncClient, credentials: dict) -> None:
@@ -5615,22 +5626,34 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"devices successful with {resp}")
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            # Object of type xxxResponse is not JSON
-            # serializable, hence we use the dictionary.
-            dic = resp.__dict__
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                dic.pop("transport_response")
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(*resp.devices, sep="\n")  # one per line
+        # output format controlled via --output flag
+        text = ""
+        for rr in resp.devices:
+            text += (
+                rr.id
+                + SEP
+                + rr.display_name
+                + SEP
+                + rr.last_seen_ip
+                + SEP
+                + str(rr.last_seen_date)
+                + "\n"
+            )
+        text = text.strip()
+        # Object of type xxxResponse is not JSON
+        # serializable, hence we use the dictionary.
+        json_max = resp.__dict__
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        json_.pop("transport_response")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_discovery_info(
@@ -5643,22 +5666,22 @@ async def action_discovery_info(
         gs.err_count += 1
     else:
         gs.log.debug(f"discovery_info successful with {resp}")
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            # Object of type xxxResponse is not JSON
-            # serializable, hence we use the dictionary.
-            dic = resp.__dict__
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                dic.pop("transport_response")
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(f"{resp.homeserver_url}{SEP}{resp.identity_server_url}")
+        # output format controlled via --output flag
+        text = f"{resp.homeserver_url}{SEP}{resp.identity_server_url}"
+        # Object of type xxxResponse is not JSON
+        # serializable, hence we use the dictionary.
+        json_max = resp.__dict__
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        json_.pop("transport_response")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_login_info(client: AsyncClient, credentials: dict) -> None:
@@ -5669,22 +5692,25 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         gs.err_count += 1
     else:
         gs.log.debug(f"login_info successful with {resp}")
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            # Object of type xxxResponse is not JSON
-            # serializable, hence we use the dictionary.
-            dic = resp.__dict__
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                dic.pop("transport_response")
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(*resp.flows, sep="\n")  # one per line
+        # output format controlled via --output flag
+        text = ""
+        for rr in resp.flows:
+            text += str(rr) + "\n"
+        text = text.strip()
+        # Object of type xxxResponse is not JSON
+        # serializable, hence we use the dictionary.
+        json_max = resp.__dict__
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        json_.pop("transport_response")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_content_repository_config(
@@ -5697,22 +5723,22 @@ async def action_content_repository_config(
         gs.err_count += 1
     else:
         gs.log.debug(f"content_repository_config successful with {resp}")
-        # output format controlled via --output
-        if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-            # Object of type xxxResponse is not JSON
-            # serializable, hence we use the dictionary.
-            dic = resp.__dict__
-            if gs.pa.output != OUTPUT_JSON_MAX:
-                dic.pop("transport_response")
-            if gs.pa.output != OUTPUT_JSON_SPEC:
-                # nothing to add
-                pass
-            if gs.pa.output == OUTPUT_JSON_SPEC:
-                print(json.dumps(dic))
-            else:
-                print(json.dumps(dic, default=obj_to_dict))
-        else:  # default, gs.output == OUTPUT_TEXT:
-            print(resp.upload_size)  # returns only 1 value
+        # output format controlled via --output flag
+        text = resp.upload_size  # returns only 1 value
+        # Object of type xxxResponse is not JSON
+        # serializable, hence we use the dictionary.
+        json_max = resp.__dict__
+        # json_max |= {"key": value}  # add dict items
+        json_ = json_max.copy()
+        json_.pop("transport_response")
+        json_spec = None
+        print_output(
+            gs.pa.output,
+            text=text,
+            json_=json_,
+            json_max=json_max,
+            json_spec=json_spec,
+        )
 
 
 async def action_rest(client: AsyncClient, credentials: dict) -> None:
@@ -5843,27 +5869,20 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
                 f"Response is: {txt}. Input was: method={method} "
                 f"data={data}, url={url}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    # nothing to remove
-                    pass
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"response": txt})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    # exception: not serializable, need to filter
-                    print(json.dumps(dic, default=obj_to_dict))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{txt}")
+            # output format controlled via --output flag
+            text = f"{txt}"  # returns only 1 value
+            json_max = resp.__dict__
+            json_max |= {"response": txt}  # add dict items
+            json_ = json_max.copy()
+            # json_.pop("key")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
@@ -5883,25 +5902,22 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
             gs.log.debug(
                 f"avatar_mxc is {avatar_mxc}. avatar_url is {avatar_url}"
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"avatar_http": avatar_url})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{avatar_mxc}{SEP}{avatar_url}")
+            # output format controlled via --output flag
+            text = f"{avatar_mxc}{SEP}{avatar_url}"
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"avatar_http": avatar_url}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
         else:
             gs.log.error(
                 f"Failed getting avatar for user {user_id} "
@@ -5938,28 +5954,25 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
                 f"displayname is {displayname}. avatar_mxc is {avatar_mxc}. "
                 f"avatar_url is {avatar_url}. other_info is {resp.other_info}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"avatar_http": avatar_url})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{displayname}{SEP}{avatar_mxc}{SEP}{avatar_url}"
-                    f"{SEP}{other_info}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{displayname}{SEP}{avatar_mxc}{SEP}{avatar_url}"
+                f"{SEP}{other_info}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"avatar_http": avatar_url}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_get_client_info(
@@ -6000,32 +6013,27 @@ async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
                 f"room is {room}. "
             )
             resp = room
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    # nothing to remove
-                    pass
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"display_name": room_displayname})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    # exception, MatrixUser not serializable, need to filter
-                    print(json.dumps(dic, default=obj_to_dict))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{room_id}{SEP}{room_displayname}{SEP}"
-                    f"{room.canonical_alias}{SEP}{room.topic}{SEP}"
-                    f"{room.creator}{SEP}{room.encrypted}"
-                    # f"{SEP}{user_id}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{room_id}{SEP}{room_displayname}{SEP}"
+                f"{room.canonical_alias}{SEP}{room.topic}{SEP}"
+                f"{room.creator}{SEP}{room.encrypted}"
+                # f"{SEP}{user_id}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"display_name": room_displayname}  # add dict items
+            json_ = json_max.copy()
+            # json_.pop("key")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_has_permission(
@@ -6063,50 +6071,45 @@ async def action_has_permission(
                 f"'{permission_type}' in room {room_id}. {resp}"
             )
             gs.err_count += 1
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # for JSON the user can determine which one from the list
-                # was successful and which one failed. For 4 inputs there
-                # might only be 3 output JSON objects if there was 1 error.
-                pass
-            else:  # default, gs.output == OUTPUT_TEXT:
-                # in text mode we print this line, so that for 4 inputs there
-                # will be 4 output lines
-                print(
+            # output format controlled via --output flag
+            # for JSON the user can determine which one from the list
+            # was successful and which one failed. For 4 inputs there
+            # might only be 3 output JSON objects if there was 1 error.
+            # In text mode we print this error line, so that for 4 inputs
+            # there will be 4 output lines.
+            print_output(
+                gs.pa.output,
+                text=(
                     f"Error{SEP}{user_id}{SEP}{room_id}"
                     f"{SEP}{permission_type}"
-                )
+                ),
+                json_=None,
+                json_max=None,
+                json_spec=None,
+            )
         else:
             gs.log.debug(
                 f"has_permission {user_id} for permission type "
                 f"'{permission_type}' in room {room_id}: {resp}"
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic, default=obj_to_dict))
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}"
-                    f"{permission_type}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}" f"{permission_type}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
@@ -6234,46 +6237,40 @@ async def action_room_resolve_alias(
                 f"Successfully resolved room alias '{alias}' to "
                 f"{resp.room_id}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    # nothing to add
-                    pass
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{resp.room_alias}{SEP}{resp.room_id}{SEP}"
-                    f"{resp.servers}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{resp.room_alias}{SEP}{resp.room_id}{SEP}" f"{resp.servers}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
         else:
             gs.log.error(f"Failed to resolve room alias '{alias}': {resp}")
             gs.err_count += 1
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # for JSON the user can determine which one from the list
-                # was successful and which one failed. For 4 inputs there
-                # might only be 3 output JSON objects if there was 1 error.
-                pass
-            else:  # default, gs.output == OUTPUT_TEXT:
-                # in text mode we print this line, so that for 4 inputs there
-                # will be 4 output lines
-                print(f"{alias}{SEP}Error{SEP}[]")  # empty server list
+            # output format controlled via --output flag
+            # for JSON the user can determine which one from the list
+            # was successful and which one failed. For 4 inputs there
+            # might only be 3 output JSON objects if there was 1 error.
+            # In text mode we print this error line, so that for 4 inputs
+            # there will be 4 output lines.
+            print_output(
+                gs.pa.output,
+                text=(f"{alias}{SEP}Error{SEP}[]"),
+                json_=None,
+                json_max=None,
+                json_spec=None,
+            )
 
 
 async def action_room_delete_alias(
@@ -6335,28 +6332,25 @@ async def action_get_openid_token(
                 f"Successfully obtained OpenId token "
                 f"{resp.access_token} for user {user_id}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    dic.update({"user_id": user_id})
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(
-                    f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
-                    f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
-                )
+            # output format controlled via --output flag
+            text = (
+                f"{user_id}{SEP}{resp.access_token}{SEP}{resp.expires_in}"
+                f"{SEP}{resp.matrix_server_name}{SEP}{resp.token_type}"
+            )
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            json_max |= {"user_id": user_id}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
 
 
 async def action_room_get_visibility(
@@ -6374,46 +6368,41 @@ async def action_room_get_visibility(
                 f"Successfully got visibility for room {resp.room_id}: "
                 f"{resp.visibility}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    # nothing to add
-                    pass
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{resp.visibility}{SEP}{room_id}")
+            # output format controlled via --output flag
+            text = f"{resp.visibility}{SEP}{room_id}"
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
         else:
             gs.log.error(
                 f"Failed getting visibility for room {room_id}. {resp}"
             )
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # for JSON the user can determine which one from the list
-                # was successful and which one failed. For 4 inputs there
-                # might only be 3 output JSON objects if there was 1 error.
-                pass
-            else:  # default, gs.output == OUTPUT_TEXT:
-                # in text mode we print this line, so that for 4 inputs there
-                # will be 4 output lines
-                print(f"{errmsg}{SEP}{room_id}")
+            # output format controlled via --output flag
+            # for JSON the user can determine which one from the list
+            # was successful and which one failed. For 4 inputs there
+            # might only be 3 output JSON objects if there was 1 error.
+            # In text mode we print this error line, so that for 4 inputs
+            # there will be 4 output lines.
+            print_output(
+                gs.pa.output,
+                text=(f"{errmsg}{SEP}{room_id}"),
+                json_=None,
+                json_max=None,
+                json_spec=None,
+            )
 
 
 async def action_room_get_state(
@@ -6431,44 +6420,39 @@ async def action_room_get_state(
                 f"Successfully got state for room {resp.room_id}: "
                 f"{resp.events}."
             )
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # Object of type xxxResponse is not JSON
-                # serializable, hence we use the dictionary.
-                dic = resp.__dict__
-                if gs.pa.output != OUTPUT_JSON_MAX:
-                    dic.pop("transport_response")
-                if gs.pa.output != OUTPUT_JSON_SPEC:
-                    # nothing to add
-                    pass
-                if gs.pa.output == OUTPUT_JSON_SPEC:
-                    print(json.dumps(dic))
-                else:
-                    print(json.dumps(dic, default=obj_to_dict))
-            else:  # default, gs.output == OUTPUT_TEXT:
-                print(f"{resp.events}{SEP}{room_id}")
+            # output format controlled via --output flag
+            text = f"{resp.events}{SEP}{room_id}"
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = resp.__dict__
+            # json_max |= {"key": value}  # add dict items
+            json_ = json_max.copy()
+            json_.pop("transport_response")
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
         else:
             gs.log.error(f"Failed getting state for room {room_id}. {resp}")
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
-            # output format controlled via --output
-            if gs.pa.output in (
-                OUTPUT_JSON,
-                OUTPUT_JSON_SPEC,
-                OUTPUT_JSON_MAX,
-            ):
-                # for JSON the user can determine which one from the list
-                # was successful and which one failed. For 4 inputs there
-                # might only be 3 output JSON objects if there was 1 error.
-                pass
-            else:  # default, gs.output == OUTPUT_TEXT:
-                # in text mode we print this line, so that for 4 inputs there
-                # will be 4 output lines
-                print(f"{errmsg}{SEP}{room_id}")
+            # output format controlled via --output flag
+            # for JSON the user can determine which one from the list
+            # was successful and which one failed. For 4 inputs there
+            # might only be 3 output JSON objects if there was 1 error.
+            # In text mode we print this error line, so that for 4 inputs
+            # there will be 4 output lines.
+            print_output(
+                gs.pa.output,
+                text=(f"{errmsg}{SEP}{room_id}"),
+                json_=None,
+                json_max=None,
+                json_spec=None,
+            )
 
 
 async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
@@ -6599,11 +6583,20 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     """Get user id while already logged in."""
     whoami = credentials["user_id"]
     gs.log.debug(f"whoami: user id: {whoami}")
-    # output format controlled via --output
-    if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_SPEC, OUTPUT_JSON_MAX):
-        print(json.dumps({"user_id": whoami}))
-    else:  # default, gs.output == OUTPUT_TEXT:
-        print(whoami)
+    # output format controlled via --output flag
+    text = whoami
+    json_max = {"user_id": whoami}
+    # json_max |= {"key": value}  # add dict items
+    json_ = json_max.copy()
+    # json_.pop("key")
+    json_spec = None
+    print_output(
+        gs.pa.output,
+        text=text,
+        json_=json_,
+        json_max=json_max,
+        json_spec=json_spec,
+    )
 
 
 async def action_roomsetget() -> None:
@@ -9121,21 +9114,26 @@ def main_inner(
         f"If you have chosen '{OUTPUT_JSON}', "
         "the output will be formatted as JSON. "
         "The content of the JSON object matches the data provided by the "
-        "matrix-nio API. In some occassions the output is enhanced "
-        "by having added a few data items for convenience. These convenient "
-        "data items are added to the data from matrix-nio. "
+        "matrix-nio SDK. In some occassions the output is enhanced "
+        "by having a few extra data items added for convenience. "
         "In most cases the output will be processed by other programs "
         "rather than read by humans. "
-        f"Option '{OUTPUT_JSON_SPEC}' is practically the same as "
-        f"'{OUTPUT_JSON}', "
-        "but no additional fields are added. "
         f"Option '{OUTPUT_JSON_MAX}' is practically the same as "
         f"'{OUTPUT_JSON}', "
         "but yet another additional field is added. "
         "The data item 'transport_response' which gives information on "
-        "how the data was obtained and transported is being added. "
+        "how the data was obtained and transported is also being added. "
+        "For '--listen' a few more fields are added. "
         "In most cases the output will be processed by other programs "
-        "rather than read by humans. ",
+        "rather than read by humans. "
+        f"Option '{OUTPUT_JSON_SPEC}' only prints information that adheres "
+        "1-to-1 to the Matrix Specification. Currently only the events "
+        "on '--listen' and '--tail' provide data exactly as in the "
+        "Matrix Specification. If no data is available that corresponds "
+        "exactly with the Matrix Specification, no data will be printed. "
+        "In short, currently '--json-spec' only provides outputs for "
+        "'--listen' and '--tail'. All other arguments like '--get-room-info' "
+        "will print no output. ",
     )
     ap.add_argument(
         # no single char flag

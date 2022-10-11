@@ -61,6 +61,11 @@ alt="get it on Docker Hub" height="100"></a>
   room display name, room alias, etc. for a given room id
 - new option: `--get-client-info` to get client info
 - new option: `--verbose` to specify debugging verbosity
+- announcing `matrix-commander-rs` :crab:, `matrix-commander` but in Rust.
+  See [matrix-commander-rs](https://github.com/8go/matrix-commander-rs).
+  Please :star: it if you like the idea. Please contribute if you can,
+  please :pray: write some code to make this vision happen. Thank you!
+  :heart:
 
 # Summary, TLDR
 
@@ -626,7 +631,7 @@ $ matrix-commander --content-repository-config # list config of content repo
 $ matrix-commander --sync off -m Test -i image.svg # a faster send
 $ matrix-commander --joined-rooms --output json | jq # get json output in JSON
 $ matrix-commander --joined-rooms --output json-max | jq # full details
-$ matrix-commander --joined-rooms --output json-spec | jq # as specification
+$ matrix-commander --tail 10 --output json-spec | jq # as specification
 $ matrix-commander --joined-rooms --output text # get human-readable output
 $ # example of how to use stdin, how to pipe data into the program
 $ echo "Some text" | matrix-commander # send a text msg via pipe
@@ -1610,25 +1615,31 @@ options:
                         intention to be consumed by humans, i.e. readable
                         text. If you have chosen 'json', the output will be
                         formatted as JSON. The content of the JSON object
-                        matches the data provided by the matrix-nio API. In
-                        some occassions the output is enhanced by having added
-                        a few data items for convenience. These convenient
-                        data items are added to the data from matrix-nio. In
-                        most cases the output will be processed by other
-                        programs rather than read by humans. Option 'json-
-                        spec' is practically the same as 'json', but no
-                        additional fields are added. Option 'json-max' is
-                        practically the same as 'json', but yet another
-                        additional field is added. The data item
-                        'transport_response' which gives information on how
-                        the data was obtained and transported is being added.
-                        In most cases the output will be processed by other
-                        programs rather than read by humans.
+                        matches the data provided by the matrix-nio SDK. In
+                        some occassions the output is enhanced by having a few
+                        extra data items added for convenience. In most cases
+                        the output will be processed by other programs rather
+                        than read by humans. Option 'json-max' is practically
+                        the same as 'json', but yet another additional field
+                        is added. The data item 'transport_response' which
+                        gives information on how the data was obtained and
+                        transported is also being added. For '--listen' a few
+                        more fields are added. In most cases the output will
+                        be processed by other programs rather than read by
+                        humans. Option 'json-spec' only prints information
+                        that adheres 1-to-1 to the Matrix Specification.
+                        Currently only the events on '--listen' and '--tail'
+                        provide data exactly as in the Matrix Specification.
+                        If no data is available that corresponds exactly with
+                        the Matrix Specification, no data will be printed. In
+                        short, currently '--json-spec' only provides outputs
+                        for '--listen' and '--tail'. All other arguments like
+                        '--get-room-info' will print no output.
   --version             Print version information. After printing version
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.11 2022-10-10. Enjoy, star on Github and
+You are running version 3.5.12 2022-10-11. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
