@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  python-version: Mona
+  python-version: "3.10"
   
 jobs:
   tests:
