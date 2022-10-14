@@ -5,6 +5,9 @@ name: Run a single test from tests directory manually
 on:
   workflow_dispatch:
 
+env:
+  python-version: Mona
+  
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -12,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ env.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.python-version }}
 
       - name: Install system dependencies
         run: sudo apt install libdbus-1-dev libolm-dev
