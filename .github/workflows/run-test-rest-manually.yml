@@ -7,6 +7,7 @@ on:
 
 env:
   python-version: "3.10"
+  test-case: "test-rest.sh"
 
 jobs:
   tests:
@@ -44,8 +45,8 @@ jobs:
       - name: Python version
         run:  python --version
 
-      - name: Test REST
-        run:  ./tests/test-rest.sh
+      - name: Test ${{ env.test-case }}
+        run:  ./tests/${{ env.test-case }}
 
       - name: Log out of matrix server
         run: matrix-commander -m "matrix-commander CI log out" --logout me
