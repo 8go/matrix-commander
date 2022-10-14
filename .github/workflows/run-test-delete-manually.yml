@@ -1,6 +1,6 @@
 # This is a basic workflow to perform automated tests with Actions
 
-name: Run a single test from tests directory manually
+name: Run DELETE test from tests directory manually
 
 on:
   workflow_dispatch:
