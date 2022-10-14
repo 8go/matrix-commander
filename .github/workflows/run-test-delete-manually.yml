@@ -45,9 +45,6 @@ jobs:
           MATRIX_PASSWORD: ${{ secrets.MATRIX_PASSWORD }}
         run: matrix-commander --login password --user-login "${MATRIX_USERNAME}" --password "${MATRIX_PASSWORD}" --homeserver "${MATRIX_HOMESERVER}" --device "ci" --room-default "${MATRIX_ROOM}" -m "matrix-commander posted from CI (${GITHUB_REPOSITORY} / ${GITHUB_REF})"
 
-      - name: Test ${{ env.test-case }}
-        run:  ./tests/${{ env.test-case }}
-
       - name: ls
         run:  ls
 
@@ -56,6 +53,9 @@ jobs:
 
       - name: Test print-event-id
         run:  matrix-commander -m "Want to get event id for this message too." --print-event-id
+
+      - name: Test ${{ env.test-case }}
+        run:  ./tests/${{ env.test-case }}
 
       - name: Log out of matrix server
         run: matrix-commander -m "matrix-commander CI log out" --logout me
