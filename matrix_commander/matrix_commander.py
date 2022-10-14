@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.12 2022-10-11. Enjoy, star on Github and
+You are running version 3.5.13 2022-10-14. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1799,8 +1799,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-11"
-VERSIONNR = "3.5.12"
+VERSION = "2022-10-14"
+VERSIONNR = "3.5.13"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3770,15 +3770,22 @@ async def send_event(client, rooms, event):  # noqa: C901
                 f'as event "{resp.event_id}".'
             )
             if gs.pa.print_event_id:
-                # todo outout format ==> done
-                if gs.pa.output in (OUTPUT_JSON, OUTPUT_JSON_MAX):
-                    dic = resp.__dict__
-                    if gs.pa.output == OUTPUT_JSON:
-                        dic.pop("transport_response")
-                    dic.update({"event": event})
-                    print(json.dumps(dic, default=obj_to_dict))
-                else:  # default, gs.output == OUTPUT_TEXT:
-                    print(f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}")
+                # output format controlled via --output flag
+                text = f"{resp.event_id}{SEP}{resp.room_id}{SEP}{event}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                json_max |= {"event": event}  # add dict items
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
             gs.log.debug(
                 f'This event was sent: "{event}" ({content}) '
                 f'to room "{room_id}". '
@@ -4622,40 +4629,56 @@ async def login_using_credentials_file(
         ssl=gs.ssl,
         proxy=gs.pa.proxy,
     )
+    if gs.pa.proxy:
+        gs.log.debug(f"Proxy {gs.pa.proxy} will be used for connectivity.")
 
-    resp = client.restore_login(
+    # restore_login() always returns None, on success or failure
+    # restore_login() does not go to the server, it just sets some local values
+    client.restore_login(
         user_id=credentials["user_id"],
         device_id=credentials["device_id"],
         access_token=credentials["access_token"],
-    )  # returns always None, on success or failure
-    # room_id = credentials["room_id"]
-    gs.log.debug(
-        "Logged in using stored credentials from "
-        f'credentials file "{credentials_file}".'
     )
-    if gs.pa.proxy:
-        gs.log.debug(f"Proxy {gs.pa.proxy} will be used for connectivity.")
-    # gs.log.debug(f"Logged_in() = {client.logged_in}")  # this was meaningless
-    # just because client.logged_in is True does not mean we are logged in
-    # How to know if login was successful? Do an actual API call. E.g. whoami
-    resp = await client.whoami()
-    if isinstance(resp, responses.WhoamiError):
-        gs.log.error(
-            "restore_login failed. Did you perform --logout "
-            "before? Looks like your access-token expired. Maybe "
-            "delete credentials file and store and perform a "
-            f"new --login. Response is: {resp}"
-        )
-        gs.err_count += 1
-        await client.close()
-        client = None
-        credentials = None
+    gs.log.debug(
+        "Login will be using stored credentials from "
+        f'credentials file "{credentials_file}". '
+        f'room_id = {credentials["room_id"]}, '
+        f'device_id = {credentials["device_id"]}, '
+        f'access_token = {credentials["access_token"][0:2]}...'
+        f'{credentials["access_token"][-2:]}.'
+    )
+    if gs.pa.debug > 0:
+        # gs.log.debug(f"Logged_in()={client.logged_in}") is always True.
+        # Just because client.logged_in is True does not mean we are logged in.
+        # That just means the data structure is filled.
+        # How to know if login was successful?
+        # Do an actual API call against the server. E.g. whoami.
+        # We don't want to do this always for performance reasons, so we only
+        # do it in debug mode.
+        resp = await client.whoami()
+        if isinstance(resp, responses.WhoamiError):
+            gs.log.error(
+                "restore_login failed. Did you perform --logout "
+                "before? Looks like your access-token expired. Maybe "
+                "delete credentials file and store and perform a "
+                f"new --login. Response is: {resp}"
+            )
+            gs.err_count += 1
+            await client.close()
+            client = None
+            credentials = None
+        else:
+            gs.log.debug(
+                "restore_login successful. Successfully "
+                f"logged in as user {resp.user_id} via restore_login. "
+                f"Response is: {resp}"
+            )
     else:
-        gs.log.debug(
-            "restore_login successful. Successfully "
-            f"logged in as user {resp.user_id} via restore_login. "
-            f"Response is: {resp}"
-        )
+        pass
+        # login might or might not fail later,
+        # if it fails some exception will be raised, the exception text
+        # might not explain the problem well, but this way we speed up
+        # performance by issuing one API less against the server.
     return (client, credentials)
 
 
@@ -9219,6 +9242,7 @@ def main_inner(
 
     create_pid_file()
 
+    gs.log.debug(f'Python version is "{sys.version}"')
     gs.log.debug(f'Stdin pipe is assigned to "{gs.stdin_use}".')
     if gs.pa.ssl_certificate != SSL_CERTIFICATE_DEFAULT:
         gs.log.debug(
