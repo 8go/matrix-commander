@@ -52,7 +52,7 @@ jobs:
         run:  ls matrix_commander
 
       - name: Test print-event-id
-        run:  matrix-commander -m "Want to get event id for this message too." --print-event-id
+        run:  matrix-commander -m "Want to get event id for this message too." --print-event-id -d
 
       - name: Test ${{ env.test-case }}
         run:  ./tests/${{ env.test-case }}
