@@ -7,6 +7,7 @@ on:
 
 env:
   python-version: "3.10"
+  test-case: "test-delete.sh"
   
 jobs:
   tests:
@@ -41,11 +42,11 @@ jobs:
           MATRIX_PASSWORD: ${{ secrets.MATRIX_PASSWORD }}
         run: matrix-commander --login password --user-login "${MATRIX_USERNAME}" --password "${MATRIX_PASSWORD}" --homeserver "${MATRIX_HOMESERVER}" --device "ci" --room-default "${MATRIX_ROOM}" -m "matrix-commander posted from CI (${GITHUB_REPOSITORY} / ${GITHUB_REF})"
 
-      - name: Test python version
+      - name: Python version
         run: python --version
 
-      - name: Test delete event
-        run:  ./tests/test-delete.sh
+      - name: Test ${{ env.test-case }}
+        run:  ./tests/${{ env.test-case }}
 
       - name: Log out of matrix server
         run: matrix-commander -m "matrix-commander CI log out" --logout me
