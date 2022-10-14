@@ -43,7 +43,7 @@ jobs:
         run: matrix-commander --login password --user-login "${MATRIX_USERNAME}" --password "${MATRIX_PASSWORD}" --homeserver "${MATRIX_HOMESERVER}" --device "ci" --room-default "${MATRIX_ROOM}" -m "matrix-commander posted from CI (${GITHUB_REPOSITORY} / ${GITHUB_REF})"
 
       - name: Python version
-        run: python --version
+        run:  python --version
 
       - name: Test ${{ env.test-case }}
         run:  ./tests/${{ env.test-case }}
