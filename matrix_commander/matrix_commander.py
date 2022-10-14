@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.13 2022-10-14. Enjoy, star on Github and
+You are running version 3.5.14 2022-10-14. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1800,7 +1800,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-14"
-VERSIONNR = "3.5.13"
+VERSIONNR = "3.5.14"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1928,6 +1928,14 @@ def get_qualifiedclassname(obj):
     if module == "builtins":
         return klass.__qualname__  # avoid outputs like 'builtins.str'
     return module + "." + klass.__qualname__
+
+
+def privacy_filter(dirty: str) -> str:
+    """Remove private info from string"""
+    # homeserver = urlparse(gs.credentials["homeserver"])
+    # server_name = homeserver.netloc
+    # clean = dirty.replace(server_name, "your.homeserver.org")
+    return dirty.replace(gs.credentials["access_token"], "xxx")
 
 
 def print_output(
@@ -2127,7 +2135,7 @@ async def synchronize(client: AsyncClient) -> SyncResponse:
         err = f"sync() failed. Exception {e}"
         raise MatrixCommanderError(err) from e
     if isinstance(resp, SyncError):
-        err = f"sync failed with resp = {resp}"
+        err = f"sync failed with resp = {privacy_filter(str(resp))}"
         raise MatrixCommanderError(err) from None
     return resp
 
@@ -2229,7 +2237,7 @@ class Callbacks(object):
                     if isinstance(resp, DownloadError):
                         gs.log.error(
                             f"download of URI '{mxc}' to local file "
-                            f"failed with response {resp}"
+                            f"failed with response {privacy_filter(str(resp))}"
                         )
                         gs.err_count += 1
                         msg_url += " [Download of media file failed]"
@@ -2258,7 +2266,7 @@ class Callbacks(object):
                     if isinstance(resp, DownloadError):
                         gs.log.error(
                             f"download of URI '{mxc}' to local file "
-                            f"failed with response {resp}"
+                            f"failed with response {privacy_filter(str(resp))}"
                         )
                         gs.err_count += 1
                         msg_url += " [Download of media file failed]"
@@ -2481,7 +2489,8 @@ class Callbacks(object):
                 )
                 if isinstance(resp, ToDeviceError):
                     gs.log.error(
-                        f"accept_key_verification failed with error '{resp}'."
+                        "accept_key_verification failed with error "
+                        f"'{privacy_filter(str(resp))}'."
                     )
 
                 sas = client.key_verifications[event.transaction_id]
@@ -2489,7 +2498,10 @@ class Callbacks(object):
                 todevice_msg = sas.share_key()
                 resp = await client.to_device(todevice_msg)
                 if isinstance(resp, ToDeviceError):
-                    gs.log.error(f"to_device failed with error '{resp}'.")
+                    gs.log.error(
+                        "to_device failed with error "
+                        f"'{privacy_filter(str(resp))}'."
+                    )
 
             elif isinstance(event, KeyVerificationCancel):  # anytime
                 """at any time: receive KeyVerificationCancel
@@ -2549,7 +2561,7 @@ class Callbacks(object):
                     if isinstance(resp, ToDeviceError):
                         gs.log.error(
                             "confirm_short_auth_string failed with "
-                            f"error '{resp}'."
+                            f"error '{privacy_filter(str(resp))}'."
                         )
                 elif yn.lower() == "n":  # no, don't match, reject
                     print(
@@ -2563,7 +2575,8 @@ class Callbacks(object):
                     )
                     if isinstance(resp, ToDeviceError):
                         gs.log.error(
-                            f"cancel_key_verification failed with '{resp}'."
+                            "cancel_key_verification failed with "
+                            f"'{privacy_filter(str(resp))}'."
                         )
                 else:  # C or anything for cancel
                     print(
@@ -2576,7 +2589,8 @@ class Callbacks(object):
                     )
                     if isinstance(resp, ToDeviceError):
                         gs.log.error(
-                            f"cancel_key_verification failed with '{resp}'."
+                            "cancel_key_verification failed with "
+                            f"'{privacy_filter(str(resp))}'."
                         )
 
             elif isinstance(event, KeyVerificationMac):  # third step
@@ -2608,7 +2622,10 @@ class Callbacks(object):
                 else:
                     resp = await client.to_device(todevice_msg)
                     if isinstance(resp, ToDeviceError):
-                        gs.log.error(f"to_device failed with error '{resp}'.")
+                        gs.log.error(
+                            "to_device failed with error "
+                            f"'{privacy_filter(str(resp))}'."
+                        )
                     gs.log.info(
                         f"sas.we_started_it = {sas.we_started_it}\n"
                         f"sas.sas_accepted = {sas.sas_accepted}\n"
@@ -2676,13 +2693,18 @@ async def get_avatar_url(client: AsyncClient, user_id: str) -> str:
     avatar_url = None  # default
     resp = await client.get_avatar(user_id)
     if isinstance(resp, ProfileGetAvatarResponse):
-        gs.log.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
+        gs.log.debug(
+            "ProfileGetAvatarResponse. Response is: "
+            f"{privacy_filter(str(resp))}"
+        )
         avatar_mxc = resp.avatar_url
         gs.log.debug(f"avatar_mxc is {avatar_mxc}")
         if avatar_mxc:  # could be None if no avatar
             avatar_url = await client.mxc_to_http(avatar_mxc)
     else:
-        gs.log.info(f"Failed getting avatar from server. {resp}")
+        gs.log.info(
+            f"Failed getting avatar from server. {privacy_filter(str(resp))}"
+        )
     gs.log.debug(f"avatar_url is {avatar_url}")
     return avatar_url
 
@@ -3046,7 +3068,8 @@ async def determine_dm_rooms(
     resp = await client.joined_rooms()
     if isinstance(resp, JoinedRoomsError):
         gs.log.error(
-            f"joined_rooms failed with {resp}. Not able to "
+            f"joined_rooms failed with {privacy_filter(str(resp))}. "
+            "Not able to "
             "get all rooms. "
             f"Not able to find DM rooms for sender {sender}. "
             f"Not able to send to receivers {users}."
@@ -3054,14 +3077,17 @@ async def determine_dm_rooms(
         gs.err_count += 1
         senderrooms = []
     else:
-        gs.log.debug(f"joined_rooms successful with {resp}")
+        gs.log.debug(
+            f"joined_rooms successful with {privacy_filter(str(resp))}"
+        )
         senderrooms = resp.rooms
     room_found_for_users = []
     for room in senderrooms:
         resp = await client.joined_members(room)
         if isinstance(resp, JoinedMembersError):
             gs.log.error(
-                f"joined_members failed with {resp}. Not able to "
+                f"joined_members failed with {privacy_filter(str(resp))}. "
+                "Not able to "
                 f"get room members for room {room}. "
                 f"Not able to find DM rooms for sender {sender}. "
                 f"Not able to send to some of these receivers {users}."
@@ -3073,7 +3099,9 @@ async def determine_dm_rooms(
             # member.user_id
             # member.display_name
             # member.avatar_url
-            gs.log.debug(f"joined_members successful with {resp}")
+            gs.log.debug(
+                f"joined_members successful with {privacy_filter(str(resp))}"
+            )
             if resp.members and len(resp.members) == 2:
                 if resp.members[0].user_id == sender:
                     # sndr = resp.members[0]
@@ -3084,7 +3112,9 @@ async def determine_dm_rooms(
                 else:
                     # sndr = None
                     rcvr = None
-                    gs.log.error(f"Sender does not match {resp}")
+                    gs.log.error(
+                        f"Sender does not match {privacy_filter(str(resp))}"
+                    )
                     gs.err_count += 1
                 for user in users:
                     if (
@@ -3229,7 +3259,8 @@ async def map_roomalias_to_roomid(client, alias) -> str:
         resp = await client.room_resolve_alias(alias)
         if isinstance(resp, RoomResolveAliasError):
             gs.log.error(
-                f"room_resolve_alias for alias {alias} failed with {resp}. "
+                f"room_resolve_alias for alias {alias} failed with "
+                f"{privacy_filter(str(resp))}. "
                 f"Trying operation with input {alias} anyway. Might fail."
             )
             gs.err_count += 1
@@ -3491,7 +3522,10 @@ async def action_room_create(client: AsyncClient, credentials: dict):
             )
             # "alias1" will create a "#alias1:example.com"
             if isinstance(resp, RoomCreateError):
-                gs.log.error(f"Room_create failed with response: {resp}")
+                gs.log.error(
+                    "Room_create failed with response: "
+                    f"{privacy_filter(str(resp))}"
+                )
                 gs.err_count += 1
             else:
                 full_alias = short_room_alias_to_room_alias(alias, credentials)
@@ -3537,7 +3571,7 @@ async def action_room_join(client, credentials):
             gs.log.debug(f'Joining room "{room_id}".')
             resp = await client.join(room_id)
             if isinstance(resp, JoinError):
-                gs.log.error(f"join failed with {resp}")
+                gs.log.error(f"join failed with {privacy_filter(str(resp))}")
                 gs.err_count += 1
             else:
                 gs.log.info(f'Joined room "{room_id}" successfully.')
@@ -3558,7 +3592,7 @@ async def action_room_leave(client, credentials):
             gs.log.debug(f'Leaving room "{room_id}".')
             resp = await client.room_leave(room_id)
             if isinstance(resp, RoomLeaveError):
-                gs.log.error(f"Leave failed with {resp}")
+                gs.log.error(f"Leave failed with {privacy_filter(str(resp))}")
                 gs.err_count += 1
             else:
                 gs.log.info(f'Left room "{room_id}".')
@@ -3579,7 +3613,7 @@ async def action_room_forget(client, credentials):
             gs.log.debug(f'Forgetting room "{room_id}".')
             resp = await client.room_forget(room_id)
             if isinstance(resp, RoomForgetError):
-                gs.log.error(f"Forget failed with {resp}")
+                gs.log.error(f"Forget failed with {privacy_filter(str(resp))}")
                 gs.err_count += 1
             else:
                 gs.log.info(f'Forgot room "{room_id}".')
@@ -3605,7 +3639,9 @@ async def action_room_invite(client, credentials):
                 )
                 resp = await client.room_invite(room_id, user)
                 if isinstance(resp, RoomInviteError):
-                    gs.log.error(f"room_invite failed with {resp}")
+                    gs.log.error(
+                        f"room_invite failed with {privacy_filter(str(resp))}"
+                    )
                     gs.err_count += 1
                 else:
                     gs.log.info(
@@ -3634,7 +3670,9 @@ async def action_room_ban(client, credentials):
                 )
                 resp = await client.room_ban(room_id, user)
                 if isinstance(resp, RoomBanError):
-                    gs.log.error(f"room_ban failed with {resp}")
+                    gs.log.error(
+                        f"room_ban failed with {privacy_filter(str(resp))}"
+                    )
                     gs.err_count += 1
                 else:
                     gs.log.info(
@@ -3663,7 +3701,9 @@ async def action_room_unban(client, credentials):
                 )
                 resp = await client.room_unban(room_id, user)
                 if isinstance(resp, RoomUnbanError):
-                    gs.log.error(f"room_unban failed with {resp}")
+                    gs.log.error(
+                        f"room_unban failed with {privacy_filter(str(resp))}"
+                    )
                     gs.err_count += 1
                 else:
                     gs.log.info(
@@ -3693,7 +3733,9 @@ async def action_room_kick(client, credentials):
                 )
                 resp = await client.room_kick(room_id, user)
                 if isinstance(resp, RoomKickError):
-                    gs.log.error(f"room_kick failed with {resp}")
+                    gs.log.error(
+                        f"room_kick failed with {privacy_filter(str(resp))}"
+                    )
                     gs.err_count += 1
                 else:
                     gs.log.info(
@@ -3762,7 +3804,10 @@ async def send_event(client, rooms, event):  # noqa: C901
                 room_id, message_type=message_type, content=content
             )
             if isinstance(resp, RoomSendError):
-                gs.log.error(f"room_send failed with error '{resp}'.")
+                gs.log.error(
+                    "room_send failed with error "
+                    f"'{privacy_filter(str(resp))}'."
+                )
                 # gs.err_count += 1 # not needed, will raise exception
                 # in following line of code
             gs.log.info(
@@ -3790,7 +3835,7 @@ async def send_event(client, rooms, event):  # noqa: C901
                 f'This event was sent: "{event}" ({content}) '
                 f'to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
-                f"full response: {resp}. "
+                f"full response: {privacy_filter(str(resp))}. "
             )
     except Exception:
         gs.log.error(f"Event send of file {event} failed. Sorry.")
@@ -3915,7 +3960,8 @@ async def send_file(client, rooms, file):  # noqa: C901
         )
     if isinstance(resp, UploadResponse):
         gs.log.debug(
-            f"File was uploaded successfully to server. Response is: {resp}"
+            "File was uploaded successfully to server. Response is: "
+            f"{privacy_filter(str(resp))}"
         )
     else:
         gs.log.info(
@@ -3927,7 +3973,7 @@ async def send_file(client, rooms, file):  # noqa: C901
         gs.log.info(
             f'file="{file}"; mime_type="{mime_type}"; '
             f'filessize="{file_stat.st_size}"'
-            f"Failed to upload: {resp}"
+            f"Failed to upload: {privacy_filter(str(resp))}"
         )
 
     # determine msg_type:
@@ -3961,7 +4007,10 @@ async def send_file(client, rooms, file):  # noqa: C901
                 room_id, message_type="m.room.message", content=content
             )
             if isinstance(resp, RoomSendError):
-                gs.log.error(f"room_send failed with error '{resp}'.")
+                gs.log.error(
+                    "room_send failed with error "
+                    f"'{privacy_filter(str(resp))}'."
+                )
                 # gs.err_count += 1 # not needed, will raise exception
                 # in following line of code
             gs.log.info(
@@ -3988,7 +4037,7 @@ async def send_file(client, rooms, file):  # noqa: C901
             gs.log.debug(
                 f'This file was sent: "{file}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
-                f"full response: {resp}. "
+                f"full response: {privacy_filter(str(resp))}. "
             )
     except Exception:
         gs.log.error(f"File send of file {file} failed. Sorry.")
@@ -4152,7 +4201,7 @@ async def send_image(client, rooms, image):  # noqa: C901
     if isinstance(resp, UploadResponse):
         gs.log.debug(
             "Image was uploaded successfully to server. "
-            f"Response is: {resp}"
+            f"Response is: {privacy_filter(str(resp))}"
         )
     else:
         gs.log.info(
@@ -4164,7 +4213,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         gs.log.info(
             f'file="{image}"; mime_type="{mime_type}"; '
             f'filessize="{file_stat.st_size}"'
-            f"Failed to upload: {resp}"
+            f"Failed to upload: {privacy_filter(str(resp))}"
         )
 
     # TODO compute thumbnail, upload thumbnail to Server
@@ -4202,7 +4251,8 @@ async def send_image(client, rooms, image):  # noqa: C901
                 resp = await client.room_resolve_alias(room_id)
                 if isinstance(resp, RoomResolveAliasError):
                     gs.log.error(
-                        f"room_resolve_alias failed with error '{resp}'."
+                        "room_resolve_alias failed with error "
+                        f"'{privacy_filter(str(resp))}'."
                     )
                 room_id = resp.room_id
                 gs.log.debug(
@@ -4213,7 +4263,10 @@ async def send_image(client, rooms, image):  # noqa: C901
                 room_id, message_type="m.room.message", content=content
             )
             if isinstance(resp, RoomSendError):
-                gs.log.error(f"room_send failed with error '{resp}'.")
+                gs.log.error(
+                    "room_send failed with error "
+                    f"'{privacy_filter(str(resp))}'."
+                )
                 # gs.err_count += 1 # not needed, will raise exception
                 # in following line of code
             gs.log.info(
@@ -4242,7 +4295,7 @@ async def send_image(client, rooms, image):  # noqa: C901
                 f'This image file was sent: "{image}" '
                 f'to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
-                f"full response: {resp}. "
+                f"full response: {privacy_filter(str(resp))}. "
             )
     except Exception:
         gs.log.error(f"Image send of file {image} failed. Sorry.")
@@ -4320,7 +4373,8 @@ async def send_message(client, rooms, message):  # noqa: C901
                 resp = await client.room_resolve_alias(room_id)
                 if isinstance(resp, RoomResolveAliasError):
                     gs.log.error(
-                        f"room_resolve_alias failed with error '{resp}'."
+                        "room_resolve_alias failed with error "
+                        f"'{privacy_filter(str(resp))}'."
                     )
                 room_id = resp.room_id
                 gs.log.debug(
@@ -4334,7 +4388,10 @@ async def send_message(client, rooms, message):  # noqa: C901
                 ignore_unverified_devices=True,
             )
             if isinstance(resp, RoomSendError):
-                gs.log.error(f"room_send failed with error '{resp}'.")
+                gs.log.error(
+                    "room_send failed with error "
+                    f"'{privacy_filter(str(resp))}'."
+                )
                 # gs.err_count += 1 # not needed, will raise exception
                 # in following line of code
             gs.log.info(
@@ -4361,7 +4418,7 @@ async def send_message(client, rooms, message):  # noqa: C901
             gs.log.debug(
                 f'This message was sent: "{message}" to room "{room_id}". '
                 f"Response: event_id={resp.event_id}, room_id={resp.room_id}, "
-                f"full response: {resp}. "
+                f"full response: {privacy_filter(str(resp))}. "
             )
     except Exception:
         gs.log.error("Message send failed. Sorry.")
@@ -4611,6 +4668,7 @@ async def login_using_credentials_file(
         ) from None
 
     credentials = read_credentials_from_disk(credentials_file)
+    gs.credentials = credentials
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
@@ -4661,7 +4719,7 @@ async def login_using_credentials_file(
                 "restore_login failed. Did you perform --logout "
                 "before? Looks like your access-token expired. Maybe "
                 "delete credentials file and store and perform a "
-                f"new --login. Response is: {resp}"
+                f"new --login. Response is: {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
             await client.close()
@@ -4671,7 +4729,7 @@ async def login_using_credentials_file(
             gs.log.debug(
                 "restore_login successful. Successfully "
                 f"logged in as user {resp.user_id} via restore_login. "
-                f"Response is: {resp}"
+                f"Response is: {privacy_filter(str(resp))}"
             )
     else:
         pass
@@ -4720,9 +4778,11 @@ async def listen_once(client: AsyncClient) -> None:
     # sync_forever().
     resp = await client.sync(timeout=10000, full_state=False)
     if isinstance(resp, SyncResponse):
-        gs.log.debug(f"Sync successful. Response is: {resp}")
+        gs.log.debug(
+            f"Sync successful. Response is: {privacy_filter(str(resp))}"
+        )
     else:
-        gs.log.info(f"Sync failed. Error is: {resp}")
+        gs.log.info(f"Sync failed. Error is: {privacy_filter(str(resp))}")
     # sync() forces the message_callback() to fire
     # for each new message presented in the sync().
 
@@ -4833,7 +4893,8 @@ async def listen_once_alternative(client: AsyncClient) -> None:
             )
             if isinstance(resp, RoomReadMarkersError):
                 gs.log.debug(
-                    f"room_read_markers failed with response = {resp}."
+                    "room_read_markers failed with response "
+                    f"{privacy_filter(str(resp))}."
                 )
 
 
@@ -4891,12 +4952,16 @@ async def listen_tail(  # noqa: C901
         )
         if isinstance(resp, RoomMessagesError):
             gs.log.warning(
-                f"room_messages failed with resp = {resp}. "
+                f"room_messages failed with response "
+                f"{privacy_filter(str(resp))}. "
                 "Processing continues."
             )
             gs.warn_count += 1
             continue  # skip this room
-        gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
+        gs.log.debug(
+            f"room_messages response = {type(resp)} :: "
+            f"{privacy_filter(str(resp))}."
+        )
         gs.log.debug(f"room_messages room_id = {resp.room_id}.")
         gs.log.debug(f"room_messages start = (str) {resp.start}.")
         gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
@@ -4921,7 +4986,8 @@ async def listen_tail(  # noqa: C901
             )
             if isinstance(resp, RoomReadMarkersError):
                 gs.log.debug(
-                    f"room_read_markers failed with response = {resp}."
+                    "room_read_markers failed with response "
+                    f"{privacy_filter(str(resp))}."
                 )
 
 
@@ -4983,11 +5049,16 @@ async def read_all_events_in_direction(
             break
         if isinstance(resp, RoomMessagesError):
             gs.err_count += 1
-            gs.log.error(f"room_messages failed with resp = {resp}")
+            gs.log.error(
+                f"room_messages failed with resp = {privacy_filter(str(resp))}"
+            )
             break  # skip to end of function
         gs.log.debug(f"Got {len(all_events)+len(resp.chunk)} messages so far.")
         gs.log.debug(f"Received {len(resp.chunk)} events.")
-        gs.log.debug(f"room_messages response = {type(resp)} :: {resp}.")
+        gs.log.debug(
+            f"room_messages response = {type(resp)} :: "
+            f"{privacy_filter(str(resp))}."
+        )
         gs.log.debug(f"room_messages room_id = {resp.room_id}.")
         gs.log.debug(f"room_messages start = (str) {resp.start}.")
         gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
@@ -5079,7 +5150,8 @@ async def listen_all(  # noqa: C901
             )
             if isinstance(resp, RoomReadMarkersError):
                 gs.log.debug(
-                    f"room_read_markers failed with response = {resp}."
+                    "room_read_markers failed with response "
+                    f"{privacy_filter(str(resp))}."
                 )
 
 
@@ -5127,10 +5199,12 @@ async def action_set_device_name(
     content = {"device_name": gs.pa.set_device_name}
     resp = await client.update_device(credentials["device_id"], content)
     if isinstance(resp, UpdateDeviceError):
-        gs.log.error(f"update_device failed with {resp}")
+        gs.log.error(f"update_device failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"update_device successful with {resp}")
+        gs.log.debug(
+            f"update_device successful with {privacy_filter(str(resp))}"
+        )
 
 
 async def action_set_display_name(
@@ -5143,10 +5217,14 @@ async def action_set_display_name(
     """
     resp = await client.set_displayname(gs.pa.set_display_name)
     if isinstance(resp, ProfileSetDisplayNameError):
-        gs.log.error(f"set_displayname failed with {resp}")
+        gs.log.error(
+            f"set_displayname failed with {privacy_filter(str(resp))}"
+        )
         gs.err_count += 1
     else:
-        gs.log.debug(f"set_displayname successful with {resp}")
+        gs.log.debug(
+            f"set_displayname successful with {privacy_filter(str(resp))}"
+        )
 
 
 async def action_get_display_name(
@@ -5163,10 +5241,14 @@ async def action_get_display_name(
     for user in users:
         resp = await client.get_displayname(user)
         if isinstance(resp, ProfileGetDisplayNameError):
-            gs.log.error(f"get_displayname failed with {resp}")
+            gs.log.error(
+                f"get_displayname failed with {privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
         else:
-            gs.log.debug(f"get_displayname successful with {resp}")
+            gs.log.debug(
+                f"get_displayname successful with {privacy_filter(str(resp))}"
+            )
             # resp.displayname is str or None (has no display name)
             if not resp.displayname:
                 displayname = ""  # means no display name is set
@@ -5198,10 +5280,12 @@ async def action_set_presence(client: AsyncClient, credentials: dict) -> None:
     gs.log.debug(f"Setting presence to {state} [{gs.pa.set_presence}].")
     resp = await client.set_presence(state)
     if isinstance(resp, PresenceSetError):
-        gs.log.error(f"set_presence failed with {resp}")
+        gs.log.error(f"set_presence failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"set_presence successful with {resp}")
+        gs.log.debug(
+            f"set_presence successful with {privacy_filter(str(resp))}"
+        )
 
 
 async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
@@ -5216,10 +5300,14 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
     for user in users:
         resp = await client.get_presence(user)
         if isinstance(resp, PresenceGetError):
-            gs.log.error(f"get_presence failed with {resp}")
+            gs.log.error(
+                f"get_presence failed with {privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
         else:
-            gs.log.debug(f"get_presence successful with {resp}")
+            gs.log.debug(
+                f"get_presence successful with {privacy_filter(str(resp))}"
+            )
             if not resp.last_active_ago:
                 last_active_ago = 0  # means currently_active is not set
             else:
@@ -5275,14 +5363,15 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
                 "Failed to upload. "
                 f'file="{filename}"; mime_type="{mime_type}"; '
                 f"filessize={file_stat.st_size}; encrypt={encrypt}"
-                f"Server response: {resp}"
+                f"Server response: {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
         else:
             gs.log.debug(
                 f"File {filename}, mime={mime_type}, "
                 f"{file_stat.st_size} bytes, encrypt={encrypt} "
-                f"was successfully uploaded to server. Response is: {resp}."
+                "was successfully uploaded to server. Response is: "
+                f"{privacy_filter(str(resp))}."
             )
             gs.log.debug(
                 f"URI of uploaded file {filename} is: {resp.content_uri}"
@@ -5481,7 +5570,7 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
         if isinstance(resp, DownloadError):
             gs.log.error(
                 f"download of URI '{mxc}' to local file '{filename}' "
-                f"failed with response {resp}"
+                f"failed with response {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
         else:
@@ -5525,10 +5614,12 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
     """Get joined rooms while already logged in."""
     resp = await client.joined_rooms()
     if isinstance(resp, JoinedRoomsError):
-        gs.log.error(f"joined_rooms failed with {resp}")
+        gs.log.error(f"joined_rooms failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"joined_rooms successful with {resp}")
+        gs.log.debug(
+            f"joined_rooms successful with {privacy_filter(str(resp))}"
+        )
         # output format controlled via --output flag
         text = ""
         for rr in resp.rooms:
@@ -5569,7 +5660,8 @@ async def action_joined_members(
         resp = await client.joined_rooms()
         if isinstance(resp, JoinedRoomsError):
             gs.log.error(
-                f"joined_rooms failed with {resp}. Not able to "
+                "joined_rooms failed with "
+                f"{privacy_filter(str(resp))}. Not able to "
                 "get all rooms as specified by '*'. "
                 "The member listing will be incomplete or missing."
             )
@@ -5577,7 +5669,9 @@ async def action_joined_members(
             # since we can't get all rooms leave room list as is
             rooms = filter(lambda val: val != "*", rooms)  # remove all *
         else:
-            gs.log.debug(f"joined_rooms successful with {resp}")
+            gs.log.debug(
+                f"joined_rooms successful with {privacy_filter(str(resp))}"
+            )
             gs.log.debug(
                 "Room list has been successfully overwritten with '*'"
             )
@@ -5586,10 +5680,14 @@ async def action_joined_members(
         room = room.replace(r"\!", "!")  # remove possible escape
         resp = await client.joined_members(room)
         if isinstance(resp, JoinedMembersError):
-            gs.log.error(f"joined_members failed with {resp}")
+            gs.log.error(
+                f"joined_members failed with {privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
         else:
-            gs.log.debug(f"joined_members successful with {resp}")
+            gs.log.debug(
+                f"joined_members successful with {privacy_filter(str(resp))}"
+            )
             # members = List[RoomMember] ; RoomMember
             # output format controlled via --output flag
             text = resp.room_id + "\n"
@@ -5645,10 +5743,10 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
     """List devices of account while already logged in."""
     resp = await client.devices()
     if isinstance(resp, DevicesError):
-        gs.log.error(f"devices failed with {resp}")
+        gs.log.error(f"devices failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"devices successful with {resp}")
+        gs.log.debug(f"devices successful with {privacy_filter(str(resp))}")
         # output format controlled via --output flag
         text = ""
         for rr in resp.devices:
@@ -5685,10 +5783,12 @@ async def action_discovery_info(
     """List discovery_info of home server while already logged in."""
     resp = await client.discovery_info()
     if isinstance(resp, DiscoveryInfoError):
-        gs.log.error(f"discovery_info failed with {resp}")
+        gs.log.error(f"discovery_info failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"discovery_info successful with {resp}")
+        gs.log.debug(
+            f"discovery_info successful with {privacy_filter(str(resp))}"
+        )
         # output format controlled via --output flag
         text = f"{resp.homeserver_url}{SEP}{resp.identity_server_url}"
         # Object of type xxxResponse is not JSON
@@ -5711,10 +5811,10 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
     """List login methods of home server while already logged in."""
     resp = await client.login_info()
     if isinstance(resp, LoginInfoError):
-        gs.log.error(f"login_info failed with {resp}")
+        gs.log.error(f"login_info failed with {privacy_filter(str(resp))}")
         gs.err_count += 1
     else:
-        gs.log.debug(f"login_info successful with {resp}")
+        gs.log.debug(f"login_info successful with {privacy_filter(str(resp))}")
         # output format controlled via --output flag
         text = ""
         for rr in resp.flows:
@@ -5742,10 +5842,16 @@ async def action_content_repository_config(
     """List config of content repo of home server while already logged in."""
     resp = await client.content_repository_config()
     if isinstance(resp, ContentRepositoryConfigError):
-        gs.log.error(f"content_repository_config failed with {resp}")
+        gs.log.error(
+            "content_repository_config failed with "
+            f"{privacy_filter(str(resp))}"
+        )
         gs.err_count += 1
     else:
-        gs.log.debug(f"content_repository_config successful with {resp}")
+        gs.log.debug(
+            "content_repository_config successful with "
+            f"{privacy_filter(str(resp))}"
+        )
         # output format controlled via --output flag
         text = resp.upload_size  # returns only 1 value
         # Object of type xxxResponse is not JSON
@@ -5917,7 +6023,10 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
         user_id = user_id.strip()
         resp = await client.get_avatar(user_id)
         if isinstance(resp, ProfileGetAvatarResponse):
-            gs.log.debug(f"ProfileGetAvatarResponse. Response is: {resp}")
+            gs.log.debug(
+                "ProfileGetAvatarResponse. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             avatar_mxc = resp.avatar_url
             avatar_url = None
             if avatar_mxc:  # could be None if no avatar
@@ -5944,7 +6053,7 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
         else:
             gs.log.error(
                 f"Failed getting avatar for user {user_id} "
-                f"from server. {resp}"
+                f"from server. {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
 
@@ -5960,11 +6069,13 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
         if isinstance(resp, ProfileGetError):
             gs.log.error(
                 f"Failed getting profile for user {user_id} "
-                f"from server. {resp}"
+                f"from server. {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
         else:
-            gs.log.debug(f"ProfileGetResponse. Response is: {resp}")
+            gs.log.debug(
+                f"ProfileGetResponse. Response is: {privacy_filter(str(resp))}"
+            )
             displayname = resp.displayname
             avatar_mxc = resp.avatar_url
             avatar_url = None
@@ -6091,7 +6202,8 @@ async def action_has_permission(
         if isinstance(resp, ErrorResponse):
             gs.log.error(
                 "Failed to ask about permission for permission type "
-                f"'{permission_type}' in room {room_id}. {resp}"
+                f"'{permission_type}' in room {room_id}. "
+                f"Response is {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
             # output format controlled via --output flag
@@ -6113,11 +6225,13 @@ async def action_has_permission(
         else:
             gs.log.debug(
                 f"has_permission {user_id} for permission type "
-                f"'{permission_type}' in room {room_id}: {resp}"
+                f"'{permission_type}' in room {room_id}: "
+                f"{privacy_filter(str(resp))}"
             )
             # output format controlled via --output flag
             text = (
-                f"{resp}{SEP}{user_id}{SEP}{room_id}{SEP}" f"{permission_type}"
+                f"{privacy_filter(str(resp))}{SEP}{user_id}{SEP}{room_id}{SEP}"
+                f"{permission_type}"
             )
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
@@ -6142,14 +6256,18 @@ async def action_set_avatar(client: AsyncClient, credentials: dict) -> None:
     gs.log.debug(f"Setting avatar for user {user_id} to URI {avatar_mxc}.")
     resp = await client.set_avatar(avatar_mxc)
     if isinstance(resp, ProfileSetAvatarResponse):
-        gs.log.debug(f"ProfileSetAvatarResponse. Response is: {resp}")
+        gs.log.debug(
+            "ProfileSetAvatarResponse. Response is: "
+            f"{privacy_filter(str(resp))}"
+        )
         gs.log.info(
             f"Successfully set avatar for user {user_id} "
             f"to URI {avatar_mxc}."
         )
     else:
         gs.log.error(
-            f"Failed setting avatar for user {user_id} on server. {resp}"
+            f"Failed setting avatar for user {user_id} on server. "
+            f"{privacy_filter(str(resp))}"
         )
         gs.err_count += 1
 
@@ -6163,11 +6281,13 @@ async def action_import_keys(client: AsyncClient, credentials: dict) -> None:
     if isinstance(resp, EncryptionError):
         gs.log.error(
             f"Failed to decrypt keys file. File {file} is invalid or "
-            f"couldn’t be decrypted. {resp}"
+            f"couldn’t be decrypted. {privacy_filter(str(resp))}"
         )
         gs.err_count += 1
     else:
-        gs.log.debug(f"import_keys successful. Response is: {resp}")
+        gs.log.debug(
+            f"import_keys successful. Response is: {privacy_filter(str(resp))}"
+        )
         gs.log.info(f"Successfully imported keys from file {file}.")
 
 
@@ -6181,7 +6301,9 @@ async def action_export_keys(client: AsyncClient, credentials: dict) -> None:
     except Exception:
         gs.log.error(f"Failed to export keys to file {file}.")
         raise
-    gs.log.debug(f"export_keys successful. Response is: {resp}")
+    gs.log.debug(
+        f"export_keys successful. Response is: {privacy_filter(str(resp))}"
+    )
     gs.log.info(f"Successfully exported keys to file {file}.")
 
 
@@ -6223,13 +6345,17 @@ async def action_room_set_alias(
             alias = alias + ":" + room_id.split(":")[1]
         resp = await client.room_put_alias(alias, room_id)
         if isinstance(resp, RoomPutAliasResponse):
-            gs.log.debug(f"room_put_alias successful. Response is: {resp}")
+            gs.log.debug(
+                "room_put_alias successful. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.log.info(
                 f"Successfully added alias '{alias}' to room '{room_id}'."
             )
         else:
             gs.log.error(
-                f"Failed to add alias '{alias}' to room '{room_id}': {resp}"
+                f"Failed to add alias '{alias}' to room '{room_id}': "
+                f"{privacy_filter(str(resp))}"
             )
             gs.err_count += 1
 
@@ -6255,7 +6381,10 @@ async def action_room_resolve_alias(
             alias = short_room_alias_to_room_alias(alias, credentials)
         resp = await client.room_resolve_alias(alias)
         if isinstance(resp, RoomResolveAliasResponse):
-            gs.log.debug(f"room_resolve_alias successful. Response is: {resp}")
+            gs.log.debug(
+                "room_resolve_alias successful. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.log.info(
                 f"Successfully resolved room alias '{alias}' to "
                 f"{resp.room_id}."
@@ -6279,7 +6408,10 @@ async def action_room_resolve_alias(
                 json_spec=json_spec,
             )
         else:
-            gs.log.error(f"Failed to resolve room alias '{alias}': {resp}")
+            gs.log.error(
+                f"Failed to resolve room alias '{alias}': "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
             # output format controlled via --output flag
             # for JSON the user can determine which one from the list
@@ -6316,10 +6448,16 @@ async def action_room_delete_alias(
             alias = short_room_alias_to_room_alias(alias, credentials)
         resp = await client.room_delete_alias(alias)
         if isinstance(resp, RoomDeleteAliasResponse):
-            gs.log.debug(f"room_delete_alias successful. Response is: {resp}")
+            gs.log.debug(
+                "room_delete_alias successful. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.log.info(f"Successfully deleted room alias '{alias}'.")
         else:
-            gs.log.error(f"Failed to delete room alias '{alias}': {resp}")
+            gs.log.error(
+                f"Failed to delete room alias '{alias}': "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
 
 
@@ -6346,11 +6484,15 @@ async def action_get_openid_token(
         resp = await client.get_openid_token(user_id)
         if isinstance(resp, GetOpenIDTokenError):
             gs.log.error(
-                f"Failed to get OpenId for user {user_id}. Response: {resp}"
+                f"Failed to get OpenId for user {user_id}. Response: "
+                f"{privacy_filter(str(resp))}"
             )
             gs.err_count += 1
         else:
-            gs.log.debug(f"get_openid_token successful. Response is: {resp}")
+            gs.log.debug(
+                "get_openid_token successful. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.log.info(
                 f"Successfully obtained OpenId token "
                 f"{resp.access_token} for user {user_id}."
@@ -6409,7 +6551,8 @@ async def action_room_get_visibility(
             )
         else:
             gs.log.error(
-                f"Failed getting visibility for room {room_id}. {resp}"
+                f"Failed getting visibility for room {room_id}. "
+                f"{privacy_filter(str(resp))}"
             )
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
@@ -6460,7 +6603,10 @@ async def action_room_get_state(
                 json_spec=json_spec,
             )
         else:
-            gs.log.error(f"Failed getting state for room {room_id}. {resp}")
+            gs.log.error(
+                f"Failed getting state for room {room_id}. "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
             errmsg = "Error: " + str(resp.status_code) + " " + resp.message
             # output format controlled via --output flag
@@ -6546,18 +6692,22 @@ async def action_delete_device(client: AsyncClient, credentials: dict) -> None:
         gs.log.error(
             f"Failed to delete devices {devices} for user {user_id} "
             f"with password {passwordfake} and auth {authfake}. "
-            f"Response: {resp}"
+            f"Response: {privacy_filter(str(resp))}"
         )
         gs.err_count += 1
     elif isinstance(resp, DeleteDevicesAuthResponse):
         gs.log.error(
             f"Failed to delete devices {devices} for user {user_id} due to "
             "authentication failure. Are you authorized? "
-            f"Authentication: {authfake}, Response: {resp}"
+            f"Authentication: {authfake}, Response: "
+            f"{privacy_filter(str(resp))}"
         )
         gs.err_count += 1
     else:
-        gs.log.debug(f"delete_devices successful. Response is: {resp}")
+        gs.log.debug(
+            "delete_devices successful. Response is: "
+            f"{privacy_filter(str(resp))}"
+        )
         gs.log.info(
             f"Successfully deleted devices {devices} for user {user_id}."
         )
@@ -6591,11 +6741,14 @@ async def action_room_redact(client: AsyncClient, credentials: dict) -> None:
             gs.log.error(
                 f"Failed to redact event {event_id} in room {room_id} "
                 f"with reason '{reason}'. "
-                f"Response: {resp}"
+                f"Response: {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
         else:
-            gs.log.debug(f"room_redact successful. Response is: {resp}")
+            gs.log.debug(
+                "room_redact successful. Response is: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.log.info(
                 f"Successfully redacted event {event_id} in room {room_id} "
                 f"providing reason '{'' if reason is None else reason}'."
@@ -6806,7 +6959,8 @@ async def action_send() -> None:
                     resp = await gs.client.room_resolve_alias(room_id)
                     if isinstance(resp, RoomResolveAliasError):
                         gs.log.error(
-                            f"room_resolve_alias failed with error '{resp}'."
+                            "room_resolve_alias failed with error "
+                            f"'{privacy_filter(str(resp))}'."
                         )
                     room_id = resp.room_id
                     gs.log.debug(
@@ -6865,10 +7019,15 @@ async def action_logout() -> None:
             return
         resp = await gs.client.logout(all_devices)
         if isinstance(resp, LogoutError):
-            gs.log.error(f"Failed to logout {device}. Response: {resp}")
+            gs.log.error(
+                f"Failed to logout {device}. Response: "
+                f"{privacy_filter(str(resp))}"
+            )
             gs.err_count += 1
         else:
-            gs.log.debug(f"logout successful. Response is: {resp}")
+            gs.log.debug(
+                f"logout successful. Response is: {privacy_filter(str(resp))}"
+            )
             gs.log.info(f"Successfully logged out {device}.")
 
     except Exception as e:
@@ -7180,7 +7339,7 @@ async def action_login() -> None:
                 "Most likely wrong credentials were entered. "
                 f"homeserver='{homeserver}'; device name='{device_name}'; "
                 f"user='{user_id}'; room_id='{room_id}'. "
-                f"Failed to log in: {resp}"
+                f"Failed to log in: {privacy_filter(str(resp))}"
             )
             gs.err_count += 1
             raise MatrixCommanderError(txt)

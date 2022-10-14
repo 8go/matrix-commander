@@ -14,6 +14,8 @@ else
     echo "Optionally, set variable \"MC_OPTIONS\" for further options."
 fi
 
+echo "Python version is: $(python --version)"
+
 function test1() {
     echo "=== Test 1: send a message, get event id, delete msg ==="
     echo "Watch it in your client, e.g. Element. Messge arrives, message is removed."

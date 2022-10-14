@@ -3,6 +3,19 @@
 # just in case PATH is not set correctly
 PATH=".:./matrix_commander:../matrix_commander:$PATH"
 
+# One may set similar values in the terminal before calling the script.
+# export MC_OPTIONS="-d --room \!...some.room.id:matrix.example.org "
+
+# getting some optional arguments
+if [ "$MC_OPTIONS" != "" ]; then
+    echo "Exellent. Variable MC_OPTIONS already set. " \
+        "Using \"$MC_OPTIONS\" as additional options for testing."
+else
+    echo "Optionally, set variable \"MC_OPTIONS\" for further options."
+fi
+
+echo "Python version is: $(python --version)"
+
 function test1() {
     echo "=== Test 1: get version and features from server ==="
     matrix-commander --rest GET "" "__homeserver__/_matrix/client/versions"
