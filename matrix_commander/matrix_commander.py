@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.14 2022-10-14. Enjoy, star on Github and
+You are running version 3.5.15 2022-10-14. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1800,7 +1800,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-14"
-VERSIONNR = "3.5.14"
+VERSIONNR = "3.5.15"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2413,15 +2413,15 @@ class Callbacks(object):
             # output format controlled via --output flag
             text = complete_msg  # print the received message
             json_ = {"source": event.source}
-            json_ |= {"room": room}
-            json_ |= {"room_display_name": room.display_name}
-            json_ |= {"sender_nick": sender_nick}
-            json_ |= {"event_datetime": event_datetime}
+            json_.update({"room": room})
+            json_.update({"room_display_name": room.display_name})
+            json_.update({"sender_nick": sender_nick})
+            json_.update({"event_datetime": event_datetime})
             json_max = event.__dict__
-            json_max |= {"room": room}
-            json_max |= {"room_display_name": room.display_name}
-            json_max |= {"sender_nick": sender_nick}
-            json_max |= {"event_datetime": event_datetime}
+            json_max.update({"room": room})
+            json_max.update({"room_display_name": room.display_name})
+            json_max.update({"sender_nick": sender_nick})
+            json_max.update({"event_datetime": event_datetime})
             json_spec = event.source
             print_output(
                 gs.pa.output,
@@ -3539,10 +3539,10 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
                 # resp has only 1 useful useful member: room_id
-                json_max |= {"alias": alias}  # add dict items
-                json_max |= {"alias_full": full_alias}
-                json_max |= {"name": name}
-                json_max |= {"topic": topic}
+                json_max.update({"alias": alias})  # add dict items
+                json_max.update({"alias_full": full_alias})
+                json_max.update({"name": name})
+                json_max.update({"topic": topic})
                 json_ = json_max.copy()
                 json_.pop("transport_response")
                 json_spec = None
@@ -3820,7 +3820,7 @@ async def send_event(client, rooms, event):  # noqa: C901
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
-                json_max |= {"event": event}  # add dict items
+                json_max.update({"event": event})  # add dict items
                 json_ = json_max.copy()
                 json_.pop("transport_response")
                 json_spec = None
@@ -4023,7 +4023,7 @@ async def send_file(client, rooms, file):  # noqa: C901
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
-                json_max |= {"file": file}  # add dict items
+                json_max.update({"file": file})  # add dict items
                 json_ = json_max.copy()
                 json_.pop("transport_response")
                 json_spec = None
@@ -4280,7 +4280,7 @@ async def send_image(client, rooms, image):  # noqa: C901
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
-                json_max |= {"image": image}  # add dict items
+                json_max.update({"image": image})  # add dict items
                 json_ = json_max.copy()
                 json_.pop("transport_response")
                 json_spec = None
@@ -4404,7 +4404,7 @@ async def send_message(client, rooms, message):  # noqa: C901
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
-                json_max |= {"message": message}  # add dict items
+                json_max.update({"message": message})  # add dict items
                 json_ = json_max.copy()
                 json_.pop("transport_response")
                 json_spec = None
@@ -5259,7 +5259,7 @@ async def action_get_display_name(
             # Object of type RoomCreateResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"user": user}  # add dict items
+            json_max.update({"user": user})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -5328,7 +5328,7 @@ async def action_get_presence(client: AsyncClient, credentials: dict) -> None:
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -5387,7 +5387,9 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"decryption_dict": decryption_dict}  # add dict items
+            json_max.update(
+                {"decryption_dict": decryption_dict}
+            )  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -5628,7 +5630,7 @@ async def action_joined_rooms(client: AsyncClient, credentials: dict) -> None:
         # Object of type xxxResponse is not JSON
         # serializable, hence we use the dictionary.
         json_max = resp.__dict__
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         json_.pop("transport_response")
         json_spec = None
@@ -5705,7 +5707,7 @@ async def action_joined_members(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -5726,7 +5728,7 @@ async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
         # output format controlled via --output flag
         text = f"{mxc}{SEP}{http}"
         json_max = {"mxc": mxc, "http": http}
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         # json_.pop("key")
         json_spec = None
@@ -5764,7 +5766,7 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
         # Object of type xxxResponse is not JSON
         # serializable, hence we use the dictionary.
         json_max = resp.__dict__
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         json_.pop("transport_response")
         json_spec = None
@@ -5794,7 +5796,7 @@ async def action_discovery_info(
         # Object of type xxxResponse is not JSON
         # serializable, hence we use the dictionary.
         json_max = resp.__dict__
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         json_.pop("transport_response")
         json_spec = None
@@ -5823,7 +5825,7 @@ async def action_login_info(client: AsyncClient, credentials: dict) -> None:
         # Object of type xxxResponse is not JSON
         # serializable, hence we use the dictionary.
         json_max = resp.__dict__
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         json_.pop("transport_response")
         json_spec = None
@@ -5857,7 +5859,7 @@ async def action_content_repository_config(
         # Object of type xxxResponse is not JSON
         # serializable, hence we use the dictionary.
         json_max = resp.__dict__
-        # json_max |= {"key": value}  # add dict items
+        # json_max.update({"key": value})  # add dict items
         json_ = json_max.copy()
         json_.pop("transport_response")
         json_spec = None
@@ -6001,7 +6003,7 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
             # output format controlled via --output flag
             text = f"{txt}"  # returns only 1 value
             json_max = resp.__dict__
-            json_max |= {"response": txt}  # add dict items
+            json_max.update({"response": txt})  # add dict items
             json_ = json_max.copy()
             # json_.pop("key")
             json_spec = None
@@ -6039,7 +6041,7 @@ async def action_get_avatar(client: AsyncClient, credentials: dict) -> None:
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"avatar_http": avatar_url}  # add dict items
+            json_max.update({"avatar_http": avatar_url})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6096,7 +6098,7 @@ async def action_get_profile(client: AsyncClient, credentials: dict) -> None:
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"avatar_http": avatar_url}  # add dict items
+            json_max.update({"avatar_http": avatar_url})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6157,7 +6159,9 @@ async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"display_name": room_displayname}  # add dict items
+            json_max.update(
+                {"display_name": room_displayname}
+            )  # add dict items
             json_ = json_max.copy()
             # json_.pop("key")
             json_spec = None
@@ -6236,7 +6240,7 @@ async def action_has_permission(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6396,7 +6400,7 @@ async def action_room_resolve_alias(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6505,7 +6509,7 @@ async def action_get_openid_token(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            json_max |= {"user_id": user_id}  # add dict items
+            json_max.update({"user_id": user_id})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6538,7 +6542,7 @@ async def action_room_get_visibility(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6591,7 +6595,7 @@ async def action_room_get_state(
             # Object of type xxxResponse is not JSON
             # serializable, hence we use the dictionary.
             json_max = resp.__dict__
-            # json_max |= {"key": value}  # add dict items
+            # json_max.update({"key": value})  # add dict items
             json_ = json_max.copy()
             json_.pop("transport_response")
             json_spec = None
@@ -6762,7 +6766,7 @@ async def action_whoami(client: AsyncClient, credentials: dict) -> None:
     # output format controlled via --output flag
     text = whoami
     json_max = {"user_id": whoami}
-    # json_max |= {"key": value}  # add dict items
+    # json_max.update({"key": value})  # add dict items
     json_ = json_max.copy()
     # json_.pop("key")
     json_spec = None
