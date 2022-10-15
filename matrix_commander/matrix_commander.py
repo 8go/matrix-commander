@@ -1754,33 +1754,88 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
-                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, ErrorResponse, JoinedMembersError,
-                 JoinedRoomsError, JoinError, KeyVerificationCancel,
-                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
-                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
-                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
-                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
-                 ProfileGetDisplayNameError, ProfileGetError,
-                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
-                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
-                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
-                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
-                 RoomGetStateResponse, RoomGetVisibilityResponse,
-                 RoomInviteError, RoomKickError, RoomLeaveError,
-                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
-                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
-                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
-                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
-                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
-                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
-                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto,
-                 responses)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    ContentRepositoryConfigError,
+    DeleteDevicesAuthResponse,
+    DeleteDevicesError,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    EncryptionError,
+    ErrorResponse,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    LogoutError,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileGetError,
+    ProfileSetAvatarResponse,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomDeleteAliasResponse,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomGetStateResponse,
+    RoomGetVisibilityResponse,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomPutAliasResponse,
+    RoomReadMarkersError,
+    RoomRedactError,
+    RoomResolveAliasError,
+    RoomResolveAliasResponse,
+    RoomSendError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+    responses,
+)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1935,7 +1990,7 @@ def privacy_filter(dirty: str) -> str:
     # homeserver = urlparse(gs.credentials["homeserver"])
     # server_name = homeserver.netloc
     # clean = dirty.replace(server_name, "your.homeserver.org")
-    return dirty.replace(gs.credentials["access_token"], "xxx")
+    return dirty.replace(gs.credentials["access_token"], "***")
 
 
 def print_output(
@@ -5927,7 +5982,9 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
                 data = data.replace(ph, credentials["device_id"])
                 url = url.replace(ph, credentials["device_id"])
             elif ph == ROOM_ID_PLACEHOLDER:
-                room_id = quote(credentials["room_id"])
+                room_id = credentials["room_id"]
+                room_id = await map_roominfo_to_roomid(client, room_id)
+                room_id = quote(room_id)
                 data = data.replace(ph, room_id)
                 url = url.replace(ph, room_id)
         url = url.strip()
