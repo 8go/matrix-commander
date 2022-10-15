@@ -35,6 +35,10 @@ except:
 
 now = datetime.now().strftime("%Y%m%d-%H%M%S")
 
+# to make test self-contained, create the test file here inside Python
+TESTFILE = "test.txt"
+with open(TESTFILE, "w") as f:
+    f.write("content of test.txt")
 # set up some test arguments
 print(f"Running test program: {sys.argv[0]}")
 print(f"Current working directory is: {os.getcwd()}")
@@ -43,8 +47,9 @@ print(f"Arguments that are passed on to matrix-commander are: {sys.argv[1:]}")
 sys.argv[0] = "matrix-commander"
 sys.argv.extend(["--version"])
 sys.argv.extend(["--message", f"Hello World @ {now}!"])
-sys.argv.extend(["--image", "./tests/test.s.png"])
-# sys.argv.extend(["--debug"])  # will leak possibly sensitive data
+sys.argv.extend(["--file", TESTFILE])
+sys.argv.extend(["--print-event-id"])
+# sys.argv.extend(["--debug"])
 print(f"Testing with these arguments: {sys.argv}")
 try:
     ret = matrix_commander.main()
@@ -57,4 +62,5 @@ try:
 except Exception as e:
     print(f"Exception happened: {e}")
     ret = 99
+os.remove(TESTFILE)
 exit(ret)
