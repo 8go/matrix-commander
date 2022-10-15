@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.16 2022-10-15. Enjoy, star on Github and
+You are running version 3.5.17 2022-10-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1800,7 +1800,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-15"
-VERSIONNR = "3.5.16"
+VERSIONNR = "3.5.17"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3800,6 +3800,7 @@ async def send_event(client, rooms, event):  # noqa: C901
 
     try:
         for room_id in rooms:
+            room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
                 room_id, message_type=message_type, content=content
             )
@@ -4003,6 +4004,7 @@ async def send_file(client, rooms, file):  # noqa: C901
 
     try:
         for room_id in rooms:
+            room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
@@ -4247,18 +4249,7 @@ async def send_image(client, rooms, image):  # noqa: C901
 
     try:
         for room_id in rooms:
-            if is_room_alias(room_id):
-                resp = await client.room_resolve_alias(room_id)
-                if isinstance(resp, RoomResolveAliasError):
-                    gs.log.error(
-                        "room_resolve_alias failed with error "
-                        f"'{privacy_filter(str(resp))}'."
-                    )
-                room_id = resp.room_id
-                gs.log.debug(
-                    f'Mapping room alias "{resp.room_alias}" to '
-                    f'room id "{resp.room_id}".'
-                )
+            room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
                 room_id, message_type="m.room.message", content=content
             )
@@ -4369,18 +4360,7 @@ async def send_message(client, rooms, message):  # noqa: C901
 
     try:
         for room_id in rooms:
-            if is_room_alias(room_id):
-                resp = await client.room_resolve_alias(room_id)
-                if isinstance(resp, RoomResolveAliasError):
-                    gs.log.error(
-                        "room_resolve_alias failed with error "
-                        f"'{privacy_filter(str(resp))}'."
-                    )
-                room_id = resp.room_id
-                gs.log.debug(
-                    f'Mapping room alias "{resp.room_alias}" to '
-                    f'room id "{resp.room_id}".'
-                )
+            room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
                 room_id,
                 message_type="m.room.message",
@@ -6959,18 +6939,7 @@ async def action_send() -> None:
             #          room_id=room_id, own_user_id=user_id, encrypted=True)
             # We must also map room aliases to room ids.
             for room_id in rooms:
-                if is_room_alias(room_id):
-                    resp = await gs.client.room_resolve_alias(room_id)
-                    if isinstance(resp, RoomResolveAliasError):
-                        gs.log.error(
-                            "room_resolve_alias failed with error "
-                            f"'{privacy_filter(str(resp))}'."
-                        )
-                    room_id = resp.room_id
-                    gs.log.debug(
-                        f'Mapping room alias "{resp.room_alias}" to '
-                        f'room id "{resp.room_id}".'
-                    )
+                room_id = await map_roominfo_to_roomid(gs.client, room_id)
                 gs.client.rooms[room_id] = MatrixRoom(
                     room_id=room_id,
                     own_user_id=gs.credentials["user_id"],
