@@ -47,7 +47,7 @@ sys.argv.extend(["--version"])
 sys.argv.extend(["--message", f"Hello World @ {now}!"])
 sys.argv.extend(["--file", TESTFILE])
 sys.argv.extend(["--print-event-id"])
-# sys.argv.extend(["--debug"])
+sys.argv.extend(["--debug"])
 print(f"Testing with these arguments: {sys.argv}")
 try:
     ret = matrix_commander.main()
