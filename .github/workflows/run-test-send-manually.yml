@@ -7,7 +7,7 @@ on:
 
 env:
   python-version: ""
-  test-case: "test-send.sh"
+  test-case: "test-send.py"
 
 jobs:
   tests:
