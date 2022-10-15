@@ -14,6 +14,17 @@ else
     echo "Optionally, set variable \"MC_OPTIONS\" for further options."
 fi
 
+echo "Python version is: $(python --version)"
+echo "GITHUB_WORKFLOW = $GITHUB_WORKFLOW"
+echo "GITHUB_REPOSITORY = $GITHUB_REPOSITORY"
+echo "MC_OPTIONS = $MC_OPTIONS"
+
+if [[ "$GITHUB_WORKFLOW" != "" ]]; then # if in Github Action Workflow
+    echo "I am in Github Action Workflow $GITHUB_WORKFLOW."
+fi
+
+failures=0
+
 type eog >/dev/null 2>&1 || {
     echo "The test works better if you install 'eog'."
 }
@@ -28,6 +39,11 @@ function test1() {
     rm -f "$TMPFILE"
     N=1
     mxc_urls=$(matrix-commander --get-avatar $MC_OPTIONS)
+    if [[ "$mxc_urls" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "$mxc_urls" # has the N URIs and URLs, like "mxc://...   https://..."
     for ii in $(seq $N); do
         echo "Handling avatar $ii"
@@ -48,11 +64,21 @@ function test1() {
 function test2() {
     echo "=== Test 2: getting the avatars of 2 users ==="
     user1=$(matrix-commander --whoami) # get some user_id
-    user2=$user1                       # now we have 2 user ids
+    if [[ "$user1" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
+    user2=$user1 # now we have 2 user ids
     TMPFILE="test.png.tmp"
     rm -f "$TMPFILE"
     N=2
     mxc_urls=$(matrix-commander --get-avatar "$user1" "$user2" $MC_OPTIONS)
+    if [[ "$mxc_urls" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "$mxc_urls" # has the N URIs and URLs, like "mxc://...   https://..."
     for ii in $(seq $N); do
         echo "Handling avatar $ii"
@@ -82,6 +108,11 @@ function test3() {
     rm -f "$TMPFILE" "$TMPFILEBW"
     N=1
     mxc_urls=$(matrix-commander --get-avatar $MC_OPTIONS)
+    if [[ "$mxc_urls" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "$mxc_urls" # has the N URIs and URLs, like "mxc://...   https://..."
     for ii in $(seq $N); do
         echo "Handling avatar $ii"
@@ -104,12 +135,31 @@ function test3() {
         }
         # avatars must not be encrypted, use --plain
         mxc_key=$(matrix-commander --upload "$TMPFILEBW" --plain)
+        if [[ "$mxc_key" == "" ]]; then
+            echo "FAILURE."
+            let failures++
+            return
+        fi
         mxcbw="${mxc_key%    *}" # before "    "
         echo "    Uploaded the new black-and-white avatar to URI \"$mxcbw\"."
         matrix-commander --set-avatar $mxcbw $MC_OPTIONS
+        res="$?"
+        if [ "$res" == "0" ]; then
+            echo "SUCCESS."
+        else
+            echo "FAILURE."
+            let failures++
+        fi
         echo "    Setted the new avatar. Have a look at your client."
         read -t 30 -p "Like the new avatar?"
         matrix-commander --set-avatar $mxc $MC_OPTIONS
+        res="$?"
+        if [ "$res" == "0" ]; then
+            echo "SUCCESS."
+        else
+            echo "FAILURE."
+            let failures++
+        fi
         echo "    Setted the avatar to as it was before. Have a look at your client."
         read -t 30 -p "Prefer the old avatar?"
         echo "" # add linebreak after timeout
@@ -122,6 +172,13 @@ function test4() {
     echo "=== Test 4: exporting keys to file ==="
     TMPFILE="test.keys.tmp"
     matrix-commander --export-keys "$TMPFILE" "bad-passphrase-3582" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS."
+    else
+        echo "FAILURE."
+        let failures++
+    fi
     echo "Here is the file with the exported keys:"
     ls -l "$TMPFILE"
 }
@@ -132,11 +189,32 @@ function test5() {
     echo "bad key file" >"$TMPFILEBK"
     echo "This should fail because of bad keys file."
     matrix-commander --import-keys "$TMPFILEBK" "bad-passphrase-3582" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE."
+        let failures++
+    else
+        echo "SUCCESS."
+    fi
     echo "This should fail because of wrong passphrase."
     matrix-commander --import-keys "$TMPFILE" "wrong-passphrase" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "FAILURE."
+        let failures++
+    else
+        echo "SUCCESS."
+    fi
     echo "This should work."
     # slow, many keys usually
     matrix-commander --import-keys "$TMPFILE" "bad-passphrase-3582" $MC_OPTIONS
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS."
+    else
+        echo "FAILURE."
+        let failures++
+    fi
     rm -f "$TMPFILE" "$TMPFILEBK"
 }
 
@@ -144,6 +222,11 @@ function test6() {
     echo "=== Test 6: getting its own user profile ==="
     N=1
     dispname_mxc_url_others=$(matrix-commander --get-profile $MC_OPTIONS)
+    if [[ "$dispname_mxc_url_others" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "$dispname_mxc_url_others" # lines with 4 pieces of information
     for ii in $(seq $N); do
         echo "Handling user profile $ii"
@@ -164,9 +247,19 @@ function test6() {
 function test7() {
     echo "=== Test 7: getting the user profiles of 2 users ==="
     user1=$(matrix-commander --whoami) # get some user_id
-    user2=$user1                       # now we have 2 user ids
+    if [[ "$user1" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
+    user2=$user1 # now we have 2 user ids
     N=2
     dispname_mxc_url_others=$(matrix-commander --get-profile "$user1" "$user2" $MC_OPTIONS)
+    if [[ "$dispname_mxc_url_others" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "$dispname_mxc_url_others" # lines with 4 pieces of information
     for ii in $(seq $N); do
         echo "Handling user profile $ii"
@@ -187,17 +280,24 @@ function test7() {
 
 function test8() {
     echo "=== Test 8: getting the state of default room ==="
-    matrix-commander --room-get-state $MC_OPTIONS \
-        2>/dev/null |                               # remove debug info
-        grep -v -e "^Error" |                       # remove error lines
-        sed -n "s/\(\[.*\]\)\(    \![^ ]*\)/\1/p" | # remove room id at EOL
-        sed "s/'/\"/g" |                            # substitute all 's as ' is not valid in JSON
-        jq                                          # beautify
+    matrix-commander --room-get-state $MC_OPTIONS --output json | jq
+    res="$?"
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS."
+    else
+        echo "FAILURE."
+        let failures++
+    fi
 }
 
 function test9() {
     echo "=== Test 9: getting the visibility of default room ==="
     visi_room=$(matrix-commander --room-get-visibility $MC_OPTIONS)
+    if [[ "$visi_room" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     visibility="${visi_room%    *}" # before "    "
     roomid="${visi_room##*    }"    # after "    "
     echo "    Visibility of room \"$roomid\" is \"$visibility\"."
@@ -209,10 +309,10 @@ function test10() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
+        let failures++
     else
         echo "SUCCESS. The program failed as expected."
     fi
-
 }
 
 function test11() {
@@ -221,10 +321,10 @@ function test11() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
+        let failures++
     else
         echo "SUCCESS. The program failed as expected."
     fi
-
 }
 
 function test12() {
@@ -233,10 +333,10 @@ function test12() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
+        let failures++
     else
         echo "SUCCESS. The program failed as expected."
     fi
-
 }
 
 function test13() {
@@ -247,8 +347,8 @@ function test13() {
         echo "SUCCESS. Alias set."
     else
         echo "FAILURE. Alias not set."
+        let failures++
     fi
-
 }
 
 function test14() {
@@ -259,8 +359,8 @@ function test14() {
         echo "SUCCESS. Alias set."
     else
         echo "FAILURE. Alias not set."
+        let failures++
     fi
-
 }
 
 function test15() {
@@ -269,10 +369,10 @@ function test15() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
+        let failures++
     else
         echo "SUCCESS. The program failed as expected."
     fi
-
 }
 
 function test16() {
@@ -283,8 +383,8 @@ function test16() {
         echo "SUCCESS. Aliases resolved."
     else
         echo "FAILURE. Aliases not resolved."
+        let failures++
     fi
-
 }
 
 function test17() {
@@ -293,10 +393,10 @@ function test17() {
     res="$?"
     if [ "$res" == "0" ]; then
         echo "FAILURE. The program should have failed, but didn't."
+        let failures++
     else
         echo "SUCCESS. The program failed as expected."
     fi
-
 }
 
 function test18() {
@@ -307,18 +407,20 @@ function test18() {
         echo "SUCCESS. Alias deleted."
     else
         echo "FAILURE. Alias not deleted."
+        let failures++
     fi
-
 }
 
-test1
-test2
-test3
-test4
-test5
-test6
-test7
-test8
+if [[ "$GITHUB_WORKFLOW" == "" ]]; then # skip in Github Action Workflow
+    test1
+    test2
+    test3
+    test4 # will leak keys
+    test5 # will leak keys
+    test6 # will leak private information
+    test7 # will leak private information
+    test8 # requires jq and sed installed
+fi
 test9
 test10
 test11
@@ -330,4 +432,6 @@ test16
 test17
 test18
 
-echo "Finsihed test series."
+echo "Finished test series with $failures failures."
+
+exit $failures

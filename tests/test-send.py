@@ -44,7 +44,8 @@ sys.argv[0] = "matrix-commander"
 sys.argv.extend(["--version"])
 sys.argv.extend(["--message", f"Hello World @ {now}!"])
 sys.argv.extend(["--image", "./tests/test.s.png"])
-# sys.argv.extend(["--debug"])  # will leak possibly sensitive data
+sys.argv.extend(["--print-event-id"])
+# sys.argv.extend(["--debug"])
 print(f"Testing with these arguments: {sys.argv}")
 try:
     ret = matrix_commander.main()

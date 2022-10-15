@@ -15,6 +15,15 @@ else
 fi
 
 echo "Python version is: $(python --version)"
+echo "GITHUB_WORKFLOW = $GITHUB_WORKFLOW"
+echo "GITHUB_REPOSITORY = $GITHUB_REPOSITORY"
+echo "MC_OPTIONS = $MC_OPTIONS"
+
+if [[ "$GITHUB_WORKFLOW" != "" ]]; then # if in Github Action Workflow
+    echo "I am in Github Action Workflow $GITHUB_WORKFLOW."
+fi
+
+failures=0
 
 function test1() {
     echo "=== Test 1: send a message, get event id, delete msg ==="
@@ -26,12 +35,24 @@ function test1() {
     echo "room: $room_id"
     echo "event: $event_id"
     matrix-commander --room-delete-content "$room_id" "$event_id" "Just testing."
+    res=$?
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS"
+    else
+        echo "FAILURE"
+        let failures++
+    fi
 }
 
 function test2() {
     echo "=== Test 2: send a message, get event id, delete msg ==="
     echo "Watch it in your client, e.g. Element. Messge arrives, message is removed."
     ev_rm_msg=$(matrix-commander -m "Want to get event id for this message too." --print-event-id $MC_OPTIONS 2>/dev/null)
+    if [[ "$ev_rm_msg" == "" ]]; then
+        echo "FAILURE."
+        let failures++
+        return
+    fi
     echo "stdout was: $ev_rm_msg"
     # shellcheck disable=SC2207
     out=($(grep -Eo '    |.+' <<<"$ev_rm_msg")) # split by "    "
@@ -40,7 +61,18 @@ function test2() {
     echo "room: $room_id"
     echo "event: $event_id"
     matrix-commander --room-delete-content "$room_id" "$event_id" "Just testing this."
+    res=$?
+    if [ "$res" == "0" ]; then
+        echo "SUCCESS"
+    else
+        echo "FAILURE"
+        let failures++
+    fi
 }
 
 test1
 test2
+
+echo "Finished test series with $failures failures."
+
+exit $failures

@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.15 2022-10-14. Enjoy, star on Github and
+You are running version 3.5.16 2022-10-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1799,8 +1799,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-14"
-VERSIONNR = "3.5.15"
+VERSION = "2022-10-15"
+VERSIONNR = "3.5.16"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"

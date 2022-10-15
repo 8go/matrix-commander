@@ -1,13 +1,14 @@
 # This is a basic workflow to perform automated tests with Actions
 
-name: Run SETGET test from tests directory manually
+name: Run EVENT test from tests directory manually
 
 on:
   workflow_dispatch:
 
 env:
   python-version: ""
-  test-case: "test-setget.sh"
+  test-case: "test-event.sh"
+  MC_OPTIONS: ""
 
 jobs:
   tests:

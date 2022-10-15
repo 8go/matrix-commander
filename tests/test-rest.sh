@@ -15,6 +15,15 @@ else
 fi
 
 echo "Python version is: $(python --version)"
+echo "GITHUB_WORKFLOW = $GITHUB_WORKFLOW"
+echo "GITHUB_REPOSITORY = $GITHUB_REPOSITORY"
+echo "MC_OPTIONS = $MC_OPTIONS"
+
+if [[ "$GITHUB_WORKFLOW" != "" ]]; then # if in Github Action Workflow
+    echo "I am in Github Action Workflow $GITHUB_WORKFLOW."
+fi
+
+failures=0
 
 function test1() {
     echo "=== Test 1: get version and features from server ==="
@@ -24,6 +33,7 @@ function test1() {
         echo "SUCCESS"
     else
         echo "FAILURE"
+        let failures++
     fi
 }
 
@@ -38,6 +48,7 @@ m.room.message?access_token=__access_token__"
         echo "SUCCESS"
     else
         echo "FAILURE"
+        let failures++
     fi
 }
 
@@ -63,9 +74,14 @@ m.room.message?access_token=__access_token__"
         echo "SUCCESS"
     else
         echo "FAILURE"
+        let failures++
     fi
 }
 
 test1
 test2
 test3
+
+echo "Finished test series with $failures failures."
+
+exit $failures
