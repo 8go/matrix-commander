@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.18 2022-10-15. Enjoy, star on Github and
+You are running version 3.5.19 2022-10-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1756,33 +1756,88 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
-                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, ErrorResponse, JoinedMembersError,
-                 JoinedRoomsError, JoinError, KeyVerificationCancel,
-                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
-                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
-                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
-                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
-                 ProfileGetDisplayNameError, ProfileGetError,
-                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
-                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
-                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
-                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
-                 RoomGetStateResponse, RoomGetVisibilityResponse,
-                 RoomInviteError, RoomKickError, RoomLeaveError,
-                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
-                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
-                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
-                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
-                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
-                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
-                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto,
-                 responses)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    ContentRepositoryConfigError,
+    DeleteDevicesAuthResponse,
+    DeleteDevicesError,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    EncryptionError,
+    ErrorResponse,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    LogoutError,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileGetError,
+    ProfileSetAvatarResponse,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomDeleteAliasResponse,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomGetStateResponse,
+    RoomGetVisibilityResponse,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomPutAliasResponse,
+    RoomReadMarkersError,
+    RoomRedactError,
+    RoomResolveAliasError,
+    RoomResolveAliasResponse,
+    RoomSendError,
+    RoomUnbanError,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+    responses,
+)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1802,7 +1857,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-15"
-VERSIONNR = "3.5.18"
+VERSIONNR = "3.5.19"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -4684,8 +4739,8 @@ async def login_using_credentials_file(
         f'credentials file "{credentials_file}". '
         f'room_id = {credentials["room_id"]}, '
         f'device_id = {credentials["device_id"]}, '
-        f'access_token = {credentials["access_token"][0:2]}...'
-        f'{credentials["access_token"][-2:]}.'
+        f'access_token = {credentials["access_token"][0:1]}***'
+        f'{credentials["access_token"][-1:]}.'
     )
     if gs.pa.debug > 0:
         # gs.log.debug(f"Logged_in()={client.logged_in}") is always True.
@@ -6318,7 +6373,7 @@ async def action_room_set_alias(
     for ii in range(len(gs.pa.room_set_alias) // 2):
         alias = gs.pa.room_set_alias[ii * 2 + 0].strip()
         room_id = gs.pa.room_set_alias[ii * 2 + 1]
-        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        room_id = await map_roominfo_to_roomid(client, room_id)
         gs.log.debug(f"Adding alias '{alias}' to room '{room_id}'.")
         if not is_room_alias(alias) and not is_short_room_alias(alias):
             # not an exhaustive check

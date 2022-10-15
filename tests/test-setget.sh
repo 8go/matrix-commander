@@ -415,11 +415,13 @@ if [[ "$GITHUB_WORKFLOW" == "" ]]; then # skip in Github Action Workflow
     test1
     test2
     test3
-    test4 # will leak keys
-    test5 # will leak keys
-    test6 # will leak private information
-    test7 # will leak private information
-    test8 # requires jq and sed installed
+fi
+test4
+test5
+test6
+test7
+if [[ "$GITHUB_WORKFLOW" == "" ]]; then # skip in Github Action Workflow
+    test8                               # uses jq
 fi
 test9
 test10
