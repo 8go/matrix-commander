@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.17 2022-10-15. Enjoy, star on Github and
+You are running version 3.5.18 2022-10-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1673,6 +1673,8 @@ Here is a sample snapshot of tab completion in action:
   the same user? Call `matrix-commander` once, not 30 times.
 - If you are sending something, then try the `--sync off` option and see
   to what degree skipping the server sync for sending helps.
+- Avoid using room aliases. Instead use room ids. For each room alias
+  the corresponding id must be retrieved from the server creating overhead.
 
 # For Developers
 
@@ -1754,88 +1756,33 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    ContentRepositoryConfigError,
-    DeleteDevicesAuthResponse,
-    DeleteDevicesError,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    ErrorResponse,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    LogoutError,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileGetError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomDeleteAliasResponse,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomGetStateResponse,
-    RoomGetVisibilityResponse,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomPutAliasResponse,
-    RoomReadMarkersError,
-    RoomRedactError,
-    RoomResolveAliasError,
-    RoomResolveAliasResponse,
-    RoomSendError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-    responses,
-)
+from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
+                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 EncryptionError, ErrorResponse, JoinedMembersError,
+                 JoinedRoomsError, JoinError, KeyVerificationCancel,
+                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
+                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
+                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
+                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
+                 ProfileGetDisplayNameError, ProfileGetError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
+                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
+                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
+                 RoomGetStateResponse, RoomGetVisibilityResponse,
+                 RoomInviteError, RoomKickError, RoomLeaveError,
+                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
+                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
+                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
+                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
+                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
+                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
+                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto,
+                 responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1855,7 +1802,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-15"
-VERSIONNR = "3.5.17"
+VERSIONNR = "3.5.18"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5413,7 +5360,7 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
             )
             gs.log.debug(
                 f"Decryption key (dictionary) of uploaded file {filename} is: "
-                f"{decryption_dict}"
+                "'*** hidden to prevent leaks'"  # f"{decryption_dict}"
             )
             # decryption_dict will be None in case of plain-text
             # the URI and keys will be needed later. So this print is a must
@@ -5582,7 +5529,11 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
     # filenames is now None or list at least as long as downloads
     # decryption_strings is now None or list at least as long as downloads
     gs.log.debug(f"File names provided in arguments: {filenames}")
-    gs.log.debug(f"File names provided in arguments: {decryption_strings}")
+    gs.log.debug(
+        "Decryption strings provided in arguments: "
+        "'*** hidden to prevent leaks'"
+        # f"{decryption_strings}"
+    )
     ii = 0
     for download in gs.pa.download:
         if gs.pa.file_name:
@@ -5627,7 +5578,9 @@ async def action_download(client: AsyncClient, credentials: dict) -> None:
                 f"successful with {len(resp.body)} bytes of data downloaded, "
                 f"content_type {resp.content_type}; "
                 f"remote filename {resp.filename}; "
-                f"encrypted {encrypted}; key dictionary {decryption_str}. "
+                f"encrypted {encrypted}; "
+                "key dictionary '*** hidden to prevent leaks'. "
+                # f"key dictionary {decryption_str}. "
                 "Trying to save data now."
             )
             if encrypted:
@@ -6566,7 +6519,7 @@ async def action_room_get_visibility(
     if gs.pa.room_get_visibility == []:
         gs.pa.room_get_visibility.append(credentials["room_id"])  # def. room
     for room_id in gs.pa.room_get_visibility:
-        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        room_id = await map_roominfo_to_roomid(client, room_id)
         gs.log.debug(f"Getting visibility for room {room_id}.")
         resp = await client.room_get_visibility(room_id)
         if isinstance(resp, RoomGetVisibilityResponse):
@@ -6619,7 +6572,7 @@ async def action_room_get_state(
     if gs.pa.room_get_state == []:
         gs.pa.room_get_state.append(credentials["room_id"])  # default room
     for room_id in gs.pa.room_get_state:
-        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        room_id = await map_roominfo_to_roomid(client, room_id)
         gs.log.debug(f"Getting visibility for room {room_id}.")
         resp = await client.room_get_state(room_id)
         if isinstance(resp, RoomGetStateResponse):
@@ -6768,7 +6721,7 @@ async def action_room_redact(client: AsyncClient, credentials: dict) -> None:
         return
     for ii in range(len(gs.pa.room_redact) // 3):
         room_id = gs.pa.room_redact[ii * 3 + 0]
-        room_id = room_id.replace(r"\!", "!")  # remove possible escape
+        room_id = await map_roominfo_to_roomid(client, room_id)
         event_id = gs.pa.room_redact[ii * 3 + 1]
         reason = gs.pa.room_redact[ii * 3 + 2].strip()
         if reason == "":

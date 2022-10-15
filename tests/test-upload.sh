@@ -83,14 +83,15 @@ function test2() {
         let failures++
         return
     fi
-    echo "$mxc_key"         # has the URI, like "mxc://...   {some key dictionary}"
+    # echo "$mxc_key"       # has the URI, like "mxc://...   {some key dictionary}"  # leaks keys
     mxc="${mxc_key%    *}"  # before "    "
     key="${mxc_key##*    }" # after "    "
     echo "mxc is \"$mxc\""
-    echo "key is \"$key\""
+    echo "key is \"***\"" # "key is \"$key\"" hide for privacy, don't leak keys
     rm -f "$TMPFILE"
     # download knows it is encrypted because we specify a key dictionary
-    matrix-commander --download "$mxc" --file-name "$TMPFILE" --key-dict "$key"
+    matrix-commander --download "$mxc" --file-name "$TMPFILE" \
+        --key-dict "$key"
     res="$?"
     if [ "$res" == "0" ]; then
         echo "SUCCESS."
@@ -127,7 +128,7 @@ function test3() {
         let failures++
         return
     fi
-    echo "$mxc_keys" # has the N URIs, like "mxc://...   None"
+    # echo "$mxc_keys" # has the N URIs, like "mxc://...   None"  # leaks keys
     MXCS=()
     KEYS=()
     for ii in $(seq $N); do
@@ -136,9 +137,9 @@ function test3() {
         mxc="${mxc_key%    *}"  # before "    "
         key="${mxc_key##*    }" # after "    "
         echo "mxc is \"$mxc\""
-        echo "key is \"$key\"" # None in our case, because plain-text
-        MXCS+=("$mxc")         # append mxc to array
-        KEYS+=("$key")         # append mxc to array
+        echo "key is \"***\"" # "key is \"$key\"" # None in our case, because plain-text  # leaks key
+        MXCS+=("$mxc")        # append mxc to array
+        KEYS+=("$key")        # append mxc to array
     done
     rm -f "${TMPFILES[0]}" "${TMPFILES[1]}"
     # download knows it is plain because we do not specify a key dictionary
@@ -209,7 +210,7 @@ function test5() {
         let failures++
         return
     fi
-    echo "$mxc_keys" # has the N URIs, like "mxc://...   None"
+    # echo "$mxc_keys" # has the N URIs, like "mxc://...   None"  # leaks keys
     MXCS=()
     KEYS=()
     for ii in $(seq $N); do
@@ -218,9 +219,9 @@ function test5() {
         mxc="${mxc_key%    *}"  # before "    "
         key="${mxc_key##*    }" # after "    "
         echo "mxc is \"$mxc\""
-        echo "key is \"$key\"" # a key dict
-        MXCS+=("$mxc")         # append mxc to array
-        KEYS+=("$key")         # append mxc to array
+        echo "key is \"***\"" # "key is \"$key\""# a key dict  # leaks keys
+        MXCS+=("$mxc")        # append mxc to array
+        KEYS+=("$key")        # append mxc to array
     done
     rm -f "${TMPFILES[0]}" "${TMPFILES[1]}"
     # download knows it is encrypted because we do specify a key dictionary
@@ -280,9 +281,7 @@ test1
 test2
 test3
 test4
-if [[ "$GITHUB_WORKFLOW" == "" ]]; then # skip in Github Action Workflow
-    test5                               # will leak sensitive data
-fi
+test5
 test6
 test7
 

@@ -1639,7 +1639,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.17 2022-10-15. Enjoy, star on Github and
+You are running version 3.5.18 2022-10-15. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1666,6 +1666,8 @@ Here is a sample snapshot of tab completion in action:
   the same user? Call `matrix-commander` once, not 30 times.
 - If you are sending something, then try the `--sync off` option and see
   to what degree skipping the server sync for sending helps.
+- Avoid using room aliases. Instead use room ids. For each room alias
+  the corresponding id must be retrieved from the server creating overhead.
 
 # For Developers
 
