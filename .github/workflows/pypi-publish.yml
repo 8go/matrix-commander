@@ -16,6 +16,8 @@ on:
     tags:
       - 'v*.0'
 
+  workflow_dispatch:
+
 jobs:
   publish-pypi:
     # Only publish on `main` branch
