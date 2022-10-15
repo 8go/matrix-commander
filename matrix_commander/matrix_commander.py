@@ -5941,7 +5941,7 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
             continue
         gs.log.debug(
             f"Preparing to invoke REST API call: method={method} "
-            f"data={data}, url={url}."
+            f"data={data}, url={privacy_filter(str(url))}."
         )
         connector = TCPConnector(ssl=gs.ssl)  # setting sslcontext
         async with ClientSession(connector=connector) as session:  # aiohttp
@@ -5971,14 +5971,14 @@ async def action_rest(client: AsyncClient, credentials: dict) -> None:
             gs.log.error(
                 f"REST API call failed. Failed with error code {status} and "
                 f"error text {txt}. Input was: method={method} "
-                f"data={data}, url={url}."
+                f"data={data}, url={privacy_filter(str(url))}."
             )
             gs.err_count += 1
         else:
             gs.log.debug(
                 f"REST API call was successful. "
                 f"Response is: {txt}. Input was: method={method} "
-                f"data={data}, url={url}."
+                f"data={data}, url={privacy_filter(str(url))}."
             )
             # output format controlled via --output flag
             text = f"{txt}"  # returns only 1 value
