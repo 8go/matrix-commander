@@ -1,6 +1,6 @@
 # This is a basic workflow to perform automated tests with Actions
 
-name: Run version test from tests directory manually
+name: Run different Py version manually
 
 on:
   workflow_dispatch:
