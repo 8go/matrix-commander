@@ -29,19 +29,25 @@ jobs:
         run:  python -m pip install --upgrade pip
 
       - name: Install requirements for Matrix Commander
-        run:  pip install -r requirements.txt
+        run:  python -m pip install -r requirements.txt
 
       - name: Source install of Matrix Commander
-        run:  pip install .
+        run:  python -m pip install .
 
       - name: Python version
         run:  python --version
+
+      - name: Pip version
+        run:  pip --version
 
       - name: ls
         run:  ls
 
       - name: ls matrix_commander
         run:  ls matrix_commander
+
+      - name: Print version
+        run:  matrix_commander/matrix-commander --version
 
       - name: Test ${{ env.test-case }}
         run:  ./tests/${{ env.test-case }}
