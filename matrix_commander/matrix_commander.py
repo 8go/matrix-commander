@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.19 2022-10-15. Enjoy, star on Github and
+You are running version 3.5.20 2022-10-17. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1756,88 +1756,33 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    ContentRepositoryConfigError,
-    DeleteDevicesAuthResponse,
-    DeleteDevicesError,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    ErrorResponse,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    LogoutError,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileGetError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomDeleteAliasResponse,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomGetStateResponse,
-    RoomGetVisibilityResponse,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomPutAliasResponse,
-    RoomReadMarkersError,
-    RoomRedactError,
-    RoomResolveAliasError,
-    RoomResolveAliasResponse,
-    RoomSendError,
-    RoomUnbanError,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-    responses,
-)
+from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
+                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 EncryptionError, ErrorResponse, JoinedMembersError,
+                 JoinedRoomsError, JoinError, KeyVerificationCancel,
+                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
+                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
+                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
+                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
+                 ProfileGetDisplayNameError, ProfileGetError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
+                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
+                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
+                 RoomGetStateResponse, RoomGetVisibilityResponse,
+                 RoomInviteError, RoomKickError, RoomLeaveError,
+                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
+                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
+                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
+                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
+                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
+                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
+                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
+                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
+                 UpdateDeviceError, UploadError, UploadResponse, crypto,
+                 responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1856,8 +1801,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-15"
-VERSIONNR = "3.5.19"
+VERSION = "2022-10-17"
+VERSIONNR = "3.5.20"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5699,7 +5644,6 @@ async def action_joined_members(
         gs.warn_count += 1
         return
 
-    # print(credentials["user_id"])  ## who am i, whoami
     gs.log.debug(f"Trying to get members for these rooms: {rooms}")
     if "*" in rooms:
         resp = await client.joined_rooms()
@@ -7517,17 +7461,52 @@ def check_download_media_dir() -> None:
 
 def version() -> None:
     """Print version info."""
+    nio_version = pkg_resources.get_distribution("matrix-nio").version
+    python_version = sys.version
+    python_version_nr = (
+        str(sys.version_info.major)
+        + "."
+        + str(sys.version_info.minor)
+        + "."
+        + str(sys.version_info.micro)
+    )
     version_info = (
         "\n"
-        f"  _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}\n"
+        f"  _|      _|      _|_|_|    _|       {PROG_WITHOUT_EXT}: "
+        f"{VERSIONNR} {VERSION}\n"
         "  _|_|  _|_|    _|            _|     a Matrix CLI client\n"
-        "  _|  _|  _|    _|              _|   \n"
-        f"  _|      _|    _|            _|     version {VERSIONNR} {VERSION}\n"
-        "  _|      _|      _|_|_|    _|       enjoy and submit PRs\n"
+        "  _|  _|  _|    _|              _|   enjoy and submit PRs\n"
+        f"  _|      _|    _|            _|     matrix-nio: {nio_version}\n"
+        f"  _|      _|      _|_|_|    _|       Python: {python_version_nr}\n"
         "\n"
     )
-    print(version_info)
     gs.log.debug(version_info)
+    # output format controlled via --output flag
+    text = version_info
+    json_max = {
+        f"{PROG_WITHOUT_EXT}": {
+            "version": f"{VERSIONNR}",
+            "date": f"{VERSION}",
+        },
+        "matrix-nio": {
+            "version": f"{nio_version}",
+        },
+        "python": {
+            "version": f"{python_version_nr}",
+            "info": f"{python_version}",
+        },
+    }
+    # json_max.update({"key": value})  # add dict items
+    json_ = json_max.copy()
+    # json_.pop("key")
+    json_spec = None
+    print_output(
+        gs.pa.output,
+        text=text,
+        json_=json_,
+        json_max=json_max,
+        json_spec=json_spec,
+    )
 
 
 def initial_check_of_log_args() -> None:
