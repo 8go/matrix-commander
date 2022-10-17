@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.20 2022-10-17. Enjoy, star on Github and
+You are running version 3.5.21 2022-10-17. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1802,7 +1802,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-10-17"
-VERSIONNR = "3.5.20"
+VERSIONNR = "3.5.21"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -7621,7 +7621,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.get_avatar is not None  # empty list must invoke function
         or gs.pa.get_profile is not None  # empty list must invoke function
         or gs.pa.get_room_info is not None  # empty list must invoke function
-        or gs.pa.get_client_info is not None
+        or gs.pa.get_client_info
         or gs.pa.has_permission
         or gs.pa.export_keys
         or gs.pa.get_openid_token is not None  # empty list must invoke func
