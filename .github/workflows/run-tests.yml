@@ -46,6 +46,9 @@ jobs:
       - name: ls matrix_commander
         run:  ls matrix_commander
 
+      - name: Test version
+        run:  ./tests/test-version.sh
+        
       - name: Log in to matrix server
         env:
           MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
@@ -56,7 +59,7 @@ jobs:
         run: matrix-commander --login password --user-login "${MATRIX_USERNAME}" --password "${MATRIX_PASSWORD}" --homeserver "${MATRIX_HOMESERVER}" --device "ci" --room-default "${MATRIX_ROOM}" -m "matrix-commander posted from CI (${GITHUB_REPOSITORY} / ${GITHUB_REF})"
 
       - name: Test events
-        run: ./tests/test-event.sh
+        run:  ./tests/test-event.sh
 
       - name: Test delete event
         run:  ./tests/test-delete.sh
