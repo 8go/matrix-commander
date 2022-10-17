@@ -40,6 +40,9 @@ jobs:
       - name: Pip version
         run:  pip --version
 
+      - name: Pip version
+        run:  python -m pip --version
+
       - name: ls
         run:  ls
 
