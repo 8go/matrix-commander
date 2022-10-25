@@ -1646,7 +1646,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.22 2022-10-17. Enjoy, star on Github and
+You are running version 3.5.23 2022-10-25. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1801,8 +1801,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-10-17"
-VERSIONNR = "3.5.22"
+VERSION = "2022-10-25"
+VERSIONNR = "3.5.23"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2856,8 +2856,11 @@ def read_credentials_from_disk(credentials_file) -> dict:
 
     """
     # open the file in read-only mode
+    gs.log.debug("Starting to read credentials file.")
     with open(credentials_file, "r") as f:
-        return json.load(f)
+        cdict = json.load(f)
+    gs.log.debug("Finished reading credentials file.")
+    return cdict
 
 
 def determine_credentials_file() -> str:
@@ -4652,6 +4655,7 @@ async def login_using_credentials_file(
     credentials = read_credentials_from_disk(credentials_file)
     gs.credentials = credentials
 
+    gs.log.debug("About to configure Matrix Async Client.")
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
         max_limit_exceeded=0,
@@ -4659,6 +4663,7 @@ async def login_using_credentials_file(
         store_sync_tokens=True,
         encryption_enabled=True,
     )
+    gs.log.debug("About to initialize Matrix Async Client.")
     # Initialize the matrix client based on credentials from file
     client = AsyncClient(
         credentials["homeserver"],
@@ -4672,13 +4677,19 @@ async def login_using_credentials_file(
     if gs.pa.proxy:
         gs.log.debug(f"Proxy {gs.pa.proxy} will be used for connectivity.")
 
+    gs.log.debug("About to restore login.")
     # restore_login() always returns None, on success or failure
     # restore_login() does not go to the server, it just sets some local values
+    # TODO: performance
+    # restore_login() is a slow operation. 1.5s to 2s. Why?
+    # Because it is reading the store file database.
+    # Setting store_sync_tokens=False above will not make it go any faster.
     client.restore_login(
         user_id=credentials["user_id"],
         device_id=credentials["device_id"],
         access_token=credentials["access_token"],
     )
+    gs.log.debug("Finished restoring login.")
     gs.log.debug(
         "Login will be using stored credentials from "
         f'credentials file "{credentials_file}". '
@@ -4688,6 +4699,7 @@ async def login_using_credentials_file(
         f'{credentials["access_token"][-1:]}.'
     )
     if gs.pa.debug > 0:
+        gs.log.debug("About to connect to server to verify connection.")
         # gs.log.debug(f"Logged_in()={client.logged_in}") is always True.
         # Just because client.logged_in is True does not mean we are logged in.
         # That just means the data structure is filled.
@@ -4695,7 +4707,13 @@ async def login_using_credentials_file(
         # Do an actual API call against the server. E.g. whoami.
         # We don't want to do this always for performance reasons, so we only
         # do it in debug mode.
-        resp = await client.whoami()
+        try:
+            resp = await client.whoami()
+        except Exception as e:
+            await client.close()
+            client = None
+            credentials = None
+            raise (e)
         if isinstance(resp, responses.WhoamiError):
             gs.log.error(
                 "restore_login failed. Did you perform --logout "
