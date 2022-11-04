@@ -3,10 +3,10 @@ aiofiles>=0.6.0
 argparse
 asyncio
 datetime
-dbus-python
 markdown
 matrix-nio[e2e]>=0.14.1
 notify2
+# dbus-python # indirectly required by notify2 # not directly required by matrix-commander
 Pillow
 python_magic
 pyxdg

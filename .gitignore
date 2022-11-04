@@ -1,8 +1,12 @@
 # Do not include credentials created at runtime.
 /store/
 /store.*/
+/store-*/
+/store_*/
 credentials.json
 credentials.json.*
+credentials.json-*
+credentials.json_*
 
 # Also do not include the media directory.
 /media/
