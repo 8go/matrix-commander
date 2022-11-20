@@ -598,6 +598,13 @@ $ matrix-commander --room-create roomAlias3 --name 'Fancy Room' \
 $ matrix-commander --room-create roomAlias4 roomAlias5 \
     --name 'Fancy Room 4' -name 'Cute Room 5' \
     --topic 'All about Matrix 4' 'All about Nio 5'
+$ # create DM rooms with user.
+$ matrix-commander --room-dm-create '@user1:example.com'
+$ # create DM rooms with name, topic, alias
+$ matrix-commander --room-dm-create '@user1:example.com' '@user2:example.com' \
+    --name 'Fancy DM room 4' -name 'Cute DM room 4' \
+    --topic 'All about Matrix 4' 'All about Nio 5' \
+    --alias roomAlias1 '#roomAlias2:example.com'
 $ # join rooms
 $ matrix-commander --room-join '!someroomId1:example.com' \
     '!someroomId2:example.com' '#roomAlias1:example.com'
@@ -674,6 +681,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--logout LOGOUT] [-c CREDENTIALS] [-s STORE]
                            [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
+                           [--room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
                            [--room-forget ROOM_FORGET [ROOM_FORGET ...]]
@@ -914,6 +922,14 @@ options:
                         to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
                         created.
+  --room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]
+                        Create one or multiple DM rooms with the specified users.
+                        For each user specified a DM room will be created and the user
+                        invited to it. For each created room one line with
+                        room id and alias will be printed to stdout. The user
+                        must be permitted to create rooms. Combine --room-dm-create
+                        with --name, --topic and --alias to add names, topics and
+                        aliases to the room(s) to be created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -1014,6 +1030,11 @@ options:
                         meaningful in combination with option --room-create.
                         This option --topic specifies the topics to be used
                         with the command --room-create.
+  --alias ALIAS [ALIAS ...]
+                        Specify one or multiple aliases. This option is only
+                        meaningful in combination with option --room-dm-create.
+                        This option --alias specifies the aliases to be used
+                        with the command --room-dm-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. Message data must not be binary
                         data, it must be text. If no '-m' is used and no other
@@ -1782,7 +1803,7 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
                  SyncError, SyncResponse, ToDeviceError, UnknownEvent,
                  UpdateDeviceError, UploadError, UploadResponse, crypto,
-                 responses)
+                 responses, RoomVisibility, RoomPreset)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -3138,7 +3159,7 @@ async def determine_dm_rooms(
                 "send operation via --room. But no DM room was "
                 f"found for user '{user}'. "
                 "Try setting up a room first via --room-create and "
-                "--room-invite option."
+                "--room-invite option or --room-dm-create."
             )
             gs.err_count += 1
     rooms = list(dict.fromkeys(rooms))  # remove duplicates in list
@@ -3467,6 +3488,116 @@ def is_user(user_id: str) -> bool:
         or is_short_user_id(user_id)
     )
 
+async def action_room_dm_create(client: AsyncClient, credentials: dict):
+    """Create a direct message room while already being logged in and invite the user to it.
+
+    Arguments:
+    ---------
+    client: AsyncClient: nio client, allows as to query the server
+    credentials: dict: allows to get the user_id of sender, etc
+    """
+    # users : list of users to create DM rooms with
+    # room_aliases : list of room aliases in the form of "sampleAlias"
+    #         These aliases will then be used by the server and
+    #         the server creates the definite alias in the form
+    #         of "#sampleAlias:example.com" from it.
+    #         We permit "#sampleAlias:example.com" and downscale it to
+    #         "sampleAlias".
+    # names : list of names for rooms
+    # topic : room topics
+
+    users = gs.pa.room_dm_create
+    room_aliases = gs.pa.alias
+    names = gs.pa.name
+    topics = gs.pa.topic
+    try:
+        index = 0
+        gs.log.debug(
+            f'Trying to create DM rooms with users "{users}", '
+            f'room aliases "{room_aliases}", '
+            f'names "{names}", and topics "{topics}".'
+        )
+        for user in users:
+            try:
+                alias = room_aliases[index]
+                alias = alias.replace(r"\!", "!")  # remove possible escape
+                # alias is a true alias, not a room id
+                # if by mistake user has given full room alias, shorten it
+                if is_room_alias(alias):
+                    alias = room_alias_to_short_room_alias(alias, credentials)
+            except (IndexError, TypeError):
+                alias = ""
+            try:
+                name = names[index]
+            except (IndexError, TypeError):
+                name = ""
+            try:
+                topic = topics[index]
+            except (IndexError, TypeError):
+                topic = ""
+            alias = alias.strip()
+            alias = None if alias == "" else alias
+            name = name.strip()
+            name = None if name == "" else name
+            topic = topic.strip()
+            topic = None if topic == "" else topic
+            gs.log.debug(
+                f'Creating DM room with user "{user}", '
+                f'room alias "{alias}", '
+                f'name "{name}", and topic "{topic}".'
+            )
+            # nio's room_create does NOT accept "#foo:example.com"
+            resp = await client.room_create(
+                alias=alias,  # desired canonical alias local part, e.g. foo
+                visibility=RoomVisibility.private,
+                is_direct=True,
+                preset=RoomPreset.private_chat,
+                invite={user}, # invite the user to the DM
+                name=name,  # room name
+                topic=topic,  # room topic
+                initial_state=[EnableEncryptionBuilder().as_dict()],
+            )
+            # "alias1" will create a "#alias1:example.com"
+            if isinstance(resp, RoomCreateError):
+                gs.log.error(
+                    "Room_create failed with response: "
+                    f"{privacy_filter(str(resp))}"
+                )
+                gs.err_count += 1
+            else:
+                if alias:
+                    full_alias = short_room_alias_to_room_alias(alias, credentials)
+                else:
+                    full_alias = ""
+                gs.log.info(
+                    f'Created DM room with room id "{resp.room_id}" '
+                    f'and short alias "{alias}" and full alias "{full_alias}".'
+                )
+                # output format controlled via --output flag
+                text = f"{resp.room_id}{SEP}{full_alias}"
+                # Object of type RoomCreateResponse is not JSON
+                # serializable, hence we use the dictionary.
+                json_max = resp.__dict__
+                # resp has only 1 useful useful member: room_id
+                json_max.update({"alias": alias})  # add dict items
+                json_max.update({"alias_full": full_alias})
+                json_max.update({"name": name})
+                json_max.update({"topic": topic})
+                json_ = json_max.copy()
+                json_.pop("transport_response")
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
+            index = index + 1
+    except Exception:
+        gs.log.error("DM room creation failed. Sorry.")
+        gs.err_count += 1
+        gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 async def action_room_create(client: AsyncClient, credentials: dict):
     """Create one or multiple rooms while already being logged in.
@@ -6799,6 +6930,8 @@ async def action_roomsetget() -> None:
         # room set actions
         if gs.pa.room_create:
             await action_room_create(gs.client, gs.credentials)
+        if gs.pa.room_dm_create:
+            await action_room_dm_create(gs.client, gs.credentials)
         if gs.pa.room_join:
             await action_room_join(gs.client, gs.credentials)
         if gs.pa.room_leave:
@@ -7590,6 +7723,7 @@ def initial_check_of_args() -> None:  # noqa: C901
     if (
         # room set
         gs.pa.room_create
+        or gs.pa.room_dm_create
         or gs.pa.room_join
         or gs.pa.room_leave
         or gs.pa.room_forget
@@ -8123,6 +8257,20 @@ def main_inner(
         "names and topics to the room(s) to be created.",
     )
     ap.add_argument(
+        "--room-dm-create",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Create one or multiple DM rooms with the specified users. "
+        "For each user specified a DM room will be created and the user "
+        "invited to it. For each created room one line with "
+        "room id and alias will be printed to stdout. The user "
+        "must be permitted to create rooms. Combine --room-dm-create "
+        "with --name, --topic and --alias to add names, topics and "
+        "aliases to the room(s) to be created.",
+    )
+    ap.add_argument(
         "--room-join",
         required=False,
         action="extend",
@@ -8285,6 +8433,17 @@ def main_inner(
         "in combination with option --room-create. "
         "This option --topic specifies the topics "
         "to be used with the command --room-create.",
+    )
+    ap.add_argument(
+        "--alias",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        help="Specify one or multiple aliases. This option is only "
+        "meaningful in combination with option --room-dm-create. "
+        "This option --alias specifies the aliases to be used "
+        "with the command --room-dm-create.",
     )
     # allow multiple messages , e.g. -m "m1" "m2" or -m "m1" -m "m2"
     # message is going to be a list of strings
