@@ -1687,7 +1687,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.26 2022-11-21. Enjoy, star on Github and
+You are running version 3.5.27 2022-11-22. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1842,8 +1842,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-11-21"
-VERSIONNR = "3.5.26"
+VERSION = "2022-11-22"
+VERSIONNR = "3.5.27"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3510,7 +3510,9 @@ def is_user(user_id: str) -> bool:
 
 
 async def action_room_dm_create(client: AsyncClient, credentials: dict):
-    """Create a direct message room while already being logged in and invite the user to it.
+    """Create a direct message room while already being logged.
+
+    After creating the private DM room it invites the other user to it.
 
     Arguments:
     ---------
@@ -3591,13 +3593,14 @@ async def action_room_dm_create(client: AsyncClient, credentials: dict):
                         alias, credentials
                     )
                 else:
-                    full_alias = ""
+                    full_alias = None
                 gs.log.info(
-                    f'Created DM room with room id "{resp.room_id}" '
-                    f'and short alias "{alias}" and full alias "{full_alias}".'
+                    f'Created DM room with room id "{resp.room_id}", '
+                    f"short alias \"{(alias or '')}\" "
+                    f"and full alias \"{(full_alias or '')}\"."
                 )
                 # output format controlled via --output flag
-                text = f"{resp.room_id}{SEP}{full_alias}"
+                text = f"{resp.room_id}{SEP}{(full_alias or '')}"
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
@@ -3688,13 +3691,19 @@ async def action_room_create(client: AsyncClient, credentials: dict):
                 )
                 gs.err_count += 1
             else:
-                full_alias = short_room_alias_to_room_alias(alias, credentials)
+                if alias:
+                    full_alias = short_room_alias_to_room_alias(
+                        alias, credentials
+                    )
+                else:
+                    full_alias = None
                 gs.log.info(
-                    f'Created room with room id "{resp.room_id}" '
-                    f'and short alias "{alias}" and full alias "{full_alias}".'
+                    f'Created room with room id "{resp.room_id}", '
+                    f"short alias \"{(alias or '')}\" "
+                    f"and full alias \"{(full_alias or '')}\"."
                 )
                 # output format controlled via --output flag
-                text = f"{resp.room_id}{SEP}{full_alias}"
+                text = f"{resp.room_id}{SEP}{(full_alias or '')}"
                 # Object of type RoomCreateResponse is not JSON
                 # serializable, hence we use the dictionary.
                 json_max = resp.__dict__
@@ -5854,13 +5863,14 @@ async def action_joined_members(
             # output format controlled via --output flag
             text = resp.room_id + "\n"
             for member in resp.members:
+                # convert None to ''
                 text += (
                     SEP
                     + member.user_id
                     + SEP
-                    + member.display_name
+                    + (member.display_name or "")
                     + SEP
-                    + member.avatar_url
+                    + (member.avatar_url or "")
                     + "\n"
                 )
             text = text.strip()
