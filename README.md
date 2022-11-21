@@ -177,6 +177,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Sending of arbitrary files (PDF, xls, doc, txt, etc.)
 - Sending events such as emoji reactions, or replies as threads
 - Using events to edit sent messages
+- Supports creating private DM rooms (thanks to PR from @murlock1000)
 - Supports DM (direct messaging), sending DMs, listening for DMs
 - Listing of joined rooms
 - Listing of members of given room(s)
@@ -591,6 +592,13 @@ $ matrix-commander --room-create roomAlias3 --name 'Fancy Room' \
 $ matrix-commander --room-create roomAlias4 roomAlias5 \
     --name 'Fancy Room 4' -name 'Cute Room 5' \
     --topic 'All about Matrix 4' 'All about Nio 5'
+$ # create DM rooms with user.
+$ matrix-commander --room-dm-create '@user1:example.com'
+$ # create DM rooms with name, topic, alias
+$ matrix-commander --room-dm-create '@user1:example.com' '@user2:example.com' \
+    --name 'Fancy DM room 4' -name 'Cute DM room 4' \
+    --topic 'All about Matrix 4' 'All about Nio 5' \
+    --alias roomAlias1 '#roomAlias2:example.com'
 $ # join rooms
 $ matrix-commander --room-join '!someroomId1:example.com' \
     '!someroomId2:example.com' '#roomAlias1:example.com'
@@ -667,6 +675,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [--logout LOGOUT] [-c CREDENTIALS] [-s STORE]
                            [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
                            [--room-create ROOM_CREATE [ROOM_CREATE ...]]
+                           [--room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]]
                            [--room-join ROOM_JOIN [ROOM_JOIN ...]]
                            [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
                            [--room-forget ROOM_FORGET [ROOM_FORGET ...]]
@@ -677,6 +686,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-u USER [USER ...]] [--user-login USER_LOGIN]
                            [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
+                           [--alias ALIAS [ALIAS ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
@@ -907,6 +917,15 @@ options:
                         to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
                         created.
+  --room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]
+                        Create one or multiple DM rooms with the specified
+                        users. For each user specified a DM room will be
+                        created and the user invited to it. For each created
+                        room one line with room id and alias will be printed
+                        to stdout. The user must be permitted to create rooms.
+                        Combine --room-dm-create with --name, --topic and
+                        --alias to add names, topics and aliases to the
+                        room(s) to be created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -1007,6 +1026,11 @@ options:
                         meaningful in combination with option --room-create.
                         This option --topic specifies the topics to be used
                         with the command --room-create.
+  --alias ALIAS [ALIAS ...]
+                        Specify one or multiple aliases. This option is only
+                        meaningful in combination with option --room-dm-
+                        create. This option --alias specifies the aliases to
+                        be used with the command --room-dm-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. Message data must not be binary
                         data, it must be text. If no '-m' is used and no other
@@ -1639,7 +1663,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.24 2022-11-04. Enjoy, star on Github and
+You are running version 3.5.25 2022-11-21. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1708,7 +1732,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, @pataquets, @KizzyCode, etc.
+    @opk12, @pataquets, @KizzyCode, @murlock1000, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 

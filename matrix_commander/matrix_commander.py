@@ -184,6 +184,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Sending of arbitrary files (PDF, xls, doc, txt, etc.)
 - Sending events such as emoji reactions, or replies as threads
 - Using events to edit sent messages
+- Supports creating private DM rooms (thanks to PR from @murlock1000)
 - Supports DM (direct messaging), sending DMs, listening for DMs
 - Listing of joined rooms
 - Listing of members of given room(s)
@@ -692,6 +693,7 @@ usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
                            [-u USER [USER ...]] [--user-login USER_LOGIN]
                            [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
+                           [--alias ALIAS [ALIAS ...]]
                            [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
                            [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
                            [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
@@ -923,13 +925,14 @@ options:
                         --topic to add names and topics to the room(s) to be
                         created.
   --room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]
-                        Create one or multiple DM rooms with the specified users.
-                        For each user specified a DM room will be created and the user
-                        invited to it. For each created room one line with
-                        room id and alias will be printed to stdout. The user
-                        must be permitted to create rooms. Combine --room-dm-create
-                        with --name, --topic and --alias to add names, topics and
-                        aliases to the room(s) to be created.
+                        Create one or multiple DM rooms with the specified
+                        users. For each user specified a DM room will be
+                        created and the user invited to it. For each created
+                        room one line with room id and alias will be printed
+                        to stdout. The user must be permitted to create rooms.
+                        Combine --room-dm-create with --name, --topic and
+                        --alias to add names, topics and aliases to the
+                        room(s) to be created.
   --room-join ROOM_JOIN [ROOM_JOIN ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
@@ -1032,9 +1035,9 @@ options:
                         with the command --room-create.
   --alias ALIAS [ALIAS ...]
                         Specify one or multiple aliases. This option is only
-                        meaningful in combination with option --room-dm-create.
-                        This option --alias specifies the aliases to be used
-                        with the command --room-dm-create.
+                        meaningful in combination with option --room-dm-
+                        create. This option --alias specifies the aliases to
+                        be used with the command --room-dm-create.
   -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
                         Send this message. Message data must not be binary
                         data, it must be text. If no '-m' is used and no other
@@ -1667,7 +1670,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.24 2022-11-04. Enjoy, star on Github and
+You are running version 3.5.25 2022-11-21. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1736,7 +1739,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, @pataquets, @KizzyCode, etc.
+    @opk12, @pataquets, @KizzyCode, @murlock1000, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
 
@@ -1798,12 +1801,12 @@ from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
                  RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
                  RoomMessagesError, RoomMessageText, RoomMessageUnknown,
-                 RoomMessageVideo, RoomNameEvent, RoomPutAliasResponse,
-                 RoomReadMarkersError, RoomRedactError, RoomResolveAliasError,
-                 RoomResolveAliasResponse, RoomSendError, RoomUnbanError,
-                 SyncError, SyncResponse, ToDeviceError, UnknownEvent,
-                 UpdateDeviceError, UploadError, UploadResponse, crypto,
-                 responses, RoomVisibility, RoomPreset)
+                 RoomMessageVideo, RoomNameEvent, RoomPreset,
+                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
+                 RoomResolveAliasError, RoomResolveAliasResponse,
+                 RoomSendError, RoomUnbanError, RoomVisibility, SyncError,
+                 SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
+                 UploadError, UploadResponse, crypto, responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -1822,8 +1825,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-11-04"
-VERSIONNR = "3.5.24"
+VERSION = "2022-11-21"
+VERSIONNR = "3.5.25"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -3488,6 +3491,7 @@ def is_user(user_id: str) -> bool:
         or is_short_user_id(user_id)
     )
 
+
 async def action_room_dm_create(client: AsyncClient, credentials: dict):
     """Create a direct message room while already being logged in and invite the user to it.
 
@@ -3552,7 +3556,7 @@ async def action_room_dm_create(client: AsyncClient, credentials: dict):
                 visibility=RoomVisibility.private,
                 is_direct=True,
                 preset=RoomPreset.private_chat,
-                invite={user}, # invite the user to the DM
+                invite={user},  # invite the user to the DM
                 name=name,  # room name
                 topic=topic,  # room topic
                 initial_state=[EnableEncryptionBuilder().as_dict()],
@@ -3566,7 +3570,9 @@ async def action_room_dm_create(client: AsyncClient, credentials: dict):
                 gs.err_count += 1
             else:
                 if alias:
-                    full_alias = short_room_alias_to_room_alias(alias, credentials)
+                    full_alias = short_room_alias_to_room_alias(
+                        alias, credentials
+                    )
                 else:
                     full_alias = ""
                 gs.log.info(
@@ -3598,6 +3604,7 @@ async def action_room_dm_create(client: AsyncClient, credentials: dict):
         gs.log.error("DM room creation failed. Sorry.")
         gs.err_count += 1
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
+
 
 async def action_room_create(client: AsyncClient, credentials: dict):
     """Create one or multiple rooms while already being logged in.
