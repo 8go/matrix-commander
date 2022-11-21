@@ -351,6 +351,23 @@ and automatically decrypted for you.
   - Note that even if you install via `pip` you must have a) Python 3.8+
     and b) `libolm` installed. See `PyPi-Instructions.md`.
 
+- For macOS Monterey 12.4 (21F79) (Apple M1 Pro) and similar please follow
+  the these steps for installation:
+
+    - Install `libolm`, `dbus` and `libmagic` using Homebrew
+    - Install `matrix-commander` using this command:
+        - `pip3 install --global-option=build_ext --global-option="-I/opt/homebrew/include/" --global-option="-L/opt/homebrew/lib/" matrix-commander`
+    - For more details see Issue #79. Thanks to @KizzyCode for the contribution.
+
+- On macOS x86_64, follow these steps for installation:
+
+    - `brew install libolm dbus libmagic`
+    - `pip3 install poetry`
+    - `pip3 install --global-option=build_ext --global-option="-I/usr/local/include/" --global-option="-L/usr/local/lib/" matrix-commander`
+    - Notice that the Link and Include directories between ARM (M1, etc.) and x86-64 are different.
+      So, check for example where file `olm.h` is located on your hard disk. That gives you a hind which Include directory to use.
+    - For more details see Issue #103. Thanks to @@johannes87 for the contribution.
+
 - If you install a docker image: `matrix-commander` is available on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
   and hence easy to install as docker image (:clap: to @pataquets for his PR).
@@ -1670,7 +1687,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.25 2022-11-21. Enjoy, star on Github and
+You are running version 3.5.26 2022-11-21. Enjoy, star on Github and
 contribute by submitting a Pull Request.
 ```
 
@@ -1826,7 +1843,7 @@ except ImportError:
 
 # version number
 VERSION = "2022-11-21"
-VERSIONNR = "3.5.25"
+VERSIONNR = "3.5.26"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
