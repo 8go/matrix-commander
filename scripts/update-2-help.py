@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+
+# - runs `matrix_commander.py --help` and writes the output into `help.txt` file
+# - replace this pattern:
+#   ```
+#   usage: ...
+#   ```
+#   in the matrix_commander.py file with the content of the
+#   newly created `help.txt` file
+# - runs a diff on the previous and new matrix_commander.py to show the changes
+
+
 import re
 import shutil
 import subprocess
@@ -6,13 +17,6 @@ import sys
 from datetime import datetime
 from os import R_OK, access
 from os.path import isfile
-
-# replace this pattern:
-# ```
-# usage: ...
-# ```
-# in the matrix_commander.py file with the output of
-# matrix_commander.py --help
 
 # datetime object containing current date and time
 now = datetime.now()

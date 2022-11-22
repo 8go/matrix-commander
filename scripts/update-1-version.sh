@@ -1,8 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# A version number is defined by:  MAJOR.MINOR.PATCH
+# where
+#     MAJOR version when you make incompatible API changes
+#     MINOR version when you add functionality in a backwards-compatible manner, and
+#     PATCH version when you make backwards-compatible bug fixes.
+# See also Issue #109
+#
+# bumps version number of project
+# change 2 lines (VERSION and VERSIONNR) in "matrix_commander/matrix_commander.py"
+# changes 1 line in "setup.cfg", the PyPi set-up file
+#
+# the script can take 1 argument: either `--minor` or `--patch`
+# the default is `--mayor`
 
 FN="matrix_commander/matrix_commander.py"
 VERSION_FILE="VERSION"
-MINOR="0"
+UPDATE="MAYOR"
 
 if ! [ -f "$FN" ]; then
     FN="../$FN"
@@ -19,9 +33,13 @@ if ! [ -f "$FN" ]; then
 fi
 
 if [ "${1,,}" == "-m" ] || [ "${1,,}" == "--minor" ]; then
-    echo "Doing only a MINOR version increment."
-    MINOR="1"
+    UPDATE="MINOR"
 fi
+
+if [ "${1,,}" == "-p" ] || [ "${1,,}" == "--patch" ]; then
+    UPDATE="PATCH"
+fi
+echo "Doing a $UPDATE version increment."
 
 PREFIX="VERSION = "
 REGEX="^${PREFIX}\"20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*\""
@@ -56,11 +74,15 @@ if [ "$COUNT" == "1" ]; then
     A=$(echo $NR | cut -d'.' -f1)
     M=$(echo $NR | cut -d'.' -f2)
     Z=$(echo $NR | cut -d'.' -f3)
-    if [ "$MINOR" == "1" ]; then
-        Z=$((Z + 1))
-    else
+    if [ "$UPDATE" == "MAYOR" ]; then
+        A=$((A + 1))
+        M="0"
+        Z="0"
+    elif [ "$UPDATE" == "MINOR" ]; then
         M=$((M + 1))
         Z="0"
+    else
+        Z=$((Z + 1))
     fi
     NEWVERSIONNR="${A}.${M}.${Z}"
     echo $NEWVERSIONNR >"$VERSION_FILE"

@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # commit first
+echo "it is assumed that a git commit has just been committed"
 
 # then tag
 # # lightweight tag (will not be automatically pushed with --follow-tags)
@@ -15,3 +16,4 @@ git tag --list -n10 | tail -n 10 # show the commit comments in last tag
 # git tag --list -n20 $(git describe) # show last tag details
 
 # then push
+echo "new tag was created, now ready for a git push"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # see also pypi-package-1-create.sh script which creates the PyPi release
 

@@ -1,4 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
+# - extract the README portion within the matrix_commander.py file
+# - places this portion into a new separate, stand-alone README.md file
+# - does a diff of previous and newly created `README.md` files to show
+#   the changes
+
 import re
 import shutil
 import subprocess
@@ -6,9 +12,6 @@ import sys
 from datetime import datetime
 from os import R_OK, access
 from os.path import isfile
-
-# extract the README portion within the matrix_commander.py file
-# into a separate stand-alone README.md file
 
 # datetime object containing current date and time
 now = datetime.now()

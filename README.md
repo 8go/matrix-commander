@@ -214,7 +214,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - In-source documentation
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
-- More than 200 stars :stars: on Github
+- More than 300 stars :stars: on Github
 - Easy installation, available through `pip`, i.e. available in
   [PyPi](https://pypi.org/project/matrix-commander/) store
 - Easy installation, available as docker image on
@@ -602,7 +602,6 @@ $ matrix-commander --room-create roomAlias1
 $ # don't use a well formed alias like '#roomAlias1:example.com' as it will
 $ # confuse the server!
 $ # BAD: matrix-commander --room-create roomAlias1 '#roomAlias1:example.com'
-$ matrix-commander --room-create roomAlias2
 $ # create rooms with name and topic
 $ matrix-commander --room-create roomAlias3 --name 'Fancy Room' \
     --topic 'All about Matrix'
@@ -616,6 +615,10 @@ $ matrix-commander --room-dm-create '@user1:example.com' '@user2:example.com' \
     --name 'Fancy DM room 4' -name 'Cute DM room 4' \
     --topic 'All about Matrix 4' 'All about Nio 5' \
     --alias roomAlias1 '#roomAlias2:example.com'
+$ # rooms (normal as well as DM) are by default created encrypted,
+$ # to overwrite that and to create a room with encrypted disabled use '--plain'
+$ matrix-commander --room-create public-room-alias2 --plain
+$ matrix-commander --room-dm-create not-encrypted-alias3 --plain
 $ # join rooms
 $ matrix-commander --room-join '!someroomId1:example.com' \
     '!someroomId2:example.com' '#roomAlias1:example.com'
@@ -688,65 +691,65 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 # Usage
 ```
 usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--verbose] [--login LOGIN] [-v [VERIFY]]
-                           [--logout LOGOUT] [-c CREDENTIALS] [-s STORE]
+                           [--verbose] [--login LOGIN_TYPE] [-v [VERIFY_TYPE]]
+                           [--logout LOGOUT_TYPE] [-c FILE] [-s STORE]
                            [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
-                           [--room-create ROOM_CREATE [ROOM_CREATE ...]]
-                           [--room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]]
-                           [--room-join ROOM_JOIN [ROOM_JOIN ...]]
-                           [--room-leave ROOM_LEAVE [ROOM_LEAVE ...]]
-                           [--room-forget ROOM_FORGET [ROOM_FORGET ...]]
-                           [--room-invite ROOM_INVITE [ROOM_INVITE ...]]
-                           [--room-ban ROOM_BAN [ROOM_BAN ...]]
-                           [--room-unban ROOM_UNBAN [ROOM_UNBAN ...]]
-                           [--room-kick ROOM_KICK [ROOM_KICK ...]]
-                           [-u USER [USER ...]] [--user-login USER_LOGIN]
-                           [--name NAME [NAME ...]]
+                           [--room-create ALIAS [ALIAS ...]]
+                           [--room-dm-create USER [USER ...]]
+                           [--room-join ROOM [ROOM ...]]
+                           [--room-leave ROOM [ROOM ...]]
+                           [--room-forget ROOM [ROOM ...]]
+                           [--room-invite ROOM [ROOM ...]]
+                           [--room-ban ROOM [ROOM ...]]
+                           [--room-unban ROOM [ROOM ...]]
+                           [--room-kick ROOM [ROOM ...]] [-u USER [USER ...]]
+                           [--user-login USER_LOGIN] [--name NAME [NAME ...]]
                            [--topic TOPIC [TOPIC ...]]
-                           [--alias ALIAS [ALIAS ...]]
-                           [-m MESSAGE [MESSAGE ...]] [-i IMAGE [IMAGE ...]]
-                           [-a AUDIO [AUDIO ...]] [-f FILE [FILE ...]]
-                           [-e EVENT [EVENT ...]] [-w] [-z] [-k] [-p SPLIT]
-                           [--config CONFIG] [--proxy PROXY] [-n]
-                           [--encrypted] [-l [LISTEN]] [-t [TAIL]] [-y]
+                           [--alias ALIAS [ALIAS ...]] [-m TEXT [TEXT ...]]
+                           [-i IMAGE [IMAGE ...]] [-a AUDIO [AUDIO ...]]
+                           [-f FILE [FILE ...]]
+                           [-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]]
+                           [-w] [-z] [-k] [-p SEPARATOR] [--config CONFIG]
+                           [--proxy PROXY] [-n] [--encrypted]
+                           [-l [LISTEN_TYPE]] [-t [NUMBER]] [-y]
                            [--print-event-id]
                            [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [--set-device-name SET_DEVICE_NAME]
-                           [--set-display-name SET_DISPLAY_NAME]
-                           [--get-display-name] [--set-presence SET_PRESENCE]
-                           [--get-presence] [--upload UPLOAD [UPLOAD ...]]
-                           [--download DOWNLOAD [DOWNLOAD ...]]
-                           [--delete-mxc DELETE_MXC [DELETE_MXC ...]]
-                           [--delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]]
-                           [--joined-rooms]
-                           [--joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]]
-                           [--mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]]
-                           [--devices] [--discovery-info] [--login-info]
+                           [--set-device-name DEVICE_NAME]
+                           [--set-display-name DISPLAY_NAME]
+                           [--get-display-name] [--set-presence PRESENCE_TYPE]
+                           [--get-presence] [--upload FILE [FILE ...]]
+                           [--download MXC_URI [MXC_URI ...]]
+                           [--delete-mxc MXC_URI [MXC_URI ...]]
+                           [--delete-mxc-before TIMESTAMP [TIMESTAMP ...]]
+                           [--joined-rooms] [--joined-members ROOM [ROOM ...]]
+                           [--mxc-to-http MXC_URI [MXC_URI ...]] [--devices]
+                           [--discovery-info] [--login-info]
                            [--content-repository-config]
-                           [--rest REST [REST ...]] [--set-avatar SET_AVATAR]
+                           [--rest REST_METHOD DATA URL [REST_METHOD DATA URL ...]]
+                           [--set-avatar AVATAR_MXC]
                            [--get-avatar [GET_AVATAR ...]]
-                           [--get-profile [GET_PROFILE ...]]
-                           [--get-room-info [GET_ROOM_INFO ...]]
-                           [--get-client-info]
-                           [--has-permission HAS_PERMISSION [HAS_PERMISSION ...]]
+                           [--get-profile [USER ...]]
+                           [--get-room-info [ROOM ...]] [--get-client-info]
+                           [--has-permission ROOM_ID PERMISSION_TYPE [ROOM_ID PERMISSION_TYPE ...]]
                            [--import-keys IMPORT_KEYS IMPORT_KEYS]
                            [--export-keys EXPORT_KEYS EXPORT_KEYS]
-                           [--room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]]
-                           [--room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]]
-                           [--room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]]
-                           [--get-openid-token [GET_OPENID_TOKEN ...]]
-                           [--room-get-visibility [ROOM_GET_VISIBILITY ...]]
-                           [--room-get-state [ROOM_GET_STATE ...]]
-                           [--delete-device DELETE_DEVICE [DELETE_DEVICE ...]]
-                           [--room-redact ROOM_REDACT [ROOM_REDACT ...]]
+                           [--room-set-alias ALIAS ROOM [ALIAS ROOM ...]]
+                           [--room-resolve-alias ALIAS [ALIAS ...]]
+                           [--room-delete-alias ALIAS [ALIAS ...]]
+                           [--get-openid-token [USER ...]]
+                           [--room-get-visibility [ROOM ...]]
+                           [--room-get-state [ROOM ...]]
+                           [--delete-device DEVICE [DEVICE ...]]
+                           [--room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]]
                            [--whoami] [--no-ssl]
                            [--ssl-certificate SSL_CERTIFICATE]
                            [--file-name FILE_NAME [FILE_NAME ...]]
                            [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
                            [--separator SEPARATOR]
                            [--access-token ACCESS_TOKEN] [--password PASSWORD]
-                           [--homeserver HOMESERVER] [--device DEVICE]
-                           [--sync SYNC] [--output OUTPUT] [--version]
+                           [--homeserver HOMESERVER_URL]
+                           [--device DEVICE_NAME] [--sync SYNC_TYPE]
+                           [--output OUTPUT_TYPE] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -792,7 +795,7 @@ options:
                         high. Verbosity only affects the debug information.
                         So, if '--debug' is not used then '--verbose' will be
                         ignored.
-  --login LOGIN         Login to and authenticate with the Matrix homeserver.
+  --login LOGIN_TYPE    Login to and authenticate with the Matrix homeserver.
                         This requires exactly one argument, the login method.
                         Currently two choices are offered: 'password' and
                         'sso'. Provide one of these methods. If you have
@@ -817,7 +820,7 @@ options:
                         the server supports it and if there is access to a
                         browser. So, don't use SSO on headless homeservers
                         where there is no browser installed or accessible.
-  -v [VERIFY], --verify [VERIFY]
+  -v [VERIFY_TYPE], --verify [VERIFY_TYPE]
                         Perform verification. By default, no verification is
                         performed. Possible values are: "emoji". If
                         verification is desired, run this program in the
@@ -855,7 +858,7 @@ options:
                         should see a text message indicating success. You
                         should now be verified across all devices and across
                         all users.
-  --logout LOGOUT       Logout this or all devices from the Matrix homeserver.
+  --logout LOGOUT_TYPE  Logout this or all devices from the Matrix homeserver.
                         This requires exactly one argument. Two choices are
                         offered: 'me' and 'all'. Provide one of these choices.
                         If you choose 'me', only the one device matrix-
@@ -871,7 +874,7 @@ options:
                         commander without ever logging out. --logout is a
                         cleanup if you have decided not to use this (or all)
                         device(s) ever again.
-  -c CREDENTIALS, --credentials CREDENTIALS
+  -c FILE, --credentials FILE
                         On first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
                         default, this file is "credentials.json". On further
@@ -921,7 +924,7 @@ options:
                         --login. A default room is needed. Specify a valid
                         room either with --room-default or provide it via
                         keyboard.
-  --room-create ROOM_CREATE [ROOM_CREATE ...]
+  --room-create ALIAS [ALIAS ...]
                         Create one or multiple rooms. One or multiple room
                         aliases can be specified. For each alias specified a
                         room will be created. For each created room one line
@@ -933,26 +936,34 @@ options:
                         the string 'SomeRoomAlias'. The user must be permitted
                         to create rooms. Combine --room-create with --name and
                         --topic to add names and topics to the room(s) to be
-                        created.
-  --room-dm-create ROOM_DM_CREATE [ROOM_DM_CREATE ...]
+                        created. Rooms are by default created encrypted; to
+                        overwrite that and to create a room with encryption
+                        disabled use '--plain'. Room id, room alias,
+                        encryption and other fields are printed as output, one
+                        line per created room.
+  --room-dm-create USER [USER ...]
                         Create one or multiple DM rooms with the specified
                         users. For each user specified a DM room will be
                         created and the user invited to it. For each created
                         room one line with room id and alias will be printed
                         to stdout. The user must be permitted to create rooms.
-                        Combine --room-dm-create with --name, --topic and
-                        --alias to add names, topics and aliases to the
-                        room(s) to be created.
-  --room-join ROOM_JOIN [ROOM_JOIN ...]
+                        Combine --room-dm-create with --name, --topic, --alias
+                        to add names, topics and aliases to the room(s) to be
+                        created.DM rooms are by default created encrypted; to
+                        overwrite that and to create a room with encryption
+                        disabled use '--plain'. Room id, room alias,
+                        encryption and other fields are printed as output, one
+                        line per created room.
+  --room-join ROOM [ROOM ...]
                         Join this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
                         provided in the arguments will be joined. The user
                         must have permissions to join these rooms.
-  --room-leave ROOM_LEAVE [ROOM_LEAVE ...]
+  --room-leave ROOM [ROOM ...]
                         Leave this room or these rooms. One or multiple room
                         aliases can be specified. The room (or multiple ones)
                         provided in the arguments will be left.
-  --room-forget ROOM_FORGET [ROOM_FORGET ...]
+  --room-forget ROOM [ROOM ...]
                         After leaving a room you should (most likely) forget
                         the room. Forgetting a room removes the users' room
                         history. One or multiple room aliases can be
@@ -960,25 +971,25 @@ options:
                         arguments will be forgotten. If all users forget a
                         room, the room can eventually be deleted on the
                         server.
-  --room-invite ROOM_INVITE [ROOM_INVITE ...]
+  --room-invite ROOM [ROOM ...]
                         Invite one ore more users to join one or more rooms.
                         Specify the user(s) as arguments to --user. Specify
                         the rooms as arguments to this option, i.e. as
                         arguments to --room-invite. The user must have
                         permissions to invite users.
-  --room-ban ROOM_BAN [ROOM_BAN ...]
+  --room-ban ROOM [ROOM ...]
                         Ban one ore more users from one or more rooms. Specify
                         the user(s) as arguments to --user. Specify the rooms
                         as arguments to this option, i.e. as arguments to
                         --room-ban. The user must have permissions to ban
                         users.
-  --room-unban ROOM_UNBAN [ROOM_UNBAN ...]
+  --room-unban ROOM [ROOM ...]
                         Unban one ore more users from one or more rooms.
                         Specify the user(s) as arguments to --user. Specify
                         the rooms as arguments to this option, i.e. as
                         arguments to --room-unban. The user must have
                         permissions to unban users.
-  --room-kick ROOM_KICK [ROOM_KICK ...]
+  --room-kick ROOM [ROOM ...]
                         Kick one ore more users from one or more rooms.
                         Specify the user(s) as arguments to --user. Specify
                         the rooms as arguments to this option, i.e. as
@@ -1048,7 +1059,7 @@ options:
                         meaningful in combination with option --room-dm-
                         create. This option --alias specifies the aliases to
                         be used with the command --room-dm-create.
-  -m MESSAGE [MESSAGE ...], --message MESSAGE [MESSAGE ...]
+  -m TEXT [TEXT ...], --message TEXT [TEXT ...]
                         Send this message. Message data must not be binary
                         data, it must be text. If no '-m' is used and no other
                         conflicting arguments are provided, and information is
@@ -1101,7 +1112,7 @@ options:
                         want to feed a file into matrix-commander via a pipe,
                         via stdin, then specify the special character '-'. See
                         description of '-i' to see how '-' is handled.
-  -e EVENT [EVENT ...], --event EVENT [EVENT ...]
+  -e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
                         Send an event that is formatted as a JSON object as
                         specified by the Matrix protocol. This allows the
                         advanced user to send additional types of events such
@@ -1128,7 +1139,7 @@ options:
                         This is useful for sending ASCII-art or tabbed output
                         like tables as a fixed-sized font will be used for
                         display.
-  -p SPLIT, --split SPLIT
+  -p SEPARATOR, --split SEPARATOR
                         If set, split the message(s) into multiple messages
                         wherever the string specified with --split occurs.
                         E.g. One pipes a stream of RSS articles into the
@@ -1157,7 +1168,7 @@ options:
                         possible. It cannot be turned off. This flag does
                         nothing as encryption is turned on with or without
                         this argument.
-  -l [LISTEN], --listen [LISTEN]
+  -l [LISTEN_TYPE], --listen [LISTEN_TYPE]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
                         and "all". By default, --listen is set to "never". So,
@@ -1185,7 +1196,7 @@ options:
                         "once" and "forever" that listen in ALL rooms, "tail"
                         and "all" listen only to the room specified in the
                         credentials file or the --room options.
-  -t [TAIL], --tail [TAIL]
+  -t [NUMBER], --tail [NUMBER]
                         The --tail option reads and prints up to the last N
                         messages from the specified rooms, then quits. It
                         takes one argument, an integer, which we call N here.
@@ -1224,11 +1235,11 @@ options:
                         visually notify of arriving messages through the
                         operating system. By default there is no notification
                         via OS.
-  --set-device-name SET_DEVICE_NAME
+  --set-device-name DEVICE_NAME
                         Set or rename the current device to the device name
                         provided. Send, listen and verify operations are
                         allowed when renaming the device.
-  --set-display-name SET_DISPLAY_NAME
+  --set-display-name DISPLAY_NAME
                         Set or rename the display name for the current user to
                         the display name provided. Send, listen and verify
                         operations are allowed when setting the display name.
@@ -1242,7 +1253,7 @@ options:
                         allowed when getting display name(s). Do not confuse
                         this option with the option '--get-room-info' which
                         gets the room display name, not the user display name.
-  --set-presence SET_PRESENCE
+  --set-presence PRESENCE_TYPE
                         Set presence of matrix-commander to the given value.
                         Must be one of these values: “online”, “offline”,
                         “unavailable”. Otherwise an error will be produced.
@@ -1251,13 +1262,13 @@ options:
                         option. If no user is specified get the presence of
                         itself. Send, listen and verify operations are allowed
                         when getting presence(s).
-  --upload UPLOAD [UPLOAD ...]
+  --upload FILE [FILE ...]
                         Upload one or multiple files to the content
                         repository. The files will be given a Matrix URI and
                         stored on the server. --upload allows the optional
                         argument --plain to skip encryption for upload. See
                         tests/test-upload.sh for an example.
-  --download DOWNLOAD [DOWNLOAD ...]
+  --download MXC_URI [MXC_URI ...]
                         Download one or multiple files from the content
                         repository. You must provide one or multiple Matrix
                         URIs (MXCs) which are strings like this
@@ -1280,7 +1291,7 @@ options:
                         be stored in encrypted fashion, or might be plain-text
                         if the --upload skipped encryption with --plain. See
                         tests/test-upload.sh for an example.
-  --delete-mxc DELETE_MXC [DELETE_MXC ...]
+  --delete-mxc MXC_URI [MXC_URI ...]
                         Delete one or multiple objects (e.g. files) from the
                         content repository. You must provide one or multiple
                         Matrix URIs (MXC) which are strings like this
@@ -1296,7 +1307,7 @@ options:
                         optionally, one can specify an access token which has
                         server admin permissions with the --access-token
                         argument. See tests/test-upload.sh for an example.
-  --delete-mxc-before DELETE_MXC_BEFORE [DELETE_MXC_BEFORE ...]
+  --delete-mxc-before TIMESTAMP [TIMESTAMP ...]
                         Delete objects (e.g. files) from the content
                         repository that are older than a given timestamp. It
                         is the timestamp of last access, not the timestamp
@@ -1319,12 +1330,12 @@ options:
                         argument. See tests/test-upload.sh for an example.
   --joined-rooms        Print the list of joined rooms. All rooms that you are
                         a member of will be printed, one room per line.
-  --joined-members JOINED_MEMBERS [JOINED_MEMBERS ...]
+  --joined-members ROOM [ROOM ...]
                         Print the list of joined members for one or multiple
                         rooms. If you want to print the joined members of all
                         rooms that you are member of, then use the special
                         character '*'.
-  --mxc-to-http MXC_TO_HTTP [MXC_TO_HTTP ...]
+  --mxc-to-http MXC_URI [MXC_URI ...]
                         Convert one or more matrix content URIs to the
                         corresponding HTTP URLs. The MXC URIs to provide look
                         something like this
@@ -1341,7 +1352,7 @@ options:
   --content-repository-config
                         Print the content repository configuration, currently
                         just the upload size limit in bytes.
-  --rest REST [REST ...]
+  --rest REST_METHOD DATA URL [REST_METHOD DATA URL ...]
                         Use the Matrix Client REST API. Matrix has several
                         extensive REST APIs. With the --rest argument you can
                         invoke a Matrix REST API call. This allows the user to
@@ -1369,7 +1380,7 @@ options:
                         Optionally, --access-token can be used to overwrite
                         the access token from credentials (if needed). See
                         tests/test-rest.sh for an example.
-  --set-avatar SET_AVATAR
+  --set-avatar AVATAR_MXC
                         Set the avatar MXC resource used by matrix-commander.
                         Provide one MXC URI that looks like this
                         'mxc://example.com/SomeStrangeUriKey'.
@@ -1381,7 +1392,7 @@ options:
                         ids are given, the avatars of these users will be
                         fetched. As response both MXC URI as well as URL will
                         be printed.
-  --get-profile [GET_PROFILE ...]
+  --get-profile [USER ...]
                         Get the user profile used by matrix-commander, or one
                         or multiple other users. Specify zero or more user
                         ids. If no user id is specified, the user profile of
@@ -1391,7 +1402,7 @@ options:
                         URI as well as possible additional profile information
                         (if present) will be printed. One line per user will
                         be printed.
-  --get-room-info [GET_ROOM_INFO ...]
+  --get-room-info [ROOM ...]
                         Get the room information such as room display name,
                         room alias, room creator, etc. for one or multiple
                         specified rooms. The included room 'display name' is
@@ -1417,7 +1428,7 @@ options:
                         not the room display name.
   --get-client-info     Print information kept in the client, i.e. matrix-
                         commander. Output is printed in JSON format.
-  --has-permission HAS_PERMISSION [HAS_PERMISSION ...]
+  --has-permission ROOM_ID PERMISSION_TYPE [ROOM_ID PERMISSION_TYPE ...]
                         Inquire if user used by matrix-commander has
                         permission for one or multiple actions in one or
                         multiple rooms. Each inquiry requires 2 parameters:
@@ -1444,7 +1455,7 @@ options:
                         the file will be encrypted with. Note that this does
                         not save other information such as the private
                         identity keys of the device.
-  --room-set-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...], --room-put-alias ROOM_SET_ALIAS [ROOM_SET_ALIAS ...]
+  --room-set-alias ALIAS ROOM [ALIAS ROOM ...], --room-put-alias ALIAS ROOM [ALIAS ROOM ...]
                         Add an alias to a room, or aliases to multiple rooms.
                         Provide pairs of arguments. In each pair, the first
                         argument must be the alias you want to assign to the
@@ -1466,7 +1477,7 @@ options:
                         will be automatically appended. Adding the same alias
                         multiple times to the same room results in an error.
                         --room-put-alias is eqivalent to --room-set-alias.
-  --room-resolve-alias ROOM_RESOLVE_ALIAS [ROOM_RESOLVE_ALIAS ...]
+  --room-resolve-alias ALIAS [ALIAS ...]
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
@@ -1479,7 +1490,7 @@ options:
                         Resolving an alias that does not exist results in an
                         error. For each room alias one line will be printed to
                         stdout with the result.
-  --room-delete-alias ROOM_DELETE_ALIAS [ROOM_DELETE_ALIAS ...]
+  --room-delete-alias ALIAS [ALIAS ...]
                         Delete one or multiple rooms aliases. Provide one or
                         multiple room aliases. You can have multiple room
                         aliases per room. So, you may delete multiple aliases
@@ -1493,7 +1504,7 @@ options:
                         credentials file) will be automatically appended.
                         Deleting an alias that does not exist results in an
                         error.
-  --get-openid-token [GET_OPENID_TOKEN ...]
+  --get-openid-token [USER ...]
                         Get an OpenID token for matrix-commander, or for one
                         or multiple other users. It prints an OpenID token
                         object that the requester may supply to another
@@ -1503,7 +1514,7 @@ options:
                         commander will be fetched. If one or more user ids are
                         given, the OpenID of these users will be fetched. As
                         response the user id(s) and OpenID(s) will be printed.
-  --room-get-visibility [ROOM_GET_VISIBILITY ...]
+  --room-get-visibility [ROOM ...]
                         Get the visibility of one or more rooms. Provide zero
                         or more room ids as arguments. If no argument is
                         given, then the default room of matrix-commander (as
@@ -1511,7 +1522,7 @@ options:
                         the visibility will be printed. Currently, this is
                         either the string 'private' or 'public'. As response
                         one line per room will be printed to stdout.
-  --room-get-state [ROOM_GET_STATE ...]
+  --room-get-state [ROOM ...]
                         Get the state of one or more rooms. Provide zero or
                         more room ids as arguments. If no argument is given,
                         then the default room of matrix-commander (as found in
@@ -1526,7 +1537,7 @@ options:
                         very large. To get output into a human readable form
                         pipe output through sed and jq as shown in an example
                         in tests/test-setget.sh.
-  --delete-device DELETE_DEVICE [DELETE_DEVICE ...]
+  --delete-device DEVICE [DEVICE ...]
                         Delete one or multiple devices. By default devices
                         belonging to matrix-commander will be deleted. If the
                         devices belong to a different user, use the --user
@@ -1538,7 +1549,7 @@ options:
                         password can be visible to attackers. Hence, if the
                         server does not support HTTPS this operation is
                         discouraged.
-  --room-redact ROOM_REDACT [ROOM_REDACT ...], --room-delete-content ROOM_REDACT [ROOM_REDACT ...]
+  --room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
                         Strip information out of one or several events, e.g.
                         messages. Redact is used in the meaning of 'strip,
                         wipe, black-out', not in the meaning of 'edit'. This
@@ -1561,7 +1572,7 @@ options:
                         number of arguments used with --room-redact must be a
                         multiple of 3, but we also accept 2 in which case only
                         one redaction will be done without specifying a
-                        reason. Room ids start with the dollar sign ($).
+                        reason. Event ids start with the dollar sign ($).
                         Depending on your shell, you might have to escape the
                         '$' to '\$'. --room-delete-content is an alias for
                         --room-redact. They can be used interchangeably.
@@ -1602,7 +1613,10 @@ options:
                         and want to skip one, use the empty string.
   --plain               Disable encryption for a specific action. By default,
                         everything is always encrypted. Actions that support
-                        this option are: --upload.
+                        this option are: --upload, --room-create, and --room-
+                        dm-create. Rooms are by default created encrypted; to
+                        overwrite that and to create a room with encryption
+                        disabled use '--plain'. See the individual commands.
   --separator SEPARATOR
                         Set a custom separator used for certain print outs. By
                         default, i.e. if --separator is not used, 4 spaces are
@@ -1621,13 +1635,13 @@ options:
                         and not used. It is used by '--login password' and '--
                         delete-device' actions. If not provided for --login
                         the user will be queried via keyboard.
-  --homeserver HOMESERVER
+  --homeserver HOMESERVER_URL
                         Specify a homeserver for use by certain actions. It is
                         an optional argument. By default --homeserver is
                         ignored and not used. It is used by '--login' action.
                         If not provided for --login the user will be queried
                         via keyboard.
-  --device DEVICE       Specify a device name, for use by certain actions. It
+  --device DEVICE_NAME  Specify a device name, for use by certain actions. It
                         is an optional argument. By default --device is
                         ignored and not used. It is used by '--login' action.
                         If not provided for --login the user will be queried
@@ -1636,7 +1650,7 @@ options:
                         have the same device name. In short, the same device
                         name can be assigned to multiple different devices if
                         desired.
-  --sync SYNC           This option decides on whether the program
+  --sync SYNC_TYPE      This option decides on whether the program
                         synchronizes the state with the server before a 'send'
                         action. Currently two choices are offered: 'full' and
                         'off'. Provide one of these choices. The default is
@@ -1647,7 +1661,7 @@ options:
                         If you have chosen 'off', synchronization will be
                         skipped entirely before the 'send' which will improve
                         performance.
-  --output OUTPUT       This option decides on how the output is presented.
+  --output OUTPUT_TYPE  This option decides on how the output is presented.
                         Currently offered choices are: 'text', 'json', 'json-
                         max', and 'json-spec'. Provide one of these choices.
                         The default is 'text'. If you want to use the default,
@@ -1680,8 +1694,8 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 3.5.27 2022-11-22. Enjoy, star on Github and
-contribute by submitting a Pull Request.
+You are running version 4.0.0 2022-11-22. Enjoy, star on Github and contribute
+by submitting a Pull Request.
 ```
 
 # Autocompletion
