@@ -10,6 +10,7 @@
 # bumps version number of project
 # change 2 lines (VERSION and VERSIONNR) in "matrix_commander/matrix_commander.py"
 # changes 1 line in "setup.cfg", the PyPi set-up file
+# creates 1-line `VERSION` file
 #
 # the script can take 1 argument: either `--minor` or `--patch`
 # the default is `--mayor`

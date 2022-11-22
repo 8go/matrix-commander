@@ -5,9 +5,9 @@
 #   ```
 #   usage: ...
 #   ```
-#   in the matrix_commander.py file with the content of the
+#   in the README.md file with the content of the
 #   newly created `help.txt` file
-# - runs a diff on the previous and new matrix_commander.py to show the changes
+# - runs a diff on the previous and new README.md to show the changes
 
 
 import re
@@ -23,7 +23,8 @@ now = datetime.now()
 date_string = now.strftime("%Y%m%d-%H%M%S")
 
 helpfile = "help.txt"
-filename = "matrix_commander/matrix_commander.py"
+filename = "README.md"
+executable = "matrix_commander/matrix-commander"
 
 if isfile(filename) and access(filename, R_OK):
     # so that subprocess can execute it without PATH
@@ -44,7 +45,7 @@ shutil.copy2(filename, backupfile)
 
 with open(helpfile, "w") as f:
     # tty size defaults to 80 columns
-    bashCmd = [filename, "--help"]
+    bashCmd = [executable, "--help"]
     process = subprocess.Popen(bashCmd, stdout=f)
     _, error = process.communicate()
     if error:

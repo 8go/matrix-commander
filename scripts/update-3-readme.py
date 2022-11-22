@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# - in the new setup this script is NO LONGER NEEDED as
+#   matrix-commander.py and README.md have been separated,
+#   i.e. matrix-commander.py no longer contains the README portion
+
 # - extract the README portion within the matrix_commander.py file
 # - places this portion into a new separate, stand-alone README.md file
 # - does a diff of previous and newly created `README.md` files to show

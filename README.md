@@ -244,7 +244,7 @@ Since the credentials file holds an access token it
 should be protected and secured. One can use different
 credential files for different users or different rooms.
 
-On creation the credentials file will always be created in the local
+On creation the credentials file will by default be created in the local
 directory, so the users sees it right away. This is fine if you have
 only one or a few credential files, but for better maintainability
 it is suggested to place your credentials files into directory
@@ -264,8 +264,11 @@ efficiently a `store` directory is needed to store e2ee data persistently.
 The default location for the store directory is a local directory named
 `store`. Alternatively, as a secondary choice the program looks for a store
 directory in $HOME/.local/shared/matrix-commander/store/. The user can always
-specify a different location via the --store argument. If needed the `store`
-directory will be created on the first run.
+specify a different location via the --store argument. The `store`
+directory will usually be created on the first run.
+
+For specific use cases end-to-end encryption can be disabled. Please see
+description of flag `--plain` for details.
 
 From the second time the program is run, and on all
 future runs it will use the homeserver, user id
@@ -341,25 +344,40 @@ and automatically decrypted for you.
   dependencies.
   - See https://pypi.org/project/matrix-commander
   - Usually `pip install matrix-commander` will do the trick.
-  - Note that even if you install via `pip` you must have a) Python 3.8+
+  - But, note that even if you install via `pip` you must have a) Python 3.8+
     and b) `libolm` installed. See `PyPi-Instructions.md`.
+  - Run `python -V` to get your Python version number and assure that it is
+    3.8+.
+  - For e2ee support, python-olm is needed which requires the libolm C
+    library (version 3.x). See also https://gitlab.matrix.org/matrix-org/olm.
+    Make sure that version 3 is installed. Version 2 will not work.
+    To install `libolm` do this:
+    - On Debian, Ubuntu and Debian/Ubuntu derivative distributions:
+      `sudo apt install libolm-dev`
+    - On Fedora or Fedora derivative distributions do:
+      `sudo dnf install libolm-devel`
+    - On MacOS use brew:
+      `brew install libolm`
 
 - For macOS Monterey 12.4 (21F79) (Apple M1 Pro) and similar please follow
-  the these steps for installation:
+  these steps for installation:
 
-    - Install `libolm`, `dbus` and `libmagic` using Homebrew
-    - Install `matrix-commander` using this command:
-        - `pip3 install --global-option=build_ext --global-option="-I/opt/homebrew/include/" --global-option="-L/opt/homebrew/lib/" matrix-commander`
-    - For more details see Issue #79. Thanks to @KizzyCode for the contribution.
+  - Install `libolm`, `dbus` and `libmagic` using Homebrew:
+      - `brew install libolm dbus libmagic`
+  - Install `matrix-commander` using this command:
+      - `pip3 install --global-option=build_ext --global-option="-I/opt/homebrew/include/" --global-option="-L/opt/homebrew/lib/" matrix-commander`
+  - For more details see Issue #79. Thanks to @KizzyCode for the contribution.
 
-- On macOS x86_64, follow these steps for installation:
+- For macOS x86_64 and similar please follow these steps for installation:
 
-    - `brew install libolm dbus libmagic`
-    - `pip3 install poetry`
-    - `pip3 install --global-option=build_ext --global-option="-I/usr/local/include/" --global-option="-L/usr/local/lib/" matrix-commander`
-    - Notice that the Link and Include directories between ARM (M1, etc.) and x86-64 are different.
-      So, check for example where file `olm.h` is located on your hard disk. That gives you a hind which Include directory to use.
-    - For more details see Issue #103. Thanks to @@johannes87 for the contribution.
+  - `brew install libolm dbus libmagic`
+  - `pip3 install poetry`
+  - `pip3 install --global-option=build_ext --global-option="-I/usr/local/include/" --global-option="-L/usr/local/lib/"  matrix-commander`
+  - Notice that the Link and Include directories between ARM (M1, etc.)
+    and x86-64 are different.
+    So, check for example where file `olm.h` is located on your hard disk.
+    That gives you a hint which Include directory to use.
+  - For more details see Issue #103. Thanks to @johannes87 for the contribution.
 
 - If you install a docker image: `matrix-commander` is available on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
@@ -616,7 +634,7 @@ $ matrix-commander --room-dm-create '@user1:example.com' '@user2:example.com' \
     --topic 'All about Matrix 4' 'All about Nio 5' \
     --alias roomAlias1 '#roomAlias2:example.com'
 $ # rooms (normal as well as DM) are by default created encrypted,
-$ # to overwrite that and to create a room with encrypted disabled use '--plain'
+$ # to overwrite that and to create a room with encryption disabled use --plain
 $ matrix-commander --room-create public-room-alias2 --plain
 $ matrix-commander --room-dm-create not-encrypted-alias3 --plain
 $ # join rooms
@@ -690,66 +708,64 @@ $ # for more examples of "matrix-commander --event" see tests/test-event.sh
 
 # Usage
 ```
-usage: matrix_commander.py [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
-                           [--verbose] [--login LOGIN_TYPE] [-v [VERIFY_TYPE]]
-                           [--logout LOGOUT_TYPE] [-c FILE] [-s STORE]
-                           [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
-                           [--room-create ALIAS [ALIAS ...]]
-                           [--room-dm-create USER [USER ...]]
-                           [--room-join ROOM [ROOM ...]]
-                           [--room-leave ROOM [ROOM ...]]
-                           [--room-forget ROOM [ROOM ...]]
-                           [--room-invite ROOM [ROOM ...]]
-                           [--room-ban ROOM [ROOM ...]]
-                           [--room-unban ROOM [ROOM ...]]
-                           [--room-kick ROOM [ROOM ...]] [-u USER [USER ...]]
-                           [--user-login USER_LOGIN] [--name NAME [NAME ...]]
-                           [--topic TOPIC [TOPIC ...]]
-                           [--alias ALIAS [ALIAS ...]] [-m TEXT [TEXT ...]]
-                           [-i IMAGE [IMAGE ...]] [-a AUDIO [AUDIO ...]]
-                           [-f FILE [FILE ...]]
-                           [-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]]
-                           [-w] [-z] [-k] [-p SEPARATOR] [--config CONFIG]
-                           [--proxy PROXY] [-n] [--encrypted]
-                           [-l [LISTEN_TYPE]] [-t [NUMBER]] [-y]
-                           [--print-event-id]
-                           [--download-media [DOWNLOAD_MEDIA]] [-o]
-                           [--set-device-name DEVICE_NAME]
-                           [--set-display-name DISPLAY_NAME]
-                           [--get-display-name] [--set-presence PRESENCE_TYPE]
-                           [--get-presence] [--upload FILE [FILE ...]]
-                           [--download MXC_URI [MXC_URI ...]]
-                           [--delete-mxc MXC_URI [MXC_URI ...]]
-                           [--delete-mxc-before TIMESTAMP [TIMESTAMP ...]]
-                           [--joined-rooms] [--joined-members ROOM [ROOM ...]]
-                           [--mxc-to-http MXC_URI [MXC_URI ...]] [--devices]
-                           [--discovery-info] [--login-info]
-                           [--content-repository-config]
-                           [--rest REST_METHOD DATA URL [REST_METHOD DATA URL ...]]
-                           [--set-avatar AVATAR_MXC]
-                           [--get-avatar [GET_AVATAR ...]]
-                           [--get-profile [USER ...]]
-                           [--get-room-info [ROOM ...]] [--get-client-info]
-                           [--has-permission ROOM_ID PERMISSION_TYPE [ROOM_ID PERMISSION_TYPE ...]]
-                           [--import-keys IMPORT_KEYS IMPORT_KEYS]
-                           [--export-keys EXPORT_KEYS EXPORT_KEYS]
-                           [--room-set-alias ALIAS ROOM [ALIAS ROOM ...]]
-                           [--room-resolve-alias ALIAS [ALIAS ...]]
-                           [--room-delete-alias ALIAS [ALIAS ...]]
-                           [--get-openid-token [USER ...]]
-                           [--room-get-visibility [ROOM ...]]
-                           [--room-get-state [ROOM ...]]
-                           [--delete-device DEVICE [DEVICE ...]]
-                           [--room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]]
-                           [--whoami] [--no-ssl]
-                           [--ssl-certificate SSL_CERTIFICATE]
-                           [--file-name FILE_NAME [FILE_NAME ...]]
-                           [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
-                           [--separator SEPARATOR]
-                           [--access-token ACCESS_TOKEN] [--password PASSWORD]
-                           [--homeserver HOMESERVER_URL]
-                           [--device DEVICE_NAME] [--sync SYNC_TYPE]
-                           [--output OUTPUT_TYPE] [--version]
+usage: matrix-commander [-h] [-d] [--log-level LOG_LEVEL [LOG_LEVEL ...]]
+                        [--verbose] [--login LOGIN_TYPE] [-v [VERIFY_TYPE]]
+                        [--logout LOGOUT_TYPE] [-c FILE] [-s STORE]
+                        [-r ROOM [ROOM ...]] [--room-default ROOM_DEFAULT]
+                        [--room-create ALIAS [ALIAS ...]]
+                        [--room-dm-create USER [USER ...]]
+                        [--room-join ROOM [ROOM ...]]
+                        [--room-leave ROOM [ROOM ...]]
+                        [--room-forget ROOM [ROOM ...]]
+                        [--room-invite ROOM [ROOM ...]]
+                        [--room-ban ROOM [ROOM ...]]
+                        [--room-unban ROOM [ROOM ...]]
+                        [--room-kick ROOM [ROOM ...]] [-u USER [USER ...]]
+                        [--user-login USER_LOGIN] [--name NAME [NAME ...]]
+                        [--topic TOPIC [TOPIC ...]]
+                        [--alias ALIAS [ALIAS ...]] [-m TEXT [TEXT ...]]
+                        [-i IMAGE [IMAGE ...]] [-a AUDIO [AUDIO ...]]
+                        [-f FILE [FILE ...]]
+                        [-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]] [-w]
+                        [-z] [-k] [-p SEPARATOR] [--config CONFIG]
+                        [--proxy PROXY] [-n] [--encrypted] [-l [LISTEN_TYPE]]
+                        [-t [NUMBER]] [-y] [--print-event-id]
+                        [--download-media [DOWNLOAD_MEDIA]] [-o]
+                        [--set-device-name DEVICE_NAME]
+                        [--set-display-name DISPLAY_NAME] [--get-display-name]
+                        [--set-presence PRESENCE_TYPE] [--get-presence]
+                        [--upload FILE [FILE ...]]
+                        [--download MXC_URI [MXC_URI ...]]
+                        [--delete-mxc MXC_URI [MXC_URI ...]]
+                        [--delete-mxc-before TIMESTAMP [TIMESTAMP ...]]
+                        [--joined-rooms] [--joined-members ROOM [ROOM ...]]
+                        [--mxc-to-http MXC_URI [MXC_URI ...]] [--devices]
+                        [--discovery-info] [--login-info]
+                        [--content-repository-config]
+                        [--rest REST_METHOD DATA URL [REST_METHOD DATA URL ...]]
+                        [--set-avatar AVATAR_MXC]
+                        [--get-avatar [GET_AVATAR ...]]
+                        [--get-profile [USER ...]]
+                        [--get-room-info [ROOM ...]] [--get-client-info]
+                        [--has-permission ROOM_ID PERMISSION_TYPE [ROOM_ID PERMISSION_TYPE ...]]
+                        [--import-keys IMPORT_KEYS IMPORT_KEYS]
+                        [--export-keys EXPORT_KEYS EXPORT_KEYS]
+                        [--room-set-alias ALIAS ROOM [ALIAS ROOM ...]]
+                        [--room-resolve-alias ALIAS [ALIAS ...]]
+                        [--room-delete-alias ALIAS [ALIAS ...]]
+                        [--get-openid-token [USER ...]]
+                        [--room-get-visibility [ROOM ...]]
+                        [--room-get-state [ROOM ...]]
+                        [--delete-device DEVICE [DEVICE ...]]
+                        [--room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]]
+                        [--whoami] [--no-ssl]
+                        [--ssl-certificate SSL_CERTIFICATE]
+                        [--file-name FILE_NAME [FILE_NAME ...]]
+                        [--key-dict KEY_DICT [KEY_DICT ...]] [--plain]
+                        [--separator SEPARATOR] [--access-token ACCESS_TOKEN]
+                        [--password PASSWORD] [--homeserver HOMESERVER_URL]
+                        [--device DEVICE_NAME] [--sync SYNC_TYPE]
+                        [--output OUTPUT_TYPE] [--version]
 
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
@@ -761,14 +777,14 @@ messages can be of various formats such as "text", "html", "markdown" or
 "code". Images, audio, arbitrary files, or events can be sent as well. For
 receiving there are three main options: listen forever, listen once and quit,
 and get the last N messages and quit. End-to-end encryption is enabled by
-default and cannot be turned off. ─── Bundling several actions together into a
-single call to matrix-commander is faster than calling matrix-commander
-multiple times with only one action. If there are both 'set' and 'get' actions
-present in the arguments, then the 'set' actions will be performed before the
-'get' actions. Then send actions and at the very end listen actions will be
-performed. ─── For even more explications and examples also read the
-documentation provided in the on-line Github README.md file or the README.md
-in your local installation.
+default and cannot be turned off, but it can be disabled for specific use
+cases. ─── Bundling several actions together into a single call to matrix-
+commander is faster than calling matrix-commander multiple times with only one
+action. If there are both 'set' and 'get' actions present in the arguments,
+then the 'set' actions will be performed before the 'get' actions. Then send
+actions and at the very end listen actions will be performed. ─── For even
+more explications and examples also read the documentation provided in the on-
+line Github README.md file or the README.md in your local installation.
 
 options:
   -h, --help            show this help message and exit
@@ -887,12 +903,12 @@ options:
                         Path to directory to be used as "store" for encrypted
                         messaging. By default, this directory is "./store/".
                         Since encryption is always enabled, a store is always
-                        needed. If this option is provided, the provided
-                        directory name will be used as persistent storage
-                        directory instead of the default one. Preferably, for
-                        multiple executions of this program use the same store
-                        for the same device. The store directory can be shared
-                        between multiple different devices and users.
+                        needed. The provided directory name will be used as
+                        persistent storage directory instead of the default
+                        one. Preferably, for multiple executions of this
+                        program use the same store for the same device. The
+                        store directory can be shared between multiple
+                        different devices and users.
   -r ROOM [ROOM ...], --room ROOM [ROOM ...]
                         Optionally specify one or multiple rooms via room ids
                         or room aliases. --room is used by various send
@@ -1167,7 +1183,9 @@ options:
                         always turned on and will always be used where
                         possible. It cannot be turned off. This flag does
                         nothing as encryption is turned on with or without
-                        this argument.
+                        this argument. This flag exists only for historic
+                        reasons. In some specific case encryption can be
+                        disabled, please see --plain.
   -l [LISTEN_TYPE], --listen [LISTEN_TYPE]
                         The --listen option takes one argument. There are
                         several choices: "never", "once", "forever", "tail",
@@ -1694,7 +1712,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 4.0.0 2022-11-22. Enjoy, star on Github and contribute
+You are running version 5.0.0 2022-11-22. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
@@ -1738,6 +1756,38 @@ Here is a sample snapshot of tab completion in action:
   - python3 -m black --line-length 79 matrix_commander.py
 - There is a script called `lintmc.sh` in `scripts` directory for that.
 
+# Semantic Versioning
+
+A version number is defined by: `MAJOR.MINOR.PATCH` where
+- MAJOR version changes when there is a incompatible API change
+- MINOR version changes when there is added functionality in a
+  backwards-compatible manner, and
+- PATCH version changes when there are backwards-compatible bug fixes.
+
+See also Issue #109 for a discussion on this topic.
+
+Output written to stdout (e.g. results on --room-get-info) is considered
+part of the API. So, if there is added space this would cause a major
+version change even though only a "meaningless" character has changed.
+
+Debugging and logging output written to stderr (e.g. debug statements,
+info, warning, and errors) are *not* part of the API. So, if the
+description of an error changes than this is only a patch.
+You should not rely on anything written to stderr or parse stderr or
+log files. An example line is:
+`2022-11-22 10:30:18,921:     ERROR: matrix-commander: E123 Failed ...`.
+The format is: date, level, module, number and description.
+Only warnings and errors have the `number` part.
+An effort is made to keep the first parts of these lines up to `number`
+the same for warnings and errors, and only change description.
+
+Output of `--help` can also change and should not be relied on, changes to it
+are just a patch.
+
+Some actions return a JSON event and these JSON objects might change
+as Matrix specifications change. This will not cause a version change in
+matrix-commander.
+
 # License
 
 This program is free software: you can redistribute it and/or modify it
@@ -1766,4 +1816,3 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
     @opk12, @pataquets, @KizzyCode, @murlock1000, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
-
