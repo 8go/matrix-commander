@@ -34,3 +34,10 @@ you *must* have followed these prerequisites steps! Otherwise `pip` will fail.
     So, check for example where file `olm.h` is located on your hard disk.
     That gives you a hint which Include directory to use.
   - For more details see Issue #103. Thanks to @johannes87 for the contribution.
+
+- Installing dependencies of `matrix-commander-tui`
+  - `matrix-commander-tui` requires that you install `vipe` from the packge `moreutils`.
+    - Read https://www.putorius.net/moreutils.html for installation instructions.
+    - As an alternative you could also install `vipe.sh` from https://github.com/0mp/vipe.sh/blob/master/vipe.sh.
+  - `matrix-commander-tui` requires that you install `fzf`.
+    - Read https://github.com/junegunn/fzf#installation for installation instructions.

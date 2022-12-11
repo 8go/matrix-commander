@@ -51,21 +51,22 @@ alt="get it on Docker Hub" height="100"></a>
   See [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
   for an example on how to do that.
-- incompatibility: login (authentication) must now be done explicitly
-  with `--login` on the first run of `matrix-commander`
-- new option: `--login`, supports login methods `password` and `sso`
-- new option: `--logout` to remove device and access-token validity
-- new option: `--sync` to allow skipping sync when only sending
-- new option: `--output` to produce output in different formats (text, JSON)
-- new option: `--get-room-info` to get room info such as the
-  room display name, room alias, etc. for a given room id
-- new option: `--get-client-info` to get client info
-- new option: `--verbose` to specify debugging verbosity
 - announcing `matrix-commander-rs` :crab:, `matrix-commander` but in Rust.
   See [matrix-commander-rs](https://github.com/8go/matrix-commander-rs).
   Please :star: it if you like the idea. Please contribute if you can,
-  please :pray: write some code to make this vision happen. Thank you!
+  please :pray: Thank you!
   :heart:
+- announcing `nostr-commander-rs`, similar idea as `matrix-commander` but
+  for the [nostr protocol](https://github.com/nostr-protcol/nostr).
+  See [nostr-commander-rs](https://github.com/8go/nostr-commander-rs).
+  Please :star: it if you like the idea. Please contribute if you can,
+  please :pray: Thank you!
+  :heart:
+- announcing a new tool! `matrix-commander-tui`. Since `matrix-commander` now
+  has more than 90 options this textual UI tool for the terminal
+  helps you build your command. Run `matrix-commander-tui`, 
+  select the desired options in the desired order via fzf, then adjust your
+  selection, and then run your interactively built command.
 
 # Summary, TLDR
 
@@ -214,6 +215,8 @@ Please give it a :star: on Github right now so others find it more easily.
 - In-source documentation
 - Can be run as a service
 - Smart tab completion for shells like bash (thanks to PR from @mizlan :clap:)
+- TUI tool for building commands (`matrix-commander-tui`)
+- More than 90 options
 - More than 300 stars :stars: on Github
 - Easy installation, available through `pip`, i.e. available in
   [PyPi](https://pypi.org/project/matrix-commander/) store
@@ -422,6 +425,13 @@ and automatically decrypted for you.
         notify2, please remove the corresponding 2 lines from
         the `requirements.txt` file
 
+- Installing dependencies of `matrix-commander-tui`
+  - `matrix-commander-tui` requires that you install `vipe` from the packge `moreutils`.
+    - Read https://www.putorius.net/moreutils.html for installation instructions.
+    - As an alternative you could also install `vipe.sh` from https://github.com/0mp/vipe.sh/blob/master/vipe.sh.
+  - `matrix-commander-tui` requires that you install `fzf`.
+    - Read https://github.com/junegunn/fzf#installation for installation instructions.
+
 # Examples of calling `matrix-commander`
 
 - Alternative 1: Usually `matrix-commander` is called from a terminal
@@ -434,6 +444,7 @@ and automatically decrypted for you.
   entry point `main`. An example of how this can be done can be found
   in [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
+- Invoke it via the TUI (Terminal User Interface) tool `matrix-commander-tui`.
 
 ```
 $ matrix-commander --login password # first run; will configure everything
@@ -1712,7 +1723,7 @@ options:
                         information program will continue to run. This is
                         useful for having version number in the log files.
 
-You are running version 5.0.0 2022-11-22. Enjoy, star on Github and contribute
+You are running version 5.1.0 2022-12-11. Enjoy, star on Github and contribute
 by submitting a Pull Request.
 ```
 
