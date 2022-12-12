@@ -69,18 +69,21 @@ PS3='Please enter your choice: '
 OPT1="scripts/update-1-version.sh # increment MAJOR version number, incompatible"
 OPT2="scripts/update-1-version.sh --minor # increment MINOR version number, new feature"
 OPT3="scripts/update-1-version.sh --patch # increment PATCH version number, bug fix"
-OPT4="scripts/update-2-help.py # update help file, puts it also inte README.md"
-OPT5="scripts/lintmc.sh # lint and beautify main file"
-OPT6="scripts/pypi-package-1-create.sh # create PyPi release"
-OPT7="scripts/pypi-package-2-publish.sh # optionally publish PyPi release; maybe skip this for minor versions; skip this if Actions workflow is preferred"
+OPT4="scripts/update-2-help-manual.py # update help-manual file, puts it also inte README.md"
+OPT5="scripts/update-4-help-help.py # update help-help-pre file, puts it inte matix_commander.py"
+OPT6="scripts/create-help-help.sh # update help-help file"
+OPT7="scripts/create-help-usage.sh # update help-usage file"
+OPT8="scripts/lintmc.sh # lint and beautify main file"
+OPT9="scripts/pypi-package-1-create.sh # create PyPi release"
+OPT10="scripts/pypi-package-2-publish.sh # optionally publish PyPi release; maybe skip this for minor versions; skip this if Actions workflow is preferred"
 OPTC="Continue"
 OPTQ="Quit"
-options=("$OPT1" "$OPT2" "$OPT3" "$OPT4" "$OPT5" "$OPT6" "$OPT7" "$OPTC" "$OPTQ")
+options=("$OPT1" "$OPT2" "$OPT3" "$OPT4" "$OPT5" "$OPT6" "$OPT7" "$OPT8" "$OPT9" "$OPT10" "$OPTC" "$OPTQ")
 select opt in "${options[@]}"; do
     if [ "${REPLY,,}" == "c" ]; then opt="$OPTC"; fi
     if [ "${REPLY,,}" == "q" ]; then opt="$OPTQ"; fi
     case ${opt} in
-    "$OPT1" | "$OPT2" | "$OPT3" | "$OPT4" | "$OPT5" | "$OPT6" | "$OPT7")
+    "$OPT1" | "$OPT2" | "$OPT3" | "$OPT4" | "$OPT5" | "$OPT6" | "$OPT7" | "$OPT8" | "$OPT9" | "$OPT10")
         OPTE=${opt%%#*} # remove everything after first #
         echo "Performing: $OPTE"
         $OPTE

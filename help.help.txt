@@ -1,0 +1,200 @@
+Welcome to matrix-commander, a Matrix CLI client.
+
+matrix-commander supports these arguments:
+
+--usage
+  Print usage.
+-h, --help
+  Print help.
+--manual
+  Print manual.
+--readme
+  Print README.md file.
+-d, --debug
+  Print debug information.
+--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL
+...]
+  Set the log level(s).
+--verbose
+  Set the verbosity level.
+--login PASSWORD|SSO
+  Login to and authenticate with the Matrix homeserver.
+-v [EMOJI], --verify [EMOJI]
+  Perform verification.
+--logout ME|ALL
+  Logout.
+-c CREDETIALS_FILE, --credentials CREDETIALS_FILE
+  Specify location of credentials file.
+-s STORE_DIRECTORY, --store STORE_DIRECTORY
+  Specify location of store directory.
+-r ROOM [ROOM ...], --room ROOM [ROOM ...]
+  Specify one or multiple rooms.
+--room-default DEFAULT_ROOM
+  Specify the default room at --login.
+--room-create ROOM_ALIAS [ROOM_ALIAS ...]
+  Create one or multiple rooms for given alias(es).
+--room-dm-create USER [USER ...]
+  Create one or multiple DM rooms with the specified users.
+--room-join ROOM [ROOM ...]
+  Join one room or multiple rooms.
+--room-leave ROOM [ROOM ...]
+  Leave one room or multiple rooms.
+--room-forget ROOM [ROOM ...]
+  Forget one room or multiple rooms.
+--room-invite ROOM [ROOM ...]
+  Invite one ore more users to join one or more rooms.
+--room-ban ROOM [ROOM ...]
+  Ban one ore more users from one or more rooms.
+--room-unban ROOM [ROOM ...]
+  Unban one ore more users from one or more rooms.
+--room-kick ROOM [ROOM ...]
+  Kick one ore more users from one or more rooms.
+-u USER [USER ...], --user USER [USER ...]
+  Specify one or multiple users.
+--user-login USER
+  Specify user for --login.
+--name ROOM_NAME [ROOM_NAME ...]
+  Specify one or multiple room names.
+--topic ROOM_TOPIC [ROOM_TOPIC ...]
+  Specify one or multiple room topics.
+--alias ROOM_ALIAS [ROOM_ALIAS ...]
+  Specify one or multiple room aliases.
+-m TEXT [TEXT ...], --message TEXT [TEXT ...]
+  Send one or multiple text messages.
+-i IMAGE_FILE [IMAGE_FILE ...], --image IMAGE_FILE [IMAGE_FILE ...]
+  Send one or multiple image files.
+-a AUDIO_FILE [AUDIO_FILE ...], --audio AUDIO_FILE [AUDIO_FILE ...]
+  Send one or multiple audio files.
+-f FILE [FILE ...], --file FILE [FILE ...]
+  Send one or multiple files (e.g. PDF, DOC, MP4).
+-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], --event MATRIX_JSON_OBJECT
+[MATRIX_JSON_OBJECT ...]
+  Send a Matrix JSON event.
+-w, --html
+  Send message as format "HTML".
+-z, --markdown
+  Send message as format "MARKDOWN".
+-k, --code
+  Send message as format "CODE".
+-p SEPARATOR, --split SEPARATOR
+  Split message text into multiple Matrix messages.
+--config CONFIG_FILE
+  Specify the location of a config file.
+--proxy PROXY
+  Specify a proxy for connectivity.
+-n, --notice
+  Send message as notice.
+--encrypted
+  Send message end-to-end encrypted.
+-l [NEVER|ONCE|FOREVER|TAIL|ALL], --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
+  Print received messages and listen to messages.
+-t [NUMBER], --tail [NUMBER]
+  Print last messages.
+-y, --listen-self
+  Print your own messages as well.
+--print-event-id
+  Print event ids of received messages.
+--download-media [DOWNLOAD_DIRECTORY]
+  Download media files while listening.
+-o, --os-notify
+  Notify me of arriving messages.
+--set-device-name DEVICE_NAME
+  Set or rename the current device.
+--set-display-name DISPLAY_NAME
+  Set or rename the display name.
+--get-display-name
+  Get the display name of yourself.
+--set-presence ONLINE|OFFLINE|UNAVAILABLE
+  Set your presence.
+--get-presence
+  Get your presence.
+--upload FILE [FILE ...]
+  Upload one or multiple files to the content repository.
+--download MXC_URI [MXC_URI ...]
+  Download one or multiple files from the content repository.
+--delete-mxc MXC_URI [MXC_URI ...]
+  Delete one or multiple objects from the content repository.
+--delete-mxc-before TIMESTAMP [TIMESTAMP ...]
+  Delete old objects from the content repository
+--joined-rooms
+  Print the list of joined rooms.
+--joined-members ROOM [ROOM ...]
+  Print the list of joined members for one or multiple rooms.
+--mxc-to-http MXC_URI [MXC_URI ...]
+  Convert MXC URIs to HTTP URLs.
+--devices, --get-devices
+  Print the list of devices.
+--discovery-info
+  Print discovery information about current homeserver.
+--login-info
+  Print login methods supported by the homeserver.
+--content-repository-config
+  Print the content repository configuration.
+--rest REST_METHOD DATA URL [REST_METHOD DATA URL ...]
+  Use the Matrix Client REST API.
+--set-avatar AVATAR_MXC_URI
+  Set your avatar.
+--get-avatar [USER ...]
+  Get an avatar.
+--get-profile [USER ...]
+  Get a user profile.
+--get-room-info [ROOM ...]
+  Get the room information.
+--get-client-info
+  Print client information.
+--has-permission ROOM BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc [ROOM
+BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc ...]
+  Inquire about permissions.
+--import-keys FILE PASSPHRASE FILE PASSPHRASE
+  Import Megolm decryption keys from a file.
+--export-keys FILE PASSPHRASE FILE PASSPHRASE
+  Export all the Megolm decryption keys of this device.
+--room-set-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], --room-put-alias
+ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+  Add aliases to rooms.
+--room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
+  Show room ids correspnding to room aliases.
+--room-delete-alias ROOM_ALIAS [ROOM_ALIAS ...]
+  Delete one or multiple rooms aliases.
+--get-openid-token [USER ...]
+  Get an OpenID token.
+--room-get-visibility [ROOM ...]
+  Get the visibility of one or more rooms.
+--room-get-state [ROOM ...]
+  Get the state of one or more rooms.
+--delete-device DEVICE [DEVICE ...]
+  Delete one or multiple devices.
+--room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], --room-
+delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+  Strip information out of one or several events.
+--whoami
+  Print your user id.
+--no-ssl
+  Skip SSL verification.
+--ssl-certificate SSL_CERTIFICATE_FILE
+  Use your own SSL certificate.
+--file-name FILE [FILE ...]
+  Specify one or multiple file names for some actions.
+--key-dict KEY_DICTIONARY [KEY_DICTIONARY ...]
+  Specify one or multiple key dictionaries for decryption.
+--plain
+  Disable encryption for a specific action.
+--separator SEPARATOR
+  Set a custom separator used for certain print outs.
+--access-token ACCESS_TOKEN
+  Set a custom access token for use by certain actions.
+--password PASSWORD
+  Specify a password for use by certain actions.
+--homeserver HOMESERVER_URL
+  Specify a homeserver for use by certain actions.
+--device DEVICE_NAME
+  Specify a device name, for use by certain actions.
+--sync FULL|OFF
+  Choose synchronization options.
+--output TEXT|JSON|JSON-MAX|JSON-SPEC
+  Select an output format.
+--version
+  Print version information.
+
+You are running version 5.2.0 2022-12-12. Enjoy, star on Github and contribute
+by submitting a Pull Request. Also have a look at matrix-commander-tui.

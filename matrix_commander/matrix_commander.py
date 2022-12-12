@@ -31,6 +31,7 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import textwrap
 import traceback
 import urllib.request
 import uuid
@@ -46,90 +47,33 @@ import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    ContentRepositoryConfigError,
-    DeleteDevicesAuthResponse,
-    DeleteDevicesError,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    ErrorResponse,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    LogoutError,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileGetError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomDeleteAliasResponse,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomGetStateResponse,
-    RoomGetVisibilityResponse,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomPreset,
-    RoomPutAliasResponse,
-    RoomReadMarkersError,
-    RoomRedactError,
-    RoomResolveAliasError,
-    RoomResolveAliasResponse,
-    RoomSendError,
-    RoomUnbanError,
-    RoomVisibility,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-    responses,
-)
+from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
+                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
+                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
+                 EncryptionError, ErrorResponse, JoinedMembersError,
+                 JoinedRoomsError, JoinError, KeyVerificationCancel,
+                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
+                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
+                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
+                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
+                 ProfileGetDisplayNameError, ProfileGetError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
+                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
+                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
+                 RoomGetStateResponse, RoomGetVisibilityResponse,
+                 RoomInviteError, RoomKickError, RoomLeaveError,
+                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
+                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
+                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
+                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
+                 RoomMessageVideo, RoomNameEvent, RoomPreset,
+                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
+                 RoomResolveAliasError, RoomResolveAliasResponse,
+                 RoomSendError, RoomUnbanError, RoomVisibility, SyncError,
+                 SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
+                 UploadError, UploadResponse, crypto, responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -148,8 +92,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-12-11"
-VERSIONNR = "5.1.0"
+VERSION = "2022-12-12"
+VERSIONNR = "5.2.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -231,6 +175,11 @@ OUTPUT_JSON_MAX = "json-max"
 # adhere to Spec and hence print a JSON object. All other print nothing.
 OUTPUT_JSON_SPEC = "json-spec"
 OUTPUT_DEFAULT = OUTPUT_TEXT
+# location of README.md file if it is not found on local harddisk
+# used for --manual
+README_FILE_RAW_URL = (
+    "https://raw.githubusercontent.com/8go/matrix-commander/master/README.md"
+)
 # increment this number and use new incremented number for next warning
 # last unique Wxxx warning number used: W112:
 # increment this number and use new incremented number for next error
@@ -6485,6 +6434,60 @@ def initial_check_of_args() -> None:  # noqa: C901
     raise MatrixCommanderError("E240: " + t) from None
 
 
+class colors:
+    """Colors class.
+
+    reset all colors with colors.reset.
+    2 sub classes: fg for foreground and bg for background;
+    use as colors.subclass.colorname.
+    i.e. colors.fg.red or colors.bg.green
+    also, the generic bold, disable, underline, reverse, strike through,
+    and invisible work with the main class i.e. colors.bold
+
+    use like this:
+    print(colors.bg.green, "SKk", colors.fg.red, "Amartya")
+    print(colors.bg.lightgrey, "SKk", colors.fg.red, "Amartya")
+    """
+
+    reset = "\033[0m"
+    bold = "\033[01m"
+    disable = "\033[02m"
+    inverse = "\033[03m"
+    underline = "\033[04m"
+    blink = "\033[05m"
+    blink2 = "\033[06m"
+    reverse = "\033[07m"
+    invisible = "\033[08m"
+    strikethrough = "\033[09m"
+
+    class fg:
+        black = "\033[30m"
+        red = "\033[31m"
+        green = "\033[32m"
+        orange = "\033[33m"
+        blue = "\033[34m"
+        purple = "\033[35m"
+        cyan = "\033[36m"
+        lightgrey = "\033[37m"
+        darkgrey = "\033[90m"
+        lightred = "\033[91m"
+        lightgreen = "\033[92m"
+        yellow = "\033[93m"
+        lightblue = "\033[94m"
+        pink = "\033[95m"
+        lightcyan = "\033[96m"
+
+    class bg:
+        black = "\033[40m"
+        red = "\033[41m"
+        green = "\033[42m"
+        orange = "\033[43m"
+        blue = "\033[44m"
+        purple = "\033[45m"
+        cyan = "\033[46m"
+        lightgrey = "\033[47m"
+
+
 # according to linter: function is too complex, C901
 def main_inner(
     argv: Union[None, list] = None
@@ -6509,38 +6512,53 @@ def main_inner(
     global SEP
     # Construct the argument parser
     ap = argparse.ArgumentParser(
-        description=(
-            f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. ─── "
-            "On first run use --login to log in, to authenticate. "
-            "On second run we suggest to use --verify to get verified. "
-            "Emoji verification is built-in which can be used "
-            "to verify devices. "
-            "On further runs this program implements a simple Matrix CLI "
-            "client that can send messages, listen to messages, verify "
-            "devices, etc. It can send one or multiple message to one or "
-            "multiple Matrix rooms and/or users. The text messages can be "
-            "of various "
-            'formats such as "text", "html", "markdown" or "code". '
-            "Images, audio, arbitrary files, or events can be sent as well. "
-            "For receiving there are three main options: listen forever, "
-            "listen once and quit, and get the last N messages "
-            "and quit. End-to-end encryption is enabled by default "
-            "and cannot be turned off, but it can be disabled for specific "
-            "use cases.  ─── "
-            "Bundling several actions together into a single call to "
-            f"{PROG_WITHOUT_EXT} is faster than calling {PROG_WITHOUT_EXT} "
-            "multiple times with only one action. If there are both 'set' "
-            "and 'get' actions present in the arguments, then the 'set' "
-            "actions will be performed before the 'get' actions. Then "
-            "send actions and at the very end listen actions will be "
-            "performed. ─── "
-            "For even more explications and examples also read the "
-            "documentation provided in the on-line Github README.md file "
-            "or the README.md in your local installation."
-        ),
+        add_help=False,
+        description=(f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. "),
         epilog="You are running "
         f"version {VERSIONNR} {VERSION}. Enjoy, star on Github and "
-        "contribute by submitting a Pull Request. ",
+        "contribute by submitting a Pull Request. "
+        f"Also have a look at {PROG_WITHOUT_EXT}-tui. ",
+    )
+    # -h, see add_help=False
+    ap.add_argument(
+        # see script create help.help.txt
+        # help string up to but excluding "Details::" is used for
+        # (short) `--help`. The full text will be used for long `--manual`.
+        "--usage",
+        required=False,
+        action="store_true",
+        help="Print usage. "
+        "Details:: See also --help for printing a bit more and --manual "
+        "for printing a lot more detailed information.",
+    )
+    # -h, see add_help=False
+    ap.add_argument(
+        "-h",
+        "--help",
+        required=False,
+        action="store_true",
+        help="Print help. "
+        "Details:: ee also --usage for printing even less information, "
+        "and --manual for printing more detailed information.",
+    )
+    # see -h, see add_help=False
+    ap.add_argument(
+        "--manual",
+        required=False,
+        action="store_true",
+        help="Print manual. "
+        "Details:: See also --usage for printing the absolute minimum, "
+        "and --help for printing less.",
+    )
+    # see -h, see add_help=False
+    ap.add_argument(
+        "--readme",
+        required=False,
+        action="store_true",
+        help="Print README.md file. "
+        "Details:: Tries to print the local README.md file from installation. "
+        "If not found it will get the README.md file from github.com and "
+        "print it. See also --usage, --help, and --manual.",
     )
     # Add the arguments to the parser
     ap.add_argument(
@@ -6548,7 +6566,8 @@ def main_inner(
         "--debug",
         action="count",
         default=0,
-        help="Print debug information. If used once, only the log level of "
+        help="Print debug information. "
+        "Details:: If used once, only the log level of "
         f"{PROG_WITHOUT_EXT} is set to DEBUG. "
         'If used twice ("-d -d" or "-dd") then '
         f"log levels of both {PROG_WITHOUT_EXT} and underlying modules are "
@@ -6562,7 +6581,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Set the log level(s). Possible values are "
+        metavar=("DEBUG|INFO|WARNING|ERROR|CRITICAL"),
+        help="Set the log level(s). "
+        "Details:: Possible values are "
         '"DEBUG", "INFO", "WARNING", "ERROR", and "CRITICAL". '
         "If --log_level is used with one level argument, only the log level "
         f"of {PROG_WITHOUT_EXT} is set to the specified value. "
@@ -6576,7 +6597,8 @@ def main_inner(
         "--verbose",
         action="count",
         default=0,
-        help="Set the verbosity level. If not used, then verbosity will be "
+        help="Set the verbosity level. "
+        "Details:: If not used, then verbosity will be "
         "set to low. If used once, verbosity will be high. "
         "If used more than once, verbosity will be very high. "
         "Verbosity only affects the debug information. "
@@ -6586,9 +6608,9 @@ def main_inner(
         "--login",
         required=False,
         type=str,  # login method: password, sso, (access-token)
-        metavar="LOGIN_TYPE",
+        metavar="PASSWORD|SSO",
         help="Login to and authenticate with the Matrix homeserver. "
-        "This requires exactly one argument, the login method. "
+        "Details:: This requires exactly one argument, the login method. "
         "Currently two choices are offered: 'password' and 'sso'. "
         "Provide one of these methods. "
         "If you have chosen 'password', "
@@ -6624,8 +6646,9 @@ def main_inner(
         nargs="?",  # makes the word optional
         # when -v is used, but text is not added
         const=VERIFY_USED_DEFAULT,
-        metavar="VERIFY_TYPE",
-        help="Perform verification. By default, no "
+        metavar="EMOJI",
+        help="Perform verification. "
+        "Details:: By default, no "
         "verification is performed. "
         f'Possible values are: "{EMOJI}". '
         "If verification is desired, run this program in the "
@@ -6664,8 +6687,9 @@ def main_inner(
         "--logout",
         required=False,
         type=str,  # logout options: me and all
-        metavar="LOGOUT_TYPE",
-        help="Logout this or all devices from the Matrix homeserver. "
+        metavar="ME|ALL",
+        help="Logout. "
+        "Details:: Logout this or all devices from the Matrix homeserver. "
         "This requires exactly one argument. "
         "Two choices are offered: 'me' and 'all'. "
         "Provide one of these choices. "
@@ -6688,8 +6712,9 @@ def main_inner(
         required=False,
         type=str,
         default=CREDENTIALS_FILE_DEFAULT,
-        metavar="FILE",
-        help="On first run, information about homeserver, "
+        metavar="CREDETIALS_FILE",
+        help="Specify location of credentials file. "
+        "Details:: On first run, information about homeserver, "
         "user, room id, etc. will be written to a credentials "
         "file. By default, this file "
         f'is "{CREDENTIALS_FILE_DEFAULT}". '
@@ -6706,7 +6731,9 @@ def main_inner(
         required=False,
         type=str,
         default=STORE_DIR_DEFAULT,
-        help="Path to directory to be "
+        metavar="STORE_DIRECTORY",
+        help="Specify location of store directory. "
+        "Details:: Path to directory to be "
         'used as "store" for encrypted messaging. '
         "By default, this directory "
         f'is "{STORE_DIR_DEFAULT}". '
@@ -6726,7 +6753,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Optionally specify one or multiple rooms via room ids or "
+        metavar="ROOM",
+        help="Specify one or multiple rooms. "
+        "Details:: Optionally specify one or multiple rooms via room ids or "
         "room aliases. --room is used by various send actions and "
         "various listen actions. "
         "The default room is provided "
@@ -6754,7 +6783,9 @@ def main_inner(
         "--room-default",
         required=False,
         type=str,
-        help="Optionally specify a room as the "
+        metavar="DEFAULT_ROOM",
+        help="Specify the default room at --login. "
+        "Details:: Optionally specify a room as the "
         "default room for future actions. If not specified for --login, it "
         "will be queried via the keyboard. --login stores the specified room "
         "as default room in your credentials file. This option is only used "
@@ -6767,8 +6798,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        metavar="ALIAS",
-        help="Create one or multiple rooms. One or multiple "
+        metavar="ROOM_ALIAS",
+        help="Create one or multiple rooms for given alias(es). "
+        "Details:: One or multiple "
         "room aliases can be specified. "
         "For each alias specified a room will be created. "
         "For each created room one line with room id and alias "
@@ -6796,8 +6828,8 @@ def main_inner(
         type=str,
         metavar="USER",
         help="Create one or multiple DM rooms with the specified users. "
-        "For each user specified a DM room will be created and the user "
-        "invited to it. For each created room one line with "
+        "Details:: For each user specified a DM room will be created and the "
+        "user invited to it. For each created room one line with "
         "room id and alias will be printed to stdout. The user "
         "must be permitted to create rooms. Combine --room-dm-create "
         "with --name, --topic, --alias to add names, topics and "
@@ -6815,7 +6847,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="ROOM",
-        help="Join this room or these rooms. One or multiple "
+        help="Join one room or multiple rooms. "
+        "Details:: One or multiple "
         "room aliases can be specified. The room (or multiple "
         "ones) provided in the arguments will be joined. "
         "The user must have permissions to join these rooms.",
@@ -6827,7 +6860,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="ROOM",
-        help="Leave this room or these rooms. One or multiple "
+        help="Leave one room or multiple rooms. "
+        "Details:: One or multiple "
         "room aliases can be specified. The room (or multiple "
         "ones) provided in the arguments will be left. ",
     )
@@ -6838,7 +6872,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="ROOM",
-        help="After leaving a room you should (most likely) forget the room. "
+        help="Forget one room or multiple rooms. "
+        "Details:: After leaving a room you should (most likely) forget the room. "
         "Forgetting a room removes the users' room history. "
         "One or multiple "
         "room aliases can be specified. The room (or multiple "
@@ -6854,7 +6889,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Invite one ore more users to join one or more rooms. "
-        "Specify the user(s) as arguments to --user. "
+        "Details:: Specify the user(s) as arguments to --user. "
         "Specify the rooms as arguments to this option, i.e. "
         "as arguments to --room-invite. "
         "The user must have permissions to invite users.",
@@ -6867,7 +6902,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Ban one ore more users from one or more rooms. "
-        "Specify the user(s) as arguments to --user. "
+        "Details:: Specify the user(s) as arguments to --user. "
         "Specify the rooms as arguments to this option, i.e. "
         "as arguments to --room-ban. "
         "The user must have permissions to ban users.",
@@ -6880,7 +6915,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Unban one ore more users from one or more rooms. "
-        "Specify the user(s) as arguments to --user. "
+        "Details:: Specify the user(s) as arguments to --user. "
         "Specify the rooms as arguments to this option, i.e. "
         "as arguments to --room-unban. "
         "The user must have permissions to unban users.",
@@ -6893,7 +6928,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Kick one ore more users from one or more rooms. "
-        "Specify the user(s) as arguments to --user. "
+        "Details:: Specify the user(s) as arguments to --user. "
         "Specify the rooms as arguments to this option, i.e. "
         "as arguments to --room-kick. "
         "The user must have permissions to kick users.",
@@ -6907,7 +6942,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Specify one or multiple users. This option is meaningful "
+        metavar="USER",
+        help="Specify one or multiple users. "
+        "Details:: This option is meaningful "
         "in combination with a) room actions like --room-invite, --room-ban, "
         "--room-unban, etc. and b) send actions like -m, -i, -f, etc. "
         "c) some listen actions --listen, as well as d) actions like "
@@ -6947,7 +6984,9 @@ def main_inner(
         required=False,
         type=str,
         # @john:example.com and @john and john accepted
-        help="Optional argument to specify the user for --login. "
+        metavar="USER",
+        help="Specify user for --login. "
+        "Details:: Optional argument to specify the user for --login. "
         "This gives the otion to specify the user id for login. "
         "For '--login sso' the --user-login is not needed as user id can be "
         "obtained from server via SSO. For '--login password', if not "
@@ -6963,7 +7002,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Specify one or multiple names. This option is only meaningful "
+        metavar="ROOM_NAME",
+        help="Specify one or multiple room names. "
+        "Details:: This option is only meaningful "
         "in combination with option --room-create. "
         "This option --name specifies the names "
         "to be used with the command --room-create.",
@@ -6974,7 +7015,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Specify one or multiple topics. This option is only meaningful "
+        metavar="ROOM_TOPIC",
+        help="Specify one or multiple room topics. "
+        "Details:: This option is only meaningful "
         "in combination with option --room-create. "
         "This option --topic specifies the topics "
         "to be used with the command --room-create.",
@@ -6985,7 +7028,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Specify one or multiple aliases. This option is only "
+        metavar="ROOM_ALIAS",
+        help="Specify one or multiple room aliases. "
+        "Details:: This option is only "
         "meaningful in combination with option --room-dm-create. "
         "This option --alias specifies the aliases to be used "
         "with the command --room-dm-create.",
@@ -7001,7 +7046,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="TEXT",
-        help="Send this message. Message data must not be binary data, it "
+        help="Send one or multiple text messages. "
+        "Details:: Message data must not be binary data, it "
         "must be text. If no '-m' is used and no other conflicting "
         "arguments are provided, and information is piped into the program, "
         "then the piped data will be used as message. "
@@ -7036,8 +7082,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Send this image. "
-        "This option can be used multiple times to send "
+        metavar="IMAGE_FILE",
+        help="Send one or multiple image files. "
+        "Details:: This option can be used multiple times to send "
         "multiple images. First images are sent, "
         "then text messages are sent. "
         f"If you want to feed an image into {PROG_WITHOUT_EXT} "
@@ -7063,8 +7110,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Send this audio file. "
-        "This option can be used multiple times to send "
+        metavar="AUDIO_FILE",
+        help="Send one or multiple audio files. "
+        "Details:: This option can be used multiple times to send "
         "multiple audio files. First audios are sent, "
         "then text messages are sent. "
         f"If you want to feed an audio into {PROG_WITHOUT_EXT} "
@@ -7082,8 +7130,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        help="Send this file (e.g. PDF, DOC, MP4). "
-        "This option can be used multiple times to send "
+        metavar="FILE",
+        help="Send one or multiple files (e.g. PDF, DOC, MP4). "
+        "Details:: This option can be used multiple times to send "
         "multiple files. First files are sent, "
         "then text messages are sent. "
         f"If you want to feed a file into {PROG_WITHOUT_EXT} "
@@ -7098,7 +7147,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="MATRIX_JSON_OBJECT",
-        help="Send an event that is formatted as a JSON object as "
+        help="Send a Matrix JSON event. "
+        "Details:: Send an event that is formatted as a JSON object as "
         "specified by the Matrix protocol. This allows the advanced "
         "user to send additional types of events such as reactions, "
         "send replies to previous events, or edit previous messages. "
@@ -7118,8 +7168,8 @@ def main_inner(
         "--html",
         required=False,
         action="store_true",
-        help="Send message as format "
-        '"HTML". If not specified, message will be sent '
+        help='Send message as format "HTML". '
+        "Details:: If not specified, message will be sent "
         'as format "TEXT". E.g. that allows some text '
         "to be bold, etc. Only a subset of HTML tags are "
         "accepted by Matrix.",
@@ -7130,8 +7180,8 @@ def main_inner(
         "--markdown",
         required=False,
         action="store_true",
-        help="Send message as format "
-        '"MARKDOWN". If not specified, message will be sent '
+        help='Send message as format "MARKDOWN". '
+        "Details:: If not specified, message will be sent "
         'as format "TEXT". E.g. that allows sending of text '
         "formatted in MarkDown language.",
     )
@@ -7141,8 +7191,8 @@ def main_inner(
         "--code",
         required=False,
         action="store_true",
-        help="Send message as format "
-        '"CODE". If not specified, message will be sent '
+        help='Send message as format "CODE". '
+        "Details:: If not specified, message will be sent "
         'as format "TEXT". If both --html and --code are '
         "specified then --code takes priority. This is "
         "useful for sending ASCII-art or tabbed output "
@@ -7156,7 +7206,8 @@ def main_inner(
         required=False,
         type=str,
         metavar="SEPARATOR",
-        help="If set, split the message(s) into multiple messages "
+        help="Split message text into multiple Matrix messages. "
+        "Details:: If set, split the message(s) into multiple messages "
         "wherever the string specified with --split occurs. "
         "E.g. One pipes a stream of RSS articles into the "
         "program and the articles are separated by three "
@@ -7170,7 +7221,9 @@ def main_inner(
         "--config",
         required=False,
         type=str,
-        help="Location of a config file. By default, no "
+        metavar="CONFIG_FILE",
+        help="Specify the location of a config file. "
+        "Details:: By default, no "
         "config file is used. "
         "If this option is provided, the provided file name "
         "will be used to read configuration from. Not implemented.",
@@ -7180,7 +7233,9 @@ def main_inner(
         "--proxy",
         required=False,
         type=str,
-        help="Optionally specify a proxy for connectivity. By default, "
+        metavar="PROXY",
+        help="Specify a proxy for connectivity. "
+        "Details:: By default, "
         "i.e. if this option is not set, no proxy is used. "
         "If this option is used a proxy URL must be provided. "
         "The provided proxy URL "
@@ -7197,15 +7252,15 @@ def main_inner(
         required=False,
         action="store_true",
         help="Send message as notice. "
-        "If not specified, message will be sent as text.",
+        "Details:: If not specified, message will be sent as text.",
     )
     ap.add_argument(
         # no single char flag
         "--encrypted",
         required=False,
         action="store_true",
-        help="Send message end-to-end "
-        "encrypted. Encryption is always turned on and "
+        help="Send message end-to-end encrypted. "
+        "Details:: Encryption is always turned on and "
         "will always be used where possible. "
         "It cannot be turned off. This flag does nothing "
         "as encryption is turned on with or without this "
@@ -7221,8 +7276,9 @@ def main_inner(
         default=LISTEN_DEFAULT,  # when -l is not used
         nargs="?",  # makes the word optional
         const=FOREVER,  # when -l is used, but FOREVER is not added
-        metavar="LISTEN_TYPE",
-        help="The --listen option takes one argument. There "
+        metavar="NEVER|ONCE|FOREVER|TAIL|ALL",
+        help="Print received messages and listen to messages. "
+        "Details:: The --listen option takes one argument. There "
         f'are several choices: "{NEVER}", "{ONCE}", '
         f'"{FOREVER}", "{TAIL}", and "{ALL}". '
         f'By default, --listen is set to "{NEVER}".  So, by '
@@ -7269,7 +7325,8 @@ def main_inner(
         # when -t is used, but number is not added
         const=TAIL_USED_DEFAULT,
         metavar="NUMBER",
-        help="The --tail option reads and prints up to the last N "
+        help="Print last messages. "
+        "Details:: The --tail option reads and prints up to the last N "
         "messages from the specified rooms, then quits. "
         "It takes one "
         "argument, an integer, "
@@ -7289,7 +7346,8 @@ def main_inner(
         "--listen-self",
         required=False,
         action="store_true",
-        help="If set and listening, "
+        help="Print your own messages as well. "
+        "Details:: If set and listening, "
         "then program will listen to and print also "
         "the messages sent by its own user. "
         "By default messages from oneself are not printed.",
@@ -7299,7 +7357,8 @@ def main_inner(
         "--print-event-id",
         required=False,
         action="store_true",
-        help="If set and listening, "
+        help="Print event ids of received messages. "
+        "Details:: If set and listening, "
         f"then '{PROG_WITHOUT_EXT}' will print also the event id for "
         "each received message or other received event. If set and "
         f"sending, then '{PROG_WITHOUT_EXT}' will print the event id "
@@ -7318,7 +7377,9 @@ def main_inner(
         action="store",
         nargs="?",  # makes the word optional
         const=MEDIA_DIR_DEFAULT,  # when option is used, but no dir added
-        help="If set and listening, "
+        metavar="DOWNLOAD_DIRECTORY",
+        help="Download media files while listening. "
+        "Details:: If set and listening, "
         "then program will download "
         "received media files (e.g. image, audio, video, text, PDF files). "
         "media will be downloaded to local directory. "
@@ -7333,7 +7394,8 @@ def main_inner(
         "--os-notify",
         required=False,
         action="store_true",
-        help="If set and listening, "
+        help="Notify me of arriving messages. "
+        "Details:: If set and listening, "
         "then program will attempt to visually notify of "
         "arriving messages through the operating system. "
         "By default there is no notification via OS.",
@@ -7345,7 +7407,8 @@ def main_inner(
         type=str,
         default=SET_DEVICE_NAME_UNUSED_DEFAULT,  # when option isn't used
         metavar="DEVICE_NAME",
-        help="Set or rename the current device to the "
+        help="Set or rename the current device. "
+        "Details:: Set or rename the current device to the "
         "device name provided. "
         "Send, listen and verify operations are allowed when "
         "renaming the device.",
@@ -7356,7 +7419,9 @@ def main_inner(
         type=str,
         default=SET_DISPLAY_NAME_UNUSED_DEFAULT,  # when option isn't used
         metavar="DISPLAY_NAME",
-        help="Set or rename the display name for the current user to the "
+        help="Set or rename the display name. "
+        "Details:: Set or rename the display name "
+        "for the current user to the "
         "display name provided. "
         "Send, listen and verify operations are allowed when "
         "setting the display name. "
@@ -7367,7 +7432,9 @@ def main_inner(
         "--get-display-name",
         required=False,
         action="store_true",
-        help=f"Get the display name of {PROG_WITHOUT_EXT} (itself), "
+        help="Get the display name of yourself. "
+        "Details:: Get the display name of "
+        f"{PROG_WITHOUT_EXT} (itself), "
         "or of one or multiple users. Specify user(s) with the "
         "--user option. If no user is specified get the display name of "
         "itself. "
@@ -7381,8 +7448,9 @@ def main_inner(
         required=False,
         type=str,
         # defaults to None if not used, is str if used
-        metavar="PRESENCE_TYPE",
-        help=f"Set presence of {PROG_WITHOUT_EXT} to the given value. "
+        metavar="ONLINE|OFFLINE|UNAVAILABLE",
+        help="Set your presence. "
+        f"Details:: Set presence of {PROG_WITHOUT_EXT} to the given value. "
         "Must be one of these values: “online”, “offline”, “unavailable”. "
         "Otherwise an error will be produced.",
     )
@@ -7391,7 +7459,8 @@ def main_inner(
         required=False,
         action="store_true",
         # defaults to False if not used
-        help=f"Get presence of {PROG_WITHOUT_EXT} (itself), "
+        help="Get your presence. "
+        f"Details:: Get presence of {PROG_WITHOUT_EXT} (itself), "
         "or of one or multiple users. Specify user(s) with the "
         "--user option. If no user is specified get the presence of "
         "itself. "
@@ -7406,6 +7475,7 @@ def main_inner(
         type=str,
         metavar="FILE",
         help="Upload one or multiple files to the content repository. "
+        "Details:: "
         "The files will be given a Matrix URI and "
         "stored on the server. --upload allows the optional argument "
         "--plain to skip encryption for upload. "
@@ -7419,6 +7489,7 @@ def main_inner(
         type=str,
         metavar="MXC_URI",
         help="Download one or multiple files from the content repository. "
+        "Details:: "
         "You must provide one or multiple Matrix URIs (MXCs) which are "
         "strings like "
         "this 'mxc://example.com/SomeStrangeUriKey'. If found they will "
@@ -7448,12 +7519,12 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="MXC_URI",
-        help="Delete one or multiple objects (e.g. files) from the content "
-        "repository. You must provide one or multiple Matrix URIs (MXC) "
+        help="Delete one or multiple objects from the content repository. "
+        "Details:: You must provide one or multiple Matrix URIs (MXC) "
         "which are strings like "
         "this 'mxc://example.com/SomeStrangeUriKey'. Alternatively, you "
         "can just provide the MXC id, i.e. the part after the last slash. "
-        "If found they will "
+        "If found they (i.e. the files they represent) will "
         "be deleted from the server database. In order to delete objects "
         "one must have server admin permissions. Having only room admin "
         "permissions is not sufficient and it will fail. "
@@ -7473,8 +7544,9 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="TIMESTAMP",
-        help="Delete objects (e.g. files) from the content "
-        "repository that are older than a given timestamp. "
+        help="Delete old objects from the content repository"
+        "Details:: Delete files from the content repository "
+        "that are older than a given timestamp. "
         "It is the timestamp of last access, not the timestamp when "
         "the file was created. "
         "Additionally you can specify a size in bytes to indicate "
@@ -7502,7 +7574,8 @@ def main_inner(
         "--joined-rooms",
         required=False,
         action="store_true",
-        help="Print the list of joined rooms. All rooms that you are a "
+        help="Print the list of joined rooms. "
+        "Details:: All rooms that you are a "
         "member of will be printed, one room per line.",
     )
     ap.add_argument(
@@ -7514,8 +7587,8 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Print the list of joined members for one or multiple rooms. "
-        "If you want to print the joined members of all rooms that you "
-        "are member of, then use the special character '*'.",
+        "Details:: If you want to print the joined members of all rooms that "
+        "you are member of, then use the special character '*'.",
     )
     ap.add_argument(
         "--mxc-to-http",
@@ -7524,7 +7597,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="MXC_URI",
-        help="Convert one or more matrix content URIs to the "
+        help="Convert MXC URIs to HTTP URLs. "
+        "Details:: Convert one or more matrix content URIs to the "
         "corresponding HTTP URLs. The MXC URIs "
         "to provide look something like this "
         "'mxc://example.com/SomeStrangeUriKey'. "
@@ -7536,7 +7610,8 @@ def main_inner(
         "--get-devices",  # alias, cause --deviced is very similar to --device
         required=False,
         action="store_true",
-        help="Print the list of devices. All device of this "
+        help="Print the list of devices. "
+        "Details:: All device of this "
         "account will be printed, one device per line.",
     )
     ap.add_argument(
@@ -7545,8 +7620,8 @@ def main_inner(
         required=False,
         action="store_true",
         help="Print discovery information about current homeserver. "
-        "Note that not all homeservers support discovery and an error "
-        "might be reported.",
+        "Details:: Note that not all homeservers support discovery and an "
+        "error might be reported.",
     )
     ap.add_argument(
         # no single char flag
@@ -7554,14 +7629,15 @@ def main_inner(
         required=False,
         action="store_true",
         help="Print login methods supported by the homeserver. "
-        "It prints one login method per line.",
+        "Details:: It prints one login method per line.",
     )
     ap.add_argument(
         # no single char flag
         "--content-repository-config",
         required=False,
         action="store_true",
-        help="Print the content repository configuration, currently just "
+        help="Print the content repository configuration. "
+        "Details:: This currently just prints "
         "the upload size limit in bytes.",
     )
     ap.add_argument(
@@ -7572,7 +7648,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="REST_METHOD DATA URL",
-        help="Use the Matrix Client REST API. Matrix has several extensive "
+        help="Use the Matrix Client REST API. "
+        "Details:: Matrix has several extensive "
         "REST APIs. With the --rest argument you can invoke a Matrix REST "
         "API call. This allows the user to do pretty much anything, at the "
         "price of not being very convenient. The APIs are described in "
@@ -7603,9 +7680,10 @@ def main_inner(
         "--set-avatar",
         required=False,
         type=str,
-        metavar="AVATAR_MXC",
+        metavar="AVATAR_MXC_URI",
         # defaults to None if not used, is str if used
-        help=f"Set the avatar MXC resource used by {PROG_WITHOUT_EXT}. "
+        help="Set your avatar. "
+        f"Details:: Set the avatar MXC resource used by {PROG_WITHOUT_EXT}. "
         "Provide one MXC URI that looks like this "
         "'mxc://example.com/SomeStrangeUriKey'.",
     )
@@ -7615,7 +7693,9 @@ def main_inner(
         action="extend",
         nargs="*",  # None if not used, [] is used without extra args
         type=str,
-        help=f"Get the avatar MXC resource used by {PROG_WITHOUT_EXT}, or "
+        metavar="USER",
+        help="Get an avatar. "
+        f"Details:: Get the avatar MXC resource used by {PROG_WITHOUT_EXT}, or "
         "one or multiple other users. Specify zero or more user ids. "
         f"If no user id is specified, the avatar of {PROG_WITHOUT_EXT} will "
         "be fetched. If one or more user ids are given, the avatars of "
@@ -7629,7 +7709,8 @@ def main_inner(
         nargs="*",  # None if not used, [] is used without extra args
         type=str,
         metavar="USER",
-        help=f"Get the user profile used by {PROG_WITHOUT_EXT}, or "
+        help="Get a user profile. "
+        f"Details:: Get the user profile used by {PROG_WITHOUT_EXT}, or "
         "one or multiple other users. Specify zero or more user ids. "
         f"If no user id is specified, the user profile of {PROG_WITHOUT_EXT} "
         "will be fetched. If one or more user ids are given, the user "
@@ -7645,7 +7726,8 @@ def main_inner(
         nargs="*",  # None if not used, [] is used without extra args
         type=str,
         metavar="ROOM",
-        help=f"Get the room information such as room display name, "
+        help="Get the room information. "
+        "Details:: Get the room information such as room display name, "
         "room alias, room creator, etc. for "
         "one or multiple specified rooms. The included room 'display name' is "
         "also referred to as 'room name' or incorrectly even as room title. "
@@ -7674,7 +7756,9 @@ def main_inner(
         "--get-client-info",
         required=False,
         action="store_true",
-        help=f"Print information kept in the client, i.e. {PROG_WITHOUT_EXT}. "
+        help="Print client information. "
+        "Details:: Print information kept in the client, i.e. "
+        f"{PROG_WITHOUT_EXT}. "
         "Output is printed in JSON format.",
     )
     ap.add_argument(
@@ -7683,8 +7767,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        metavar="ROOM_ID PERMISSION_TYPE",
-        help=f"Inquire if user used by {PROG_WITHOUT_EXT} has "
+        metavar="ROOM BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc",
+        help="Inquire about permissions. "
+        f"Details:: Inquire if user used by {PROG_WITHOUT_EXT} has "
         "permission for one or multiple actions in one or multiple rooms. "
         "Each inquiry requires 2 parameters: the room id and the permission "
         "type. One or multiple of these parameter pairs may be specified. "
@@ -7701,9 +7786,10 @@ def main_inner(
         action="extend",
         nargs=2,  # filename for import, passphrase
         type=str,
+        metavar="FILE PASSPHRASE",
         help="Import Megolm decryption keys from a file. "
-        "This is an optional argument. If used it must be followed by "
-        "two values. (a) a file name from which the keys will be read. "
+        "Details:: This is an optional argument. If used it must be followed "
+        "by two values. (a) a file name from which the keys will be read. "
         "(b) a passphrase with which the file can be decrypted with. "
         "The keys will be added to the current instance as well as "
         "written to the database. See also --export-keys.",
@@ -7714,9 +7800,10 @@ def main_inner(
         action="extend",
         nargs=2,  # filename for export, passphrase
         type=str,
+        metavar="FILE PASSPHRASE",
         help="Export all the Megolm decryption keys of this device. "
-        "This is an optional argument. If used it must be followed by "
-        "two values. (a) a file name to which the keys will be written to. "
+        "Details:: This is an optional argument. If used it must be followed "
+        "by two values. (a) a file name to which the keys will be written to. "
         "(b) a passphrase with which the file will be encrypted with. "
         "Note that this does not save other information such as the private "
         "identity keys of the device.",
@@ -7728,8 +7815,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        metavar="ALIAS ROOM",
-        help="Add an alias to a room, or aliases to multiple rooms. "
+        metavar="ROOM_ALIAS ROOM",
+        help="Add aliases to rooms. "
+        "Details:: Add an alias to a room, or aliases to multiple rooms. "
         "Provide pairs of arguments. In each pair, the first argument must be "
         "the alias you want to assign to the room given via room id in the "
         "second argument of the pair. E.g. the 4 arguments 'a1 r1 a2 r2' "
@@ -7757,8 +7845,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        metavar="ALIAS",
-        help="Resolves a room alias to the corresponding room id, "
+        metavar="ROOM_ALIAS",
+        help="Show room ids correspnding to room aliases. "
+        "Details:: Resolves a room alias to the corresponding room id, "
         "or multiple room aliases to their corresponding room ids. "
         "Provide one or multiple room aliases. "
         "A room alias looks like this: "
@@ -7778,9 +7867,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
-        metavar="ALIAS",
+        metavar="ROOM_ALIAS",
         help="Delete one or multiple rooms aliases. "
-        "Provide one or multiple room aliases. "
+        "Details:: Provide one or multiple room aliases. "
         "You can have multiple room aliases per room. So, "
         "you may delete multiple aliases from the same room or from different "
         "rooms. "
@@ -7800,7 +7889,8 @@ def main_inner(
         nargs="*",  # None if not used, [] is used without extra args
         type=str,
         metavar="USER",
-        help=f"Get an OpenID token for {PROG_WITHOUT_EXT}, or for "
+        help="Get an OpenID token. "
+        f"Details:: Get an OpenID token for {PROG_WITHOUT_EXT}, or for "
         "one or multiple other users. It prints an OpenID token object "
         "that the requester may supply to another service to verify their "
         "identity in Matrix. See http://www.openid.net/. "
@@ -7818,7 +7908,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Get the visibility of one or more rooms. "
-        "Provide zero or more room ids as arguments. "
+        "Details:: Provide zero or more room ids as arguments. "
         "If no argument is given, then the default room of "
         f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
         "For each room the visibility will be printed. Currently, this "
@@ -7833,7 +7923,7 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Get the state of one or more rooms. "
-        "Provide zero or more room ids as arguments. "
+        "Details::Provide zero or more room ids as arguments. "
         "If no argument is given, then the default room of "
         f"{PROG_WITHOUT_EXT} (as found in credentials file) will be used. "
         "For each room the state will be printed. The state is a long "
@@ -7853,7 +7943,8 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="DEVICE",
-        help=f"Delete one or multiple devices. By default devices belonging "
+        help=f"Delete one or multiple devices. "
+        "Details:: By default devices belonging "
         f"to {PROG_WITHOUT_EXT} will be deleted. If the devices belong "
         "to a different user, use the --user argument to specify the user, "
         "i.e. owner. Only "
@@ -7871,7 +7962,9 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="ROOM_ID EVENT_ID REASON",
-        help="Strip information out of one or several events, e.g. messages. "
+        help="Strip information out of one or several events. "
+        "Details:: "
+        "Strip information from events, e.g. messages. "
         "Redact is used in the meaning of 'strip, wipe, black-out', not "
         "in the meaning of 'edit'. This action removes, deletes the content "
         "of an event while not removing the event. You can wipe text from a "
@@ -7903,7 +7996,8 @@ def main_inner(
         "--whoami",
         required=False,
         action="store_true",
-        help=f"Print the user id used by {PROG_WITHOUT_EXT} (itself). "
+        help="Print your user id. "
+        f"Details:: Print the user id used by {PROG_WITHOUT_EXT} (itself). "
         "One can get "
         "this information also by looking at the credentials file.",
     )
@@ -7913,7 +8007,8 @@ def main_inner(
         required=False,
         action="store_true",
         default=NO_SSL_UNUSED_DEFAULT,  # when option isn't used
-        help="Skip SSL verification. By default (if this option is not used) "
+        help="Skip SSL verification. "
+        "Details:: By default (if this option is not used) "
         "the SSL certificate is validated for the connection. But, if this "
         "option is used, then the SSL certificate validation will be skipped. "
         "This is useful for home-servers that have no SSL certificate. "
@@ -7926,7 +8021,9 @@ def main_inner(
         required=False,
         type=str,
         default=SSL_CERTIFICATE_DEFAULT,  # when option isn't used
-        help="Use this option to use your own local SSL certificate file. "
+        metavar="SSL_CERTIFICATE_FILE",
+        help="Use your own SSL certificate. "
+        "Details:: Use this option to use your own local SSL certificate file. "
         "This is an optional parameter. This is useful for home servers that "
         "have their own "
         "SSL certificate. This allows you to use HTTPS/TLS for the connection "
@@ -7940,8 +8037,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
+        metavar="FILE",
         help="Specify one or multiple file names for some actions. "
-        "This is an optional argument. Use this option "
+        "Details:: This is an optional argument. Use this option "
         "in combination with options like --download to specify one or "
         "multiple file names. "
         "Ignored if used by itself without an appropriate corresponding "
@@ -7953,8 +8051,9 @@ def main_inner(
         action="extend",
         nargs="+",
         type=str,
+        metavar="KEY_DICTIONARY",
         help="Specify one or multiple key dictionaries for decryption. "
-        "One or multiple decryption "
+        "Details:: One or multiple decryption "
         "dictionaries are provided by the --upload action as a result. "
         "A decryption dictionary is a string like this: "
         "\"{'v': 'v2', 'key': {'kty': 'oct', 'alg': 'A256CTR', 'ext': True, "
@@ -7966,7 +8065,8 @@ def main_inner(
         "--plain",
         required=False,
         action="store_true",
-        help="Disable encryption for a specific action. By default, "
+        help="Disable encryption for a specific action. "
+        "Details:: By default, "
         "everything is always encrypted. "
         "Actions that support this option are: --upload, --room-create, "
         "and --room-dm-create. "
@@ -7981,8 +8081,9 @@ def main_inner(
         default=DEFAULT_SEPARATOR,  # defaults to SEP if not used
         # Text is scanned and repeated spaces are removes, so "    "
         # or {DEFAULT_SEPARATOR} will be truncated to " ". Hence "4 spaces"
+        metavar="SEPARATOR",
         help="Set a custom separator used for certain print outs. "
-        "By default, i.e. if --separator is not used, "
+        "Details:: By default, i.e. if --separator is not used, "
         "4 spaces are used as "
         "separator between columns in print statements. You could set "
         "it to '\\t' if you prefer a tab, but tabs are usually replaced "
@@ -7993,8 +8094,9 @@ def main_inner(
         "--access-token",
         required=False,
         type=str,
+        metavar="ACCESS_TOKEN",
         help="Set a custom access token for use by certain actions. "
-        "It is an optional argument. "
+        "Details:: It is an optional argument. "
         "By default --access-token is ignored and not used. "
         "It is used by the --delete-mxc, --delete-mxc-before, "
         "and --rest actions.",
@@ -8003,8 +8105,9 @@ def main_inner(
         "--password",
         required=False,
         type=str,
+        metavar="PASSWORD",
         help="Specify a password for use by certain actions. "
-        "It is an optional argument. "
+        "Details:: It is an optional argument. "
         "By default --password is ignored and not used. "
         "It is used by '--login password' and '--delete-device' "
         "actions. "
@@ -8016,7 +8119,7 @@ def main_inner(
         type=str,
         metavar="HOMESERVER_URL",
         help="Specify a homeserver for use by certain actions. "
-        "It is an optional argument. "
+        "Details:: It is an optional argument. "
         "By default --homeserver is ignored and not used. "
         "It is used by '--login' action. "
         "If not provided for --login the user will be queried via keyboard.",
@@ -8027,7 +8130,7 @@ def main_inner(
         type=str,  # device id, device name
         metavar="DEVICE_NAME",
         help="Specify a device name, for use by certain actions. "
-        "It is an optional argument. "
+        "Details:: It is an optional argument. "
         "By default --device is ignored and not used. "
         "It is used by '--login' action. "
         "If not provided for --login the user will be queried via keyboard. "
@@ -8040,8 +8143,9 @@ def main_inner(
         "--sync",
         required=False,
         type=str,  # sync method: off, full, (partial)
-        metavar="SYNC_TYPE",
-        help="This option decides on whether the program "
+        metavar="FULL|OFF",
+        help="Choose synchronization options. "
+        "Details:: This option decides on whether the program "
         "synchronizes the state with the server before a 'send' action. "
         f"Currently two choices are offered: '{SYNC_FULL}' and '{SYNC_OFF}'. "
         "Provide one of these choices. "
@@ -8059,8 +8163,9 @@ def main_inner(
         required=False,
         type=str,  # output method: text, json, json-max, ...
         default=OUTPUT_DEFAULT,  # when --output is not used
-        metavar="OUTPUT_TYPE",
-        help="This option decides on how the output is presented. "
+        metavar="TEXT|JSON|JSON-MAX|JSON-SPEC",
+        help="Select an output format. "
+        "Details:: This option decides on how the output is presented. "
         f"Currently offered choices are: '{OUTPUT_TEXT}', '{OUTPUT_JSON}', "
         f"'{OUTPUT_JSON_MAX}', and '{OUTPUT_JSON_SPEC}'. "
         "Provide one of these choices. "
@@ -8098,11 +8203,329 @@ def main_inner(
         "--version",
         required=False,
         action="store_true",
-        help="Print version information. After printing version information "
+        help="Print version information. "
+        "Details:: After printing version information "
         "program will continue to run. This is useful for having version "
         "number in the log files.",
     )
     gs.pa = ap.parse_args()
+    # wrap and indent: https://towardsdatascience.com/6-fancy-built-in-text-wrapping-techniques-in-python-a78cc57c2566
+    # ToDo: if output is not TTY, then don't add colors, e.g. when output is piped
+    if sys.stdout.isatty():
+        # You're running in a real terminal
+        # colors
+        # adapt width
+        term_width = os.get_terminal_size()[0]
+        # print("terminal width ", term_width)
+        con = colors.fg.green
+        coff = colors.reset
+        eon = colors.bold + con
+        eoff = colors.reset + con
+    else:
+        # You're being piped or redirected
+        # no Colors
+        # width = 80
+        term_width = 80
+        # print("not in terminal, using default terminal width ", term_width)
+        con = ""
+        coff = ""
+        eon = ""
+        eoff = ""
+    if gs.pa.usage:
+        print(textwrap.fill(ap.description, width=term_width))
+        print("")
+        ap.print_usage()
+        print("")
+        print(textwrap.fill(ap.epilog, width=term_width))
+        return 0
+    if gs.pa.help:
+        print(textwrap.fill(ap.description, width=term_width))
+        print("")
+        print(
+            textwrap.fill(
+                f"{PROG_WITHOUT_EXT} supports these arguments:",
+                width=term_width,
+            )
+        )
+        # print("")
+        help_help_pre = """
+<--usage>
+Print usage.
+<-h>, <--help>
+Print help.
+<--manual>
+Print manual.
+<--readme>
+Print README.md file.
+<-d>, <--debug>
+Print debug information.
+<--log-level> DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]
+Set the log level(s).
+<--verbose>
+Set the verbosity level.
+<--login> PASSWORD|SSO
+Login to and authenticate with the Matrix homeserver.
+<-v> [EMOJI], <--verify> [EMOJI]
+Perform verification.
+<--logout> ME|ALL
+Logout.
+<-c> CREDETIALS_FILE, <--credentials> CREDETIALS_FILE
+Specify location of credentials file.
+<-s> STORE_DIRECTORY, <--store> STORE_DIRECTORY
+Specify location of store directory.
+<-r> ROOM [ROOM ...], <--room> ROOM [ROOM ...]
+Specify one or multiple rooms.
+<--room-default> DEFAULT_ROOM
+Specify the default room at --login.
+<--room-create> ROOM_ALIAS [ROOM_ALIAS ...]
+Create one or multiple rooms for given alias(es).
+<--room-dm-create> USER [USER ...]
+Create one or multiple DM rooms with the specified users.
+<--room-join> ROOM [ROOM ...]
+Join one room or multiple rooms.
+<--room-leave> ROOM [ROOM ...]
+Leave one room or multiple rooms.
+<--room-forget> ROOM [ROOM ...]
+Forget one room or multiple rooms.
+<--room-invite> ROOM [ROOM ...]
+Invite one ore more users to join one or more rooms.
+<--room-ban> ROOM [ROOM ...]
+Ban one ore more users from one or more rooms.
+<--room-unban> ROOM [ROOM ...]
+Unban one ore more users from one or more rooms.
+<--room-kick> ROOM [ROOM ...]
+Kick one ore more users from one or more rooms.
+<-u> USER [USER ...], <--user> USER [USER ...]
+Specify one or multiple users.
+<--user-login> USER
+Specify user for --login.
+<--name> ROOM_NAME [ROOM_NAME ...]
+Specify one or multiple room names.
+<--topic> ROOM_TOPIC [ROOM_TOPIC ...]
+Specify one or multiple room topics.
+<--alias> ROOM_ALIAS [ROOM_ALIAS ...]
+Specify one or multiple room aliases.
+<-m> TEXT [TEXT ...], <--message> TEXT [TEXT ...]
+Send one or multiple text messages.
+<-i> IMAGE_FILE [IMAGE_FILE ...], <--image> IMAGE_FILE [IMAGE_FILE ...]
+Send one or multiple image files.
+<-a> AUDIO_FILE [AUDIO_FILE ...], <--audio> AUDIO_FILE [AUDIO_FILE ...]
+Send one or multiple audio files.
+<-f> FILE [FILE ...], <--file> FILE [FILE ...]
+Send one or multiple files (e.g. PDF, DOC, MP4).
+<-e> MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], <--event> MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
+Send a Matrix JSON event.
+<-w>, <--html>
+Send message as format "HTML".
+<-z>, <--markdown>
+Send message as format "MARKDOWN".
+<-k>, <--code>
+Send message as format "CODE".
+<-p> SEPARATOR, <--split> SEPARATOR
+Split message text into multiple Matrix messages.
+<--config> CONFIG_FILE
+Specify the location of a config file.
+<--proxy> PROXY
+Specify a proxy for connectivity.
+<-n>, <--notice>
+Send message as notice.
+<--encrypted>
+Send message end-to-end encrypted.
+<-l> [NEVER|ONCE|FOREVER|TAIL|ALL], <--listen> [NEVER|ONCE|FOREVER|TAIL|ALL]
+Print received messages and listen to messages.
+<-t> [NUMBER], <--tail> [NUMBER]
+Print last messages.
+<-y>, <--listen-self>
+Print your own messages as well.
+<--print-event-id>
+Print event ids of received messages.
+<--download-media> [DOWNLOAD_DIRECTORY]
+Download media files while listening.
+<-o>, <--os-notify>
+Notify me of arriving messages.
+<--set-device-name> DEVICE_NAME
+Set or rename the current device.
+<--set-display-name> DISPLAY_NAME
+Set or rename the display name.
+<--get-display-name>
+Get the display name of yourself.
+<--set-presence> ONLINE|OFFLINE|UNAVAILABLE
+Set your presence.
+<--get-presence>
+Get your presence.
+<--upload> FILE [FILE ...]
+Upload one or multiple files to the content repository.
+<--download> MXC_URI [MXC_URI ...]
+Download one or multiple files from the content repository.
+<--delete-mxc> MXC_URI [MXC_URI ...]
+Delete one or multiple objects from the content repository.
+<--delete-mxc-before> TIMESTAMP [TIMESTAMP ...]
+Delete old objects from the content repository
+<--joined-rooms>
+Print the list of joined rooms.
+<--joined-members> ROOM [ROOM ...]
+Print the list of joined members for one or multiple rooms.
+<--mxc-to-http> MXC_URI [MXC_URI ...]
+Convert MXC URIs to HTTP URLs.
+<--devices,> <--get-devices>
+Print the list of devices.
+<--discovery-info>
+Print discovery information about current homeserver.
+<--login-info>
+Print login methods supported by the homeserver.
+<--content-repository-config>
+Print the content repository configuration.
+<--rest> REST_METHOD DATA URL [REST_METHOD DATA URL ...]
+Use the Matrix Client REST API.
+<--set-avatar> AVATAR_MXC_URI
+Set your avatar.
+<--get-avatar> [USER ...]
+Get an avatar.
+<--get-profile> [USER ...]
+Get a user profile.
+<--get-room-info> [ROOM ...]
+Get the room information.
+<--get-client-info>
+Print client information.
+<--has-permission> ROOM BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc [ROOM BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc ...]
+Inquire about permissions.
+<--import-keys> FILE PASSPHRASE FILE PASSPHRASE
+Import Megolm decryption keys from a file.
+<--export-keys> FILE PASSPHRASE FILE PASSPHRASE
+Export all the Megolm decryption keys of this device.
+<--room-set-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], <--room-put-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+Add aliases to rooms.
+<--room-resolve-alias> ROOM_ALIAS [ROOM_ALIAS ...]
+Show room ids correspnding to room aliases.
+<--room-delete-alias> ROOM_ALIAS [ROOM_ALIAS ...]
+Delete one or multiple rooms aliases.
+<--get-openid-token> [USER ...]
+Get an OpenID token.
+<--room-get-visibility> [ROOM ...]
+Get the visibility of one or more rooms.
+<--room-get-state> [ROOM ...]
+Get the state of one or more rooms.
+<--delete-device> DEVICE [DEVICE ...]
+Delete one or multiple devices.
+<--room-redact> ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], <--room-delete-content> ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+Strip information out of one or several events.
+<--whoami>
+Print your user id.
+<--no-ssl>
+Skip SSL verification.
+<--ssl-certificate> SSL_CERTIFICATE_FILE
+Use your own SSL certificate.
+<--file-name> FILE [FILE ...]
+Specify one or multiple file names for some actions.
+<--key-dict> KEY_DICTIONARY [KEY_DICTIONARY ...]
+Specify one or multiple key dictionaries for decryption.
+<--plain>
+Disable encryption for a specific action.
+<--separator> SEPARATOR
+Set a custom separator used for certain print outs.
+<--access-token> ACCESS_TOKEN
+Set a custom access token for use by certain actions.
+<--password> PASSWORD
+Specify a password for use by certain actions.
+<--homeserver> HOMESERVER_URL
+Specify a homeserver for use by certain actions.
+<--device> DEVICE_NAME
+Specify a device name, for use by certain actions.
+<--sync> FULL|OFF
+Choose synchronization options.
+<--output> TEXT|JSON|JSON-MAX|JSON-SPEC
+Select an output format.
+<--version>
+Print version information.
+""".replace(
+            "<", eon
+        ).replace(
+            ">", eoff
+        )
+        header = False  # first line is newline
+        for line in help_help_pre.split("\n"):
+            if header:
+                print(
+                    textwrap.fill(con + line + coff, width=term_width),
+                    flush=True,
+                )
+            else:
+                print(
+                    textwrap.indent(
+                        textwrap.fill(line, width=term_width - 2), "  "
+                    ),
+                    flush=True,
+                )
+
+            header = not header
+        # print("")
+        print(textwrap.fill(ap.epilog, width=term_width))
+        return 0
+    if gs.pa.manual:
+        description = (
+            f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. ─── "
+            "On first run use --login to log in, to authenticate. "
+            "On second run we suggest to use --verify to get verified. "
+            "Emoji verification is built-in which can be used "
+            "to verify devices. "
+            "On further runs this program implements a simple Matrix CLI "
+            "client that can send messages, listen to messages, verify "
+            "devices, etc. It can send one or multiple message to one or "
+            "multiple Matrix rooms and/or users. The text messages can be "
+            "of various "
+            'formats such as "text", "html", "markdown" or "code". '
+            "Images, audio, arbitrary files, or events can be sent as well. "
+            "For receiving there are three main options: listen forever, "
+            "listen once and quit, and get the last N messages "
+            "and quit. End-to-end encryption is enabled by default "
+            "and cannot be turned off, but it can be disabled for specific "
+            "use cases.  ─── "
+            "Bundling several actions together into a single call to "
+            f"{PROG_WITHOUT_EXT} is faster than calling {PROG_WITHOUT_EXT} "
+            "multiple times with only one action. If there are both 'set' "
+            "and 'get' actions present in the arguments, then the 'set' "
+            "actions will be performed before the 'get' actions. Then "
+            "send actions and at the very end listen actions will be "
+            "performed. ─── "
+            "For even more explications and examples also read the "
+            "documentation provided in the on-line Github README.md file "
+            "or the README.md in your local installation.  ─── "
+            "For less information just use --help instead of --manual."
+        )
+        print(textwrap.fill(description, width=term_width), flush=True)
+        print("")
+        ap.print_help(file=None)  # ap.print_usage() is included
+        return 0
+    if gs.pa.readme:
+        # Todo
+        exedir = os.path.dirname(os.path.realpath(__file__))
+        readme = exedir + "/../" + "README.md"
+        readme_primary = readme
+        foundpath = None
+        if os.path.exists(readme):
+            foundpath = readme
+            print(f"Found local README.md here: {readme}")
+        else:
+            readme = exedir + "/" + "README.md"
+            if os.path.exists(readme):
+                foundpath = readme
+                print(f"Found local README.md here: {readme}")
+        if foundpath is None:
+            print(
+                "Sorry, README.md not found locally "
+                f"in installation directory {readme_primary}."
+            )
+            print(f"Hence downloading it from {README_FILE_RAW_URL}.")
+            notused, foundpath = tempfile.mkstemp()
+            urllib.request.urlretrieve(README_FILE_RAW_URL, foundpath)
+        try:
+            with open(foundpath, "r+") as f:
+                text = f.read()
+            print(f"{text}")
+        except Exception:  # (BrokenPipeError, IOError):
+            # print("BrokenPipeError caught", file=sys.stderr)
+            pass
+        return 0
 
     logging.basicConfig(  # initialize root logger, a must
         format="{asctime}: {levelname:>8}: {name:>16}: {message}", style="{"

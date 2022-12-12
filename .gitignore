@@ -15,6 +15,7 @@ credentials.json_*
 # ignore backups
 README.md.*
 matrix-commander.py.*
+matrix_commander.20*
 /matrix_commander/matrix-commander.py.*
 /matrix_commander/matrix_commander.py.*
 setup.cfg.*
@@ -43,3 +44,7 @@ versionnumber.txt
 # ignore to-do list
 todo.txt
 todo.txt.*
+
+# build file used for release
+help.help.pre.txt
+

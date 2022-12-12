@@ -22,9 +22,11 @@ sleep 1
 # generate the short command options list
 # run it throu fzf, run it through editor, execute it
 # shellcheck disable=SC2046 # quoting will
-PATH=".:matrix_commander/:$PATH" matrix-commander --help | grep -E "^  -" | awk -F '  ' '{print $2}' | sed "s/.*, //g" | sort |
+PATH=".:matrix_commander/:$PATH" matrix-commander --manual |
+    grep -E "^  -" | awk -F '  ' '{print $2}' | sed "s/.*, //g" | sort |
     echo -n "matrix-commander $(fzf -m)" | xargs | vipe | /bin/bash
 
 # to force a specific editor do this: e.g. forcing to use "nano"
-# PATH=".:matrix_commander/:$PATH" matrix-commander --help | grep -E "^  -" |  awk -F '  ' '{print $2}' | sort |
+# PATH=".:matrix_commander/:$PATH" matrix-commander --manual |
+#     grep -E "^  -" |  awk -F '  ' '{print $2}' | sort |
 #     echo -n echo $(fzf -m)  | EDITOR=nano VISUAL=nano vipe | /bin/bash

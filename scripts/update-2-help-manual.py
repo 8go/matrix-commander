@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-# - runs `matrix_commander.py --help` and writes the output into `help.txt` file
+# - runs `matrix_commander.py --manual` and writes the output into `help.manual.txt` file
 # - replace this pattern:
 #   ```
 #   usage: ...
 #   ```
 #   in the README.md file with the content of the
-#   newly created `help.txt` file
+#   newly created `help.manual.txt` file
 # - runs a diff on the previous and new README.md to show the changes
 
 
@@ -22,7 +22,7 @@ from os.path import isfile
 now = datetime.now()
 date_string = now.strftime("%Y%m%d-%H%M%S")
 
-helpfile = "help.txt"
+helpfile = "help.manual.txt"
 filename = "README.md"
 executable = "matrix_commander/matrix-commander"
 
@@ -45,7 +45,7 @@ shutil.copy2(filename, backupfile)
 
 with open(helpfile, "w") as f:
     # tty size defaults to 80 columns
-    bashCmd = [executable, "--help"]
+    bashCmd = [executable, "--manual"]
     process = subprocess.Popen(bashCmd, stdout=f)
     _, error = process.communicate()
     if error:
