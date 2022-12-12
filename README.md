@@ -64,7 +64,7 @@ alt="get it on Docker Hub" height="100"></a>
   :heart:
 - announcing a new tool! `matrix-commander-tui`. Since `matrix-commander` now
   has more than 90 options this textual UI tool for the terminal
-  helps you build your command. Run `matrix-commander-tui`, 
+  helps you build your command. Run `matrix-commander-tui`,
   select the desired options in the desired order via fzf, then adjust your
   selection, and then run your interactively built command.
 
@@ -431,6 +431,27 @@ and automatically decrypted for you.
     - As an alternative you could also install `vipe.sh` from https://github.com/0mp/vipe.sh/blob/master/vipe.sh.
   - `matrix-commander-tui` requires that you install `fzf`.
     - Read https://github.com/junegunn/fzf#installation for installation instructions.
+
+# Documentation and Resources
+
+- There are 4 level of details for the documentation. In sorted order from
+  short summary to long details:
+  - Just the options, no explanation:
+    `matrix-commander --usage` or
+    [online](https://github.com/8go/matrix-commander/blob/master/help.usage.txt)
+    on Github
+  - One-liner explanations for each option:
+    `matrix-commander --help` or
+      [online](https://github.com/8go/matrix-commander/blob/master/help.help.txt)
+      on Github
+  - Detailed verbose explanations for each option, like a man-page:
+    `matrix-commander --manual` or
+    [online](https://github.com/8go/matrix-commander/blob/master/help.manual.txt)
+    on Github
+  - Full documentation, installation, examples, use-cases, etc.:
+    `matrix-commander --readme` or
+    [online](https://github.com/8go/matrix-commander/blob/master/README.md)
+    on Github
 
 # Examples of calling `matrix-commander`
 
@@ -1878,6 +1899,16 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 # Things to do, Things missing
 
 - see [Issues](https://github.com/8go/matrix-commander/issues) on Github
+
+
+# Related Tools and Projects
+
+- [matrix-nio](https://github.com/poljar/matrix-nio/)
+- [matrix-commander](https://github.com/8go/matrix-commander/)
+- [matrix-commander-tui](https://github.com/8go/matrix-commander/matrix_commander)
+- [matrix-commander-rs](https://github.com/8go/matrix-commander-rs/)
+- [nostr-commander-rs](https://github.com/8go/nostr-commander-rs/)
+- [matrix-nostr-bridge](https://github.com/8go/matrix-nostr-bridge/)
 
 # Final Remarks
 
