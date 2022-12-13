@@ -68,8 +68,8 @@ with open(filename, "r+") as f:
     text = f.read()
     print(f"Length of {filename} before: {len(text)}")
     text = re.sub(
-        r"```\nusage: [\s\S]*?```",
-        "```\n"
+        r"\n# Usage\n```\n[\s\S]*?```",
+        r"\n# Usage\n```\n"
         + helptext.translate(
             str.maketrans(
                 {

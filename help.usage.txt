@@ -2,7 +2,7 @@ Welcome to matrix-commander, a Matrix CLI client.
 
 usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]]
-                        [--verbose] [--login PASSWORD|SSO] [-v [EMOJI]]
+                        [--verbose] [--login PASSWORD|SSO] [--verify [EMOJI]]
                         [--logout ME|ALL] [-c CREDETIALS_FILE]
                         [-s STORE_DIRECTORY] [-r ROOM [ROOM ...]]
                         [--room-default DEFAULT_ROOM]
@@ -25,7 +25,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--proxy PROXY] [-n] [--encrypted]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
-                        [--download-media [DOWNLOAD_DIRECTORY]] [-o]
+                        [--download-media [DOWNLOAD_DIRECTORY]] [--os-notify]
                         [--set-device-name DEVICE_NAME]
                         [--set-display-name DISPLAY_NAME] [--get-display-name]
                         [--set-presence ONLINE|OFFLINE|UNAVAILABLE]
@@ -59,8 +59,8 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--plain] [--separator SEPARATOR]
                         [--access-token ACCESS_TOKEN] [--password PASSWORD]
                         [--homeserver HOMESERVER_URL] [--device DEVICE_NAME]
-                        [--sync FULL|OFF]
-                        [--output TEXT|JSON|JSON-MAX|JSON-SPEC] [--version]
+                        [--sync FULL|OFF] [-o TEXT|JSON|JSON-MAX|JSON-SPEC]
+                        [-v [PRINT|CHECK]]
 
-You are running version 5.2.0 2022-12-12. Enjoy, star on Github and contribute
+You are running version 6.0.0 2022-12-13. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

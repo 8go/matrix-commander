@@ -92,8 +92,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-12-12"
-VERSIONNR = "5.2.0"
+VERSION = "2022-12-13"
+VERSIONNR = "6.0.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -136,6 +136,8 @@ PID_FILE_DEFAULT = os.path.normpath(
     PID_DIR_DEFAULT + "/" + PROG_WITHOUT_EXT + "." + str(uuid.uuid4()) + ".pid"
 )
 EMOJI = "emoji"  # verification type
+PRINT = "print"  # version type
+CHECK = "check"  # version type
 ONCE = "once"  # listening type
 NEVER = "never"  # listening type
 FOREVER = "forever"  # listening type
@@ -147,7 +149,9 @@ LISTEN_DEFAULT = NEVER
 TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
-VERIFY_USED_DEFAULT = "emoji"  # use emoji by default with --verify
+VERIFY_USED_DEFAULT = EMOJI  # use 'emoji' by default with --verify
+VERSION_UNUSED_DEFAULT = None  # use None if --version is not specified
+VERSION_USED_DEFAULT = PRINT  # use 'print' by default with --version
 SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if option is not specified
 SET_DISPLAY_NAME_UNUSED_DEFAULT = None  # use None option not used
 NO_SSL_UNUSED_DEFAULT = None  # use None if --no-ssl is not given
@@ -184,6 +188,60 @@ README_FILE_RAW_URL = (
 # last unique Wxxx warning number used: W112:
 # increment this number and use new incremented number for next error
 # last unique Exxx error number used: E248:
+
+
+class LooseVersion:
+    """Version numbering and comparison.
+    See https://github.com/effigies/looseversion/blob/main/looseversion.py.
+    Argument 'other' must be of type LooseVersion.
+    """
+
+    component_re = re.compile(r"(\d+ | [a-z]+ | \.)", re.VERBOSE)
+
+    def __init__(self, vstring=None):
+        if vstring:
+            self.parse(vstring)
+
+    def __eq__(self, other):
+        return self._cmp(other) == 0
+
+    def __lt__(self, other):
+        return self._cmp(other) < 0
+
+    def __le__(self, other):
+        return self._cmp(other) <= 0
+
+    def __gt__(self, other):
+        return self._cmp(other) > 0
+
+    def __ge__(self, other):
+        return self._cmp(other) >= 0
+
+    def parse(self, vstring):
+        self.vstring = vstring
+        components = [
+            x for x in self.component_re.split(vstring) if x and x != "."
+        ]
+        for i, obj in enumerate(components):
+            try:
+                components[i] = int(obj)
+            except ValueError:
+                pass
+        self.version = components
+
+    def __str__(self):
+        return self.vstring
+
+    def __repr__(self):
+        return "LooseVersion ('%s')" % str(self)
+
+    def _cmp(self, other):
+        if self.version == other.version:
+            return 0
+        if self.version < other.version:
+            return -1
+        if self.version > other.version:
+            return 1
 
 
 class MatrixCommanderError(Exception):
@@ -2798,8 +2856,8 @@ async def send_image(client, rooms, image):  # noqa: C901
 async def send_message(client, rooms, message):  # noqa: C901
     """Process message.
 
-    Format messages according to instructions from command line arguments.
-    Then send all messages to all rooms.
+    Format message according to instructions from command line arguments.
+    Then send the one message to all rooms.
 
     Arguments:
     ---------
@@ -2907,6 +2965,58 @@ async def send_message(client, rooms, message):  # noqa: C901
         gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
 
+async def stream_messages_from_pipe(client, rooms):
+    """Read input from pipe if available.
+
+    Read pipe line by line. For each line received, immediately
+    send it.
+
+    Arguments:
+    ---------
+    client : Client
+    rooms : list of room_ids
+
+    """
+    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+        0
+    ]  # noqa
+    if not stdin_ready:
+        gs.log.debug(
+            "stdin is not ready for streaming. "
+            "A pipe could be used, but pipe could be empty, "
+            "stdin could also be a keyboard."
+        )
+    else:
+        gs.log.debug(
+            "stdin is ready. Something "
+            "is definitely piped into program from stdin. "
+            "Reading message from stdin pipe."
+        )
+    if ((not stdin_ready) and (not sys.stdin.isatty())) or stdin_ready:
+        if not sys.stdin.isatty():
+            gs.log.debug(
+                "Pipe was definitely used, but pipe might be empty. "
+                "Trying to read from pipe in any case."
+            )
+        try:
+            for line in sys.stdin:
+                await send_message(client, rooms, line)
+                gs.log.debug("Using data from stdin pipe stream as message.")
+        except EOFError:  # EOF when reading a line
+            gs.log.debug(
+                "Reading from stdin resulted in EOF. This can happen "
+                "when a pipe was used, but the pipe is empty. "
+                "No message will be generated."
+            )
+        except UnicodeDecodeError:
+            gs.log.info(
+                "Reading from stdin resulted in UnicodeDecodeError. This "
+                "can happen if you try to pipe binary data for a text "
+                "message. For a text message only pipe text via stdin, "
+                "not binary data. No message will be generated."
+            )
+
+
 def get_messages_from_pipe() -> list:
     """Read input from pipe if available.
 
@@ -2921,14 +3031,14 @@ def get_messages_from_pipe() -> list:
     ]  # noqa
     if not stdin_ready:
         gs.log.debug(
-            "stdin is not ready. "
+            "stdin is not ready for reading. "
             "A pipe could be used, but pipe could be empty, "
             "stdin could also be a keyboard."
         )
     else:
         gs.log.debug(
             "stdin is ready. Something "
-            "is definitely piped into program from stdin."
+            "is definitely piped into program from stdin. "
             "Reading message from stdin pipe."
         )
     if ((not stdin_ready) and (not sys.stdin.isatty())) or stdin_ready:
@@ -3001,14 +3111,14 @@ def get_messages_from_keyboard() -> list:
     ]  # noqa
     if not stdin_ready:
         gs.log.debug(
-            "stdin is not ready. "
+            "stdin is not ready for keyboard interaction. "
             "A pipe could be used, but pipe could be empty, "
             "stdin could also be a keyboard."
         )
     else:
         gs.log.debug(
             "stdin is ready. Something "
-            "is definitely piped into program from stdin."
+            "is definitely piped into program from stdin. "
             "Reading message from stdin pipe."
         )
     if (not stdin_ready) and (sys.stdin.isatty()):
@@ -3075,6 +3185,7 @@ async def process_arguments_and_input(client, rooms):
     rooms : list of room_ids
 
     """
+    streaming = False
     messages_from_pipe = []
     if gs.stdin_use == "none":  # STDIN is unused
         messages_from_pipe = get_messages_from_pipe()
@@ -3086,8 +3197,15 @@ async def process_arguments_and_input(client, rooms):
         for m in gs.pa.message:
             if m == "\\-":  # escaped -
                 messages_from_commandline += ["-"]
-            elif m == "-":  # stdin pipe
+            elif m == "\\_":  # escaped _
+                messages_from_commandline += ["_"]
+            elif m == "-":
+                # stdin pipe, read and process everything in pipe as 1 msg
                 messages_from_commandline += get_messages_from_pipe()
+            elif m == "_":
+                # streaming via pipe on stdin
+                # stdin pipe, read and process everything in pipe line by line
+                streaming = True
             else:
                 messages_from_commandline += [m]
 
@@ -3111,6 +3229,9 @@ async def process_arguments_and_input(client, rooms):
         messages_all_split = messages_all
 
     await send_messages_and_files(client, rooms, messages_all_split)
+    # now we are done with all the usual sends, now we start streaming
+    if streaming:
+        await stream_messages_from_pipe(client, rooms)
 
 
 async def login_using_credentials_file(
@@ -6076,6 +6197,52 @@ def check_download_media_dir() -> None:
         gs.log.debug(f'Created media download directory "{dl}" for you.')
 
 
+def check_version() -> None:
+    """Check if latest version."""
+    pkg = PROG_WITHOUT_EXT
+    ver = VERSIONNR  # default, fallback
+    try:
+        ver = pkg_resources.get_distribution(pkg).version
+    except Exception:
+        pass  # if installed via git clone, package will not exists
+
+    installed_version = LooseVersion(ver)
+    # fetch package metadata from PyPI
+    pypi_url = f"https://pypi.org/pypi/{pkg}/json"
+    response = urllib.request.urlopen(pypi_url).read().decode()
+    latest_version = max(
+        LooseVersion(s) for s in json.loads(response)["releases"].keys()
+    )
+    if installed_version >= latest_version:
+        utd = "You are up-to-date!"
+    else:
+        utd = "Consider updating!"
+    version_info = (
+        f"package: {pkg}, installed: {installed_version}, "
+        f"latest: {latest_version} ==> {utd}"
+    )
+    gs.log.debug(version_info)
+    # output format controlled via --output flag
+    text = version_info
+    json_max = {
+        "package": f"{pkg}",
+        "version_installed": f"{installed_version}",
+        "version_latest": f"{latest_version}",
+        "comment": f"{utd}",
+    }
+    # json_max.update({"key": value})  # add dict items
+    json_ = json_max.copy()
+    # json_.pop("key")
+    json_spec = None
+    print_output(
+        gs.pa.output,
+        text=text,
+        json_=json_,
+        json_max=json_max,
+        json_spec=json_spec,
+    )
+
+
 def version() -> None:
     """Print version info."""
     nio_version = pkg_resources.get_distribution("matrix-nio").version
@@ -6294,7 +6461,7 @@ def initial_check_of_args() -> None:  # noqa: C901
                 gs.stdin_use = "event"
     if gs.pa.message:
         for message in gs.pa.message:
-            if message == "-":
+            if message == "-" or message == "_":
                 STDIN_MESSAGE += 1
                 gs.stdin_use = "message"
     STDIN_TOTAL = (
@@ -6320,6 +6487,13 @@ def initial_check_of_args() -> None:  # noqa: C901
         )
     elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
         t = f'For --verify currently only "{EMOJI}" is allowed as keyword.'
+    elif gs.pa.version and (
+        gs.pa.version.lower() != PRINT and gs.pa.version.lower() != CHECK
+    ):
+        t = (
+            f'For --version currently only "{PRINT}" '
+            f'or "{CHECK}" is allowed as keyword.'
+        )
     # allow verify with everything
     # allow send with everything
     # allow listen with everything
@@ -6638,7 +6812,7 @@ def main_inner(
         "browser installed or accessible.",
     )
     ap.add_argument(
-        "-v",
+        # "-v", ## incompatible change, -v moved to --version
         "--verify",
         required=False,
         type=str,
@@ -6873,8 +7047,8 @@ def main_inner(
         type=str,
         metavar="ROOM",
         help="Forget one room or multiple rooms. "
-        "Details:: After leaving a room you should (most likely) forget the room. "
-        "Forgetting a room removes the users' room history. "
+        "Details:: After leaving a room you should (most likely) forget the "
+        "room. Forgetting a room removes the users' room history. "
         "One or multiple "
         "room aliases can be specified. The room (or multiple "
         "ones) provided in the arguments will be forgotten. "
@@ -7065,11 +7239,24 @@ def main_inner(
         "via a pipe, via stdin, then specify the special "
         "character '-'. If '-' is specified as message, "
         "then the program will read the message from stdin. "
+        "With '-' the whole message, all lines, will be considered "
+        "a single message and sent as one message."
         "If your message is literally '-' then use '\\-' "
         "as message in the argument. "
         "'-' may appear in any position, i.e. '-m \"start\" - \"end\"' "
         "will send 3 messages out of which the second one is read from stdin. "
-        "'-' may appear only once overall in all arguments. ",
+        "'-' may appear only once overall in all arguments. "
+        "Similar to '-', another shortcut character is '_'. The "
+        "special character '_' is used for streaming data via "
+        "a pipe on stdin. With '_' the stdin pipe is read line-by-line "
+        "and each line is treated as a separate message and sent right "
+        "away. The program waits for pipe input until the pipe is "
+        "closed. E.g. Imagine a tool that generates output sporadically "
+        f"24x7. It can be piped, i.e. streamed, into {PROG_WITHOUT_EXT}, and "
+        f"{PROG_WITHOUT_EXT} stays active, sending all input instantly. "
+        "If you want to send the literal letter '_' then escape it "
+        "and send '\\_'. "
+        "'_' can be used only once. And either '-' or '_' can be used. ",
     )
     # allow multiple messages , e.g. -i "i1.jpg" "i2.gif"
     # or -i "i1.png" -i "i2.jpeg"
@@ -7390,7 +7577,7 @@ def main_inner(
         "By default media files will not be downloaded.",
     )
     ap.add_argument(
-        "-o",
+        # "-o", # incompatible change Dec 2022, -o moved to --output
         "--os-notify",
         required=False,
         action="store_true",
@@ -7695,8 +7882,8 @@ def main_inner(
         type=str,
         metavar="USER",
         help="Get an avatar. "
-        f"Details:: Get the avatar MXC resource used by {PROG_WITHOUT_EXT}, or "
-        "one or multiple other users. Specify zero or more user ids. "
+        f"Details:: Get the avatar MXC resource used by {PROG_WITHOUT_EXT}, "
+        "or one or multiple other users. Specify zero or more user ids. "
         f"If no user id is specified, the avatar of {PROG_WITHOUT_EXT} will "
         "be fetched. If one or more user ids are given, the avatars of "
         "these users will be fetched. As response both MXC URI as well as URL "
@@ -8023,7 +8210,8 @@ def main_inner(
         default=SSL_CERTIFICATE_DEFAULT,  # when option isn't used
         metavar="SSL_CERTIFICATE_FILE",
         help="Use your own SSL certificate. "
-        "Details:: Use this option to use your own local SSL certificate file. "
+        "Details:: Use this option to use "
+        "your own local SSL certificate file. "
         "This is an optional parameter. This is useful for home servers that "
         "have their own "
         "SSL certificate. This allows you to use HTTPS/TLS for the connection "
@@ -8159,6 +8347,7 @@ def main_inner(
         "which will improve performance.",
     )
     ap.add_argument(
+        "-o",  # incompatible change Dec 2022, -o moved from --os-notify
         "--output",
         required=False,
         type=str,  # output method: text, json, json-max, ...
@@ -8199,18 +8388,34 @@ def main_inner(
         "will print no output. ",
     )
     ap.add_argument(
-        # no single char flag
+        "-v",  # incompatible change Dec 2022, -v moved here from --verify
+        "-V",  # exception, allow also uppercase V
         "--version",
         required=False,
-        action="store_true",
-        help="Print version information. "
-        "Details:: After printing version information "
+        type=str,
+        default=VERSION_UNUSED_DEFAULT,  # when -t is not used
+        nargs="?",  # makes the word optional
+        # when -v is used, but text is not added
+        const=VERSION_USED_DEFAULT,
+        metavar="PRINT|CHECK",
+        help="Print version information or check for updates. "
+        "Details:: This option takes zero or one argument. "
+        f"If no argument is given, '{PRINT}' is assumed which will "
+        f"print the version of the currently installed 'PROG_WITHOUT_EXT' "
+        f"package. '{CHECK}' is the alternative. "
+        "'{CHECK}' connects to https://pypi.org and gets the version "
+        "number of latest stable release. There is no 'calling home' "
+        "on every run, only a 'check pypi.org' upon request. Your "
+        "privacy is protected. The new release is neither downloaded, "
+        "nor installed. It just informs you. "
+        "After printing version information the "
         "program will continue to run. This is useful for having version "
         "number in the log files.",
     )
     gs.pa = ap.parse_args()
-    # wrap and indent: https://towardsdatascience.com/6-fancy-built-in-text-wrapping-techniques-in-python-a78cc57c2566
-    # ToDo: if output is not TTY, then don't add colors, e.g. when output is piped
+    # wrap and indent: https://towardsdatascience.com/6-fancy-built-in-text-
+    #                  wrapping-techniques-in-python-a78cc57c2566
+    # if output is not TTY, then don't add colors, e.g. when output is piped
     if sys.stdout.isatty():
         # You're running in a real terminal
         # colors
@@ -8265,7 +8470,7 @@ Set the log level(s).
 Set the verbosity level.
 <--login> PASSWORD|SSO
 Login to and authenticate with the Matrix homeserver.
-<-v> [EMOJI], <--verify> [EMOJI]
+<--verify> [EMOJI]
 Perform verification.
 <--logout> ME|ALL
 Logout.
@@ -8341,7 +8546,7 @@ Print your own messages as well.
 Print event ids of received messages.
 <--download-media> [DOWNLOAD_DIRECTORY]
 Download media files while listening.
-<-o>, <--os-notify>
+<--os-notify>
 Notify me of arriving messages.
 <--set-device-name> DEVICE_NAME
 Set or rename the current device.
@@ -8433,10 +8638,10 @@ Specify a homeserver for use by certain actions.
 Specify a device name, for use by certain actions.
 <--sync> FULL|OFF
 Choose synchronization options.
-<--output> TEXT|JSON|JSON-MAX|JSON-SPEC
+<-o> TEXT|JSON|JSON-MAX|JSON-SPEC, <--output> TEXT|JSON|JSON-MAX|JSON-SPEC
 Select an output format.
-<--version>
-Print version information.
+<-v> [PRINT|CHECK], -V [PRINT|CHECK], <--version> [PRINT|CHECK]
+Print version information or check for updates.
 """.replace(
             "<", eon
         ).replace(
@@ -8588,7 +8793,10 @@ Print version information.
         ) from None
 
     if gs.pa.version:
-        version()  # continue execution
+        if gs.pa.version.lower() == PRINT:
+            version()  # continue execution
+        else:
+            check_version()  # continue execution
         if not (
             gs.send_action
             or gs.room_action

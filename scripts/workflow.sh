@@ -66,10 +66,10 @@ select opt in "${options[@]}"; do
 done
 
 PS3='Please enter your choice: '
-OPT1="scripts/update-1-version.sh # increment MAJOR version number, incompatible"
+OPT1="scripts/update-1-version.sh --mayor # increment MAJOR version number, incompatible"
 OPT2="scripts/update-1-version.sh --minor # increment MINOR version number, new feature"
 OPT3="scripts/update-1-version.sh --patch # increment PATCH version number, bug fix"
-OPT4="scripts/update-2-help-manual.py # update help-manual file, puts it also inte README.md"
+OPT4="scripts/update-2-help-manual.py # update help-manual file, puts it also into README.md"
 OPT5="scripts/update-4-help-help.py # update help-help-pre file, puts it inte matix_commander.py"
 OPT6="scripts/create-help-help.sh # update help-help file"
 OPT7="scripts/create-help-usage.sh # update help-usage file"
@@ -159,7 +159,7 @@ select opt in "${options[@]}"; do
 done
 
 PS3='Please enter your choice: '
-OPT1="scripts/update-4-tag.sh # create new annotated tag"
+OPT1="scripts/update-5-tag.sh # create new annotated tag"
 OPTC="Continue"
 OPTQ="Quit"
 options=("$OPT1" "$OPTC" "$OPTQ")

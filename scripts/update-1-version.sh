@@ -12,12 +12,12 @@
 # changes 1 line in "setup.cfg", the PyPi set-up file
 # creates 1-line `VERSION` file
 #
-# the script can take 1 argument: either `--minor` or `--patch`
-# the default is `--mayor`
+# the script must take 1 argument: either `--mayor`, `--minor` or `--patch`
+# NO default is set on purpose.
 
 FN="matrix_commander/matrix_commander.py"
 VERSION_FILE="VERSION"
-UPDATE="MAYOR"
+UPDATE="invalid"
 
 if ! [ -f "$FN" ]; then
     FN="../$FN"
@@ -33,6 +33,10 @@ if ! [ -f "$FN" ]; then
     exit 1
 fi
 
+if [ "${1,,}" == "-ma" ] || [ "${1,,}" == "--mayor" ]; then
+    UPDATE="MAYOR"
+fi
+
 if [ "${1,,}" == "-m" ] || [ "${1,,}" == "--minor" ]; then
     UPDATE="MINOR"
 fi
@@ -40,6 +44,12 @@ fi
 if [ "${1,,}" == "-p" ] || [ "${1,,}" == "--patch" ]; then
     UPDATE="PATCH"
 fi
+
+if [ "${UPDATE,,}" == "invalid" ]; then
+    echo "Error: No version type specified: specify either '--mayor', '--minor' or '--patch'."
+    exit 2
+fi
+
 echo "Doing a $UPDATE version increment."
 
 PREFIX="VERSION = "

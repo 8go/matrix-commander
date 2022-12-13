@@ -19,7 +19,7 @@ matrix-commander supports these arguments:
   Set the verbosity level.
 --login PASSWORD|SSO
   Login to and authenticate with the Matrix homeserver.
--v [EMOJI], --verify [EMOJI]
+--verify [EMOJI]
   Perform verification.
 --logout ME|ALL
   Logout.
@@ -96,7 +96,7 @@ matrix-commander supports these arguments:
   Print event ids of received messages.
 --download-media [DOWNLOAD_DIRECTORY]
   Download media files while listening.
--o, --os-notify
+--os-notify
   Notify me of arriving messages.
 --set-device-name DEVICE_NAME
   Set or rename the current device.
@@ -191,10 +191,10 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
   Specify a device name, for use by certain actions.
 --sync FULL|OFF
   Choose synchronization options.
---output TEXT|JSON|JSON-MAX|JSON-SPEC
+-o TEXT|JSON|JSON-MAX|JSON-SPEC, --output TEXT|JSON|JSON-MAX|JSON-SPEC
   Select an output format.
---version
-  Print version information.
+-v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
+  Print version information or check for updates.
 
-You are running version 5.2.0 2022-12-12. Enjoy, star on Github and contribute
+You are running version 6.0.0 2022-12-13. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

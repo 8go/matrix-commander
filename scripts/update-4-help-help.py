@@ -2,9 +2,10 @@
 
 # - runs `create-help-help-pre.sh` to create output file `help.help.pre.txt`
 # - replace this pattern:
-#   ```
-#   usage: ...
-#   ```
+#
+#   help_help_pre = """ ...
+#   """
+#
 #   in the matrix_commander.py file with the content of the
 #   newly created `help.help.pre.txt` file
 # - runs a diff on the previous and new matrix_commander.py to show the changes
@@ -68,8 +69,8 @@ with open(filename, "r+") as f:
     text = f.read()
     print(f"Length of {filename} before: {len(text)}")
     text = re.sub(
-        r'help_help_pre = f"""\n[\s\S]*?"""',
-        'help_help_pre = f"""\n'
+        r'help_help_pre = """\n[\s\S]*?"""',
+        r'help_help_pre = """\n'
         + helptext.translate(
             str.maketrans(
                 {

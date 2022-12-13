@@ -762,7 +762,7 @@ your local installation.  ─── For less information just use --help instead
 
 usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]]
-                        [--verbose] [--login PASSWORD|SSO] [-v [EMOJI]]
+                        [--verbose] [--login PASSWORD|SSO] [--verify [EMOJI]]
                         [--logout ME|ALL] [-c CREDETIALS_FILE]
                         [-s STORE_DIRECTORY] [-r ROOM [ROOM ...]]
                         [--room-default DEFAULT_ROOM]
@@ -785,7 +785,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--proxy PROXY] [-n] [--encrypted]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
-                        [--download-media [DOWNLOAD_DIRECTORY]] [-o]
+                        [--download-media [DOWNLOAD_DIRECTORY]] [--os-notify]
                         [--set-device-name DEVICE_NAME]
                         [--set-display-name DISPLAY_NAME] [--get-display-name]
                         [--set-presence ONLINE|OFFLINE|UNAVAILABLE]
@@ -819,8 +819,8 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--plain] [--separator SEPARATOR]
                         [--access-token ACCESS_TOKEN] [--password PASSWORD]
                         [--homeserver HOMESERVER_URL] [--device DEVICE_NAME]
-                        [--sync FULL|OFF]
-                        [--output TEXT|JSON|JSON-MAX|JSON-SPEC] [--version]
+                        [--sync FULL|OFF] [-o TEXT|JSON|JSON-MAX|JSON-SPEC]
+                        [-v [PRINT|CHECK]]
 
 Welcome to matrix-commander, a Matrix CLI client.
 
@@ -885,8 +885,7 @@ options:
                         if the server supports it and if there is access to a
                         browser. So, don't use SSO on headless homeservers
                         where there is no browser installed or accessible.
-  -v [EMOJI], --verify [EMOJI]
-                        Perform verification. Details:: By default, no
+  --verify [EMOJI]      Perform verification. Details:: By default, no
                         verification is performed. Possible values are:
                         "emoji". If verification is desired, run this program
                         in the foreground (not as a service) and without a
@@ -1150,12 +1149,25 @@ options:
                         message into matrix-commander via a pipe, via stdin,
                         then specify the special character '-'. If '-' is
                         specified as message, then the program will read the
-                        message from stdin. If your message is literally '-'
-                        then use '\-' as message in the argument. '-' may
-                        appear in any position, i.e. '-m "start" - "end"' will
-                        send 3 messages out of which the second one is read
-                        from stdin. '-' may appear only once overall in all
-                        arguments.
+                        message from stdin. With '-' the whole message, all
+                        lines, will be considered a single message and sent as
+                        one message.If your message is literally '-' then use
+                        '\-' as message in the argument. '-' may appear in any
+                        position, i.e. '-m "start" - "end"' will send 3
+                        messages out of which the second one is read from
+                        stdin. '-' may appear only once overall in all
+                        arguments. Similar to '-', another shortcut character
+                        is '_'. The special character '_' is used for
+                        streaming data via a pipe on stdin. With '_' the stdin
+                        pipe is read line-by-line and each line is treated as
+                        a separate message and sent right away. The program
+                        waits for pipe input until the pipe is closed. E.g.
+                        Imagine a tool that generates output sporadically
+                        24x7. It can be piped, i.e. streamed, into matrix-
+                        commander, and matrix-commander stays active, sending
+                        all input instantly. If you want to send the literal
+                        letter '_' then escape it and send '\_'. '_' can be
+                        used only once. And either '-' or '_' can be used.
   -i IMAGE_FILE [IMAGE_FILE ...], --image IMAGE_FILE [IMAGE_FILE ...]
                         Send one or multiple image files. Details:: This
                         option can be used multiple times to send multiple
@@ -1317,7 +1329,7 @@ options:
                         directory. If media is encrypted it will be decrypted
                         and stored decrypted. By default media files will not
                         be downloaded.
-  -o, --os-notify       Notify me of arriving messages. Details:: If set and
+  --os-notify           Notify me of arriving messages. Details:: If set and
                         listening, then program will attempt to visually
                         notify of arriving messages through the operating
                         system. By default there is no notification via OS.
@@ -1769,7 +1781,7 @@ options:
                         and the server before a 'send'. If you have chosen
                         'off', synchronization will be skipped entirely before
                         the 'send' which will improve performance.
-  --output TEXT|JSON|JSON-MAX|JSON-SPEC
+  -o TEXT|JSON|JSON-MAX|JSON-SPEC, --output TEXT|JSON|JSON-MAX|JSON-SPEC
                         Select an output format. Details:: This option decides
                         on how the output is presented. Currently offered
                         choices are: 'text', 'json', 'json-max', and 'json-
@@ -1800,11 +1812,22 @@ options:
                         currently '--json-spec' only provides outputs for '--
                         listen' and '--tail'. All other arguments like '--get-
                         room-info' will print no output.
-  --version             Print version information. Details:: After printing
-                        version information program will continue to run. This
-                        is useful for having version number in the log files.
+  -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
+                        Print version information or check for updates.
+                        Details:: This option takes zero or one argument. If
+                        no argument is given, 'print' is assumed which will
+                        print the version of the currently installed
+                        'PROG_WITHOUT_EXT' package. 'check' is the
+                        alternative. '{CHECK}' connects to https://pypi.org
+                        and gets the version number of latest stable release.
+                        There is no 'calling home' on every run, only a 'check
+                        pypi.org' upon request. Your privacy is protected. The
+                        new release is neither downloaded, nor installed. It
+                        just informs you. After printing version information
+                        the program will continue to run. This is useful for
+                        having version number in the log files.
 
-You are running version 5.1.0 2022-12-11. Enjoy, star on Github and contribute
+You are running version 6.0.0 2022-12-13. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 
