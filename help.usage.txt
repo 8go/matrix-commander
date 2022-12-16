@@ -62,5 +62,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--sync FULL|OFF] [-o TEXT|JSON|JSON-MAX|JSON-SPEC]
                         [-v [PRINT|CHECK]]
 
-You are running version 6.0.0 2022-12-13. Enjoy, star on Github and contribute
+You are running version 6.0.1 2022-12-16. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

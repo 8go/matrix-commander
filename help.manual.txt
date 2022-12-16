@@ -1085,5 +1085,5 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 6.0.0 2022-12-13. Enjoy, star on Github and contribute
+You are running version 6.0.1 2022-12-16. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

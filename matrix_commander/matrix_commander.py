@@ -92,8 +92,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-12-13"
-VERSIONNR = "6.0.0"
+VERSION = "2022-12-16"
+VERSIONNR = "6.0.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5959,7 +5959,9 @@ async def action_login() -> None:
             elif sys.platform.startswith("win"):
                 cmd = ["start"]
             else:
-                cmd = [shutil.which("x-www-browser")]
+                cmd = [shutil.which("xdg-open")]
+                if cmd == [None]:
+                    cmd = [shutil.which("x-www-browser")]
             cmd.append(
                 f"{homeserver}/_matrix/client/r0/login/sso/redirect"
                 "?redirectUrl=http://localhost:38080/"
