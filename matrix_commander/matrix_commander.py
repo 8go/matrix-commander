@@ -5611,7 +5611,7 @@ async def action_verify() -> None:
             f"{PROG_WITHOUT_EXT} is ready and waiting for the other party to "
             "initiate an emoji verification with us by selecting "
             "'Verify by Emoji' "
-            "in their Matrix client. Read --verify instructions in --help "
+            "in their Matrix client. Read --verify instructions in --manual "
             "carefully to assist you in how to do this quickly.",
             file=sys.stdout,
             flush=True,
