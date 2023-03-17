@@ -508,15 +508,15 @@ $ rssfeed | matrix-commander --split "\n\n\n"
 $ matrix-commander --credentials usr1room2.json # select credentials file
 $ matrix-commander --store /var/storage/ # select store directory
 $ # Send to a specific room
-$ matrix-commander -m "hi" --room '!YourRoomId:example.org'
+$ matrix-commander -m "hi" --room '!YourRoomId:example.com'
 $ # some shells require the ! of the room id to be escaped with \
-$ matrix-commander -m "hi" --room "\!YourRoomId:example.org"
+$ matrix-commander -m "hi" --room "\!YourRoomId:example.com"
 $ # Send to multiple rooms
-$ matrix-commander -m "hi" -r '!r1:example.org' '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.com' '!r2:example.com'
 $ # Send to multiple rooms, another way
-$ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.com' -r '!r2:example.com'
 $ # Send to a specific user, DM, direct messaging, using full user id
-$ matrix-commander -m "hi" --user '@MyFriend:example.org'
+$ matrix-commander -m "hi" --user '@MyFriend:example.com'
 $ # Send to a specific user, DM, direct messaging, using partial user id
 $ # It will be assumed that user @MyFriend is on same homeserver
 $ matrix-commander -m "hi" --user '@MyFriend'
@@ -525,9 +525,9 @@ $ # Careful! Display names might not be unique. Don't DM the wrong person!
 $ # To double-check the display names do a --joined-members "*"
 $ matrix-commander -m "hi" -u 'Joe'
 $ # Send to multiple users
-$ matrix-commander -m "hi" -u '@Joe:example.org' '@Jane:example.org'
+$ matrix-commander -m "hi" -u '@Joe:example.com' '@Jane:example.com'
 $ # Send to multiple users, another way
-$ matrix-commander -m "hi" -u '@Joe:example.org' -u '@Jane:example.org'
+$ matrix-commander -m "hi" -u '@Joe:example.com' -u '@Jane:example.com'
 $ # send 2 images and 1 text, text will be sent last
 $ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
@@ -617,14 +617,14 @@ $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
-$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.com'
 $ matrix-commander --room-set-alias 'someRoomAlias' \
     '\!someroomId1:example.com'
-$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
+$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.com'
+$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.com' \
     'someRoomAlias2'
-$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
+$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.com'
+$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.com' \
     'someRoomAlias2'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
@@ -1096,9 +1096,9 @@ options:
                         specifying a user. So, if you know the room, it is
                         preferred to use --room instead of --user. For b) and
                         c) --user can be specified in 3 ways: 1) full user id
-                        as in '@john:example.org', 2) partial user id as in
+                        as in '@john:example.com', 2) partial user id as in
                         '@john' when the user is on the same homeserver
-                        (example.org will be automatically appended), or 3) a
+                        (example.com will be automatically appended), or 3) a
                         display name as in 'john'. Be careful, when using
                         display names as they might not be unique, and you
                         could be sending to the wrong person. To see possible
@@ -1476,8 +1476,8 @@ options:
                         data (if any) in JSON format. (c) a string containing
                         the URL. All strings must be UTF-8. There are a few
                         placeholders. They are: __homeserver__ (like
-                        https://matrix.example.org), __hostname__ (like
-                        matrix.example.org), __access_token__, __user_id__
+                        https://matrix.example.com), __hostname__ (like
+                        matrix.example.com), __access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
                         __room_id__. If a placeholder is found it is replaced
                         with the value from the local credentials file. An
@@ -1581,7 +1581,7 @@ options:
                         number of arguments forming pairs. You can have
                         multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
-                        like this: '#someRoomAlias:matrix.example.org'. Short
+                        like this: '#someRoomAlias:matrix.example.com'. Short
                         aliases like 'someRoomAlias' or '#someRoomAlias' are
                         also accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
@@ -1593,7 +1593,7 @@ options:
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
-                        looks like this: '#someRoomAlias:matrix.example.org'.
+                        looks like this: '#someRoomAlias:matrix.example.com'.
                         Short aliases like 'someRoomAlias' or '#someRoomAlias'
                         are also accepted. In case of a short alias, it will
                         be automatically prefixed with '#' and the homeserver
@@ -1608,7 +1608,7 @@ options:
                         multiple room aliases per room. So, you may delete
                         multiple aliases from the same room or from different
                         rooms. A room alias looks like this:
-                        '#someRoomAlias:matrix.example.org'. Short aliases
+                        '#someRoomAlias:matrix.example.com'. Short aliases
                         like 'someRoomAlias' or '#someRoomAlias' are also
                         accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
