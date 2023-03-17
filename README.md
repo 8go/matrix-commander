@@ -284,7 +284,7 @@ to the just configured room.
 
 As second step after the `--login`, it is recommended to perform an
 emoji verification by running `--verify`. Verification is always
-interactive, bacause the emojis need to be confirmed via the keyboard.
+interactive, because the emojis need to be confirmed via the keyboard.
 If desired `--login` and `--verify` can be done in the same first run.
 The program can accept verification request and verify other devices
 via emojis. See `--verify` in help for more details.
@@ -426,7 +426,7 @@ and automatically decrypted for you.
         the `requirements.txt` file
 
 - Installing dependencies of `matrix-commander-tui`
-  - `matrix-commander-tui` requires that you install `vipe` from the packge `moreutils`.
+  - `matrix-commander-tui` requires that you install `vipe` from the package `moreutils`.
     - Read https://www.putorius.net/moreutils.html for installation instructions.
     - As an alternative you could also install `vipe.sh` from https://github.com/0mp/vipe.sh/blob/master/vipe.sh.
   - `matrix-commander-tui` requires that you install `fzf`.
@@ -763,7 +763,7 @@ your local installation.  ─── For less information just use --help instead
 usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]]
                         [--verbose] [--login PASSWORD|SSO] [--verify [EMOJI]]
-                        [--logout ME|ALL] [-c CREDETIALS_FILE]
+                        [--logout ME|ALL] [-c CREDENTIALS_FILE]
                         [-s STORE_DIRECTORY] [-r ROOM [ROOM ...]]
                         [--room-default DEFAULT_ROOM]
                         [--room-create ROOM_ALIAS [ROOM_ALIAS ...]]
@@ -828,7 +828,7 @@ options:
   --usage               Print usage. Details:: See also --help for printing a
                         bit more and --manual for printing a lot more detailed
                         information.
-  -h, --help            Print help. Details:: ee also --usage for printing
+  -h, --help            Print help. Details:: See also --usage for printing
                         even less information, and --manual for printing more
                         detailed information.
   --manual              Print manual. Details:: See also --usage for printing
@@ -933,12 +933,12 @@ options:
                         store, the logout action removes the device and makes
                         the access-token stored in the credentials invalid.
                         Hence, after a --logout, one must manually remove
-                        creditials and store, and then perform a new --login
+                        credentials and store, and then perform a new --login
                         to use matrix-commander again. You can perfectly use
                         matrix-commander without ever logging out. --logout is
                         a cleanup if you have decided not to use this (or all)
                         device(s) ever again.
-  -c CREDETIALS_FILE, --credentials CREDETIALS_FILE
+  -c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
                         Specify location of credentials file. Details:: On
                         first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -999,7 +999,7 @@ options:
                         created. For each created room one line with room id
                         and alias will be printed to stdout. If you are not
                         interested in an alias, provide an empty string like
-                        "".The alias provided must be in canocial local form,
+                        "".The alias provided must be in canonical local form,
                         i.e. if you want a final full alias like
                         "#SomeRoomAlias:matrix.example.com" you must provide
                         the string 'SomeRoomAlias'. The user must be permitted
@@ -1018,7 +1018,7 @@ options:
                         printed to stdout. The user must be permitted to
                         create rooms. Combine --room-dm-create with --name,
                         --topic, --alias to add names, topics and aliases to
-                        the room(s) to be created.DM rooms are by default
+                        the room(s) to be created. DM rooms are by default
                         created encrypted; to overwrite that and to create a
                         room with encryption disabled use '--plain'. Room id,
                         room alias, encryption and other fields are printed as
@@ -1080,7 +1080,7 @@ options:
                         is providing the functionality of 'DM (direct
                         messaging)'. For c) this option allows an alternative
                         to specifying a room as destination for some --listen
-                        actions. For d) this gives the otion to delete the
+                        actions. For d) this gives the option to delete the
                         device of a different user. ----- What is a DM?
                         matrix-commander tries to find a room that contains
                         only the sender and the receiver, hence DM. These
@@ -1106,7 +1106,7 @@ options:
                         which will show you the display names in the middle
                         column.
   --user-login USER     Specify user for --login. Details:: Optional argument
-                        to specify the user for --login. This gives the otion
+                        to specify the user for --login. This gives the option
                         to specify the user id for login. For '--login sso'
                         the --user-login is not needed as user id can be
                         obtained from server via SSO. For '--login password',
@@ -1151,7 +1151,7 @@ options:
                         specified as message, then the program will read the
                         message from stdin. With '-' the whole message, all
                         lines, will be considered a single message and sent as
-                        one message.If your message is literally '-' then use
+                        one message. If your message is literally '-' then use
                         '\-' as message in the argument. '-' may appear in any
                         position, i.e. '-m "start" - "end"' will send 3
                         messages out of which the second one is read from
@@ -1589,7 +1589,7 @@ options:
                         multiple times to the same room results in an error.
                         --room-put-alias is eqivalent to --room-set-alias.
   --room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
-                        Show room ids correspnding to room aliases. Details::
+                        Show room ids corresponding to room aliases. Details::
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
@@ -1792,7 +1792,7 @@ options:
                         consumed by humans, i.e. readable text. If you have
                         chosen 'json', the output will be formatted as JSON.
                         The content of the JSON object matches the data
-                        provided by the matrix-nio SDK. In some occassions the
+                        provided by the matrix-nio SDK. In some occasions the
                         output is enhanced by having a few extra data items
                         added for convenience. In most cases the output will
                         be processed by other programs rather than read by
