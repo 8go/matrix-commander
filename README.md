@@ -1938,6 +1938,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 - Thanks to all of you who already have contributed! So appreciated!
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
-    @opk12, @pataquets, @KizzyCode, @murlock1000, etc.
+    @opk12, @pataquets, @KizzyCode, @murlock1000, @Benjamin-Loison,
+    @barathrm, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
