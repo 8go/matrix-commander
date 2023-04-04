@@ -284,7 +284,7 @@ to the just configured room.
 
 As second step after the `--login`, it is recommended to perform an
 emoji verification by running `--verify`. Verification is always
-interactive, bacause the emojis need to be confirmed via the keyboard.
+interactive, because the emojis need to be confirmed via the keyboard.
 If desired `--login` and `--verify` can be done in the same first run.
 The program can accept verification request and verify other devices
 via emojis. See `--verify` in help for more details.
@@ -426,7 +426,7 @@ and automatically decrypted for you.
         the `requirements.txt` file
 
 - Installing dependencies of `matrix-commander-tui`
-  - `matrix-commander-tui` requires that you install `vipe` from the packge `moreutils`.
+  - `matrix-commander-tui` requires that you install `vipe` from the package `moreutils`.
     - Read https://www.putorius.net/moreutils.html for installation instructions.
     - As an alternative you could also install `vipe.sh` from https://github.com/0mp/vipe.sh/blob/master/vipe.sh.
   - `matrix-commander-tui` requires that you install `fzf`.
@@ -508,15 +508,15 @@ $ rssfeed | matrix-commander --split "\n\n\n"
 $ matrix-commander --credentials usr1room2.json # select credentials file
 $ matrix-commander --store /var/storage/ # select store directory
 $ # Send to a specific room
-$ matrix-commander -m "hi" --room '!YourRoomId:example.org'
+$ matrix-commander -m "hi" --room '!YourRoomId:example.com'
 $ # some shells require the ! of the room id to be escaped with \
-$ matrix-commander -m "hi" --room "\!YourRoomId:example.org"
+$ matrix-commander -m "hi" --room "\!YourRoomId:example.com"
 $ # Send to multiple rooms
-$ matrix-commander -m "hi" -r '!r1:example.org' '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.com' '!r2:example.com'
 $ # Send to multiple rooms, another way
-$ matrix-commander -m "hi" -r '!r1:example.org' -r '!r2:example.org'
+$ matrix-commander -m "hi" -r '!r1:example.com' -r '!r2:example.com'
 $ # Send to a specific user, DM, direct messaging, using full user id
-$ matrix-commander -m "hi" --user '@MyFriend:example.org'
+$ matrix-commander -m "hi" --user '@MyFriend:example.com'
 $ # Send to a specific user, DM, direct messaging, using partial user id
 $ # It will be assumed that user @MyFriend is on same homeserver
 $ matrix-commander -m "hi" --user '@MyFriend'
@@ -525,9 +525,9 @@ $ # Careful! Display names might not be unique. Don't DM the wrong person!
 $ # To double-check the display names do a --joined-members "*"
 $ matrix-commander -m "hi" -u 'Joe'
 $ # Send to multiple users
-$ matrix-commander -m "hi" -u '@Joe:example.org' '@Jane:example.org'
+$ matrix-commander -m "hi" -u '@Joe:example.com' '@Jane:example.com'
 $ # Send to multiple users, another way
-$ matrix-commander -m "hi" -u '@Joe:example.org' -u '@Jane:example.org'
+$ matrix-commander -m "hi" -u '@Joe:example.com' -u '@Jane:example.com'
 $ # send 2 images and 1 text, text will be sent last
 $ matrix-commander -i photo1.jpg photo2.img -m "Do you like my 2 photos?"
 $ # send 1 image and no text
@@ -617,14 +617,14 @@ $ matrix-commander --get-openid-token '@user1:example.com' '@user2:example.com'
 $ matrix-commander --room-get-visibility # get default room visibility
 $ matrix-commander --room-get-visibility \
     '\!someroomId1:example.com' '\!someroomId2:example.com'
-$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.org'
+$ matrix-commander --room-set-alias '#someRoomAlias:matrix.example.com'
 $ matrix-commander --room-set-alias 'someRoomAlias' \
     '\!someroomId1:example.com'
-$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.org' \
+$ matrix-commander --room-resolve-alias '#someRoomAlias:matrix.example.com'
+$ matrix-commander --room-resolve-alias '#someRoomAlias1:matrix.example.com' \
     'someRoomAlias2'
-$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.org'
-$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.org' \
+$ matrix-commander --room-delete-alias '#someRoomAlias:matrix.example.com'
+$ matrix-commander --room-delete-alias '#someRoomAlias1:matrix.example.com' \
     'someRoomAlias2'
 $ matrix-commander --room-get-state # get state of default room
 $ matrix-commander --room-get-state \
@@ -763,7 +763,7 @@ your local installation.  ─── For less information just use --help instead
 usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]]
                         [--verbose] [--login PASSWORD|SSO] [--verify [EMOJI]]
-                        [--logout ME|ALL] [-c CREDETIALS_FILE]
+                        [--logout ME|ALL] [-c CREDENTIALS_FILE]
                         [-s STORE_DIRECTORY] [-r ROOM [ROOM ...]]
                         [--room-default DEFAULT_ROOM]
                         [--room-create ROOM_ALIAS [ROOM_ALIAS ...]]
@@ -828,7 +828,7 @@ options:
   --usage               Print usage. Details:: See also --help for printing a
                         bit more and --manual for printing a lot more detailed
                         information.
-  -h, --help            Print help. Details:: ee also --usage for printing
+  -h, --help            Print help. Details:: See also --usage for printing
                         even less information, and --manual for printing more
                         detailed information.
   --manual              Print manual. Details:: See also --usage for printing
@@ -933,12 +933,12 @@ options:
                         store, the logout action removes the device and makes
                         the access-token stored in the credentials invalid.
                         Hence, after a --logout, one must manually remove
-                        creditials and store, and then perform a new --login
+                        credentials and store, and then perform a new --login
                         to use matrix-commander again. You can perfectly use
                         matrix-commander without ever logging out. --logout is
                         a cleanup if you have decided not to use this (or all)
                         device(s) ever again.
-  -c CREDETIALS_FILE, --credentials CREDETIALS_FILE
+  -c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
                         Specify location of credentials file. Details:: On
                         first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -999,7 +999,7 @@ options:
                         created. For each created room one line with room id
                         and alias will be printed to stdout. If you are not
                         interested in an alias, provide an empty string like
-                        "".The alias provided must be in canocial local form,
+                        "".The alias provided must be in canonical local form,
                         i.e. if you want a final full alias like
                         "#SomeRoomAlias:matrix.example.com" you must provide
                         the string 'SomeRoomAlias'. The user must be permitted
@@ -1018,7 +1018,7 @@ options:
                         printed to stdout. The user must be permitted to
                         create rooms. Combine --room-dm-create with --name,
                         --topic, --alias to add names, topics and aliases to
-                        the room(s) to be created.DM rooms are by default
+                        the room(s) to be created. DM rooms are by default
                         created encrypted; to overwrite that and to create a
                         room with encryption disabled use '--plain'. Room id,
                         room alias, encryption and other fields are printed as
@@ -1080,7 +1080,7 @@ options:
                         is providing the functionality of 'DM (direct
                         messaging)'. For c) this option allows an alternative
                         to specifying a room as destination for some --listen
-                        actions. For d) this gives the otion to delete the
+                        actions. For d) this gives the option to delete the
                         device of a different user. ----- What is a DM?
                         matrix-commander tries to find a room that contains
                         only the sender and the receiver, hence DM. These
@@ -1096,9 +1096,9 @@ options:
                         specifying a user. So, if you know the room, it is
                         preferred to use --room instead of --user. For b) and
                         c) --user can be specified in 3 ways: 1) full user id
-                        as in '@john:example.org', 2) partial user id as in
+                        as in '@john:example.com', 2) partial user id as in
                         '@john' when the user is on the same homeserver
-                        (example.org will be automatically appended), or 3) a
+                        (example.com will be automatically appended), or 3) a
                         display name as in 'john'. Be careful, when using
                         display names as they might not be unique, and you
                         could be sending to the wrong person. To see possible
@@ -1106,7 +1106,7 @@ options:
                         which will show you the display names in the middle
                         column.
   --user-login USER     Specify user for --login. Details:: Optional argument
-                        to specify the user for --login. This gives the otion
+                        to specify the user for --login. This gives the option
                         to specify the user id for login. For '--login sso'
                         the --user-login is not needed as user id can be
                         obtained from server via SSO. For '--login password',
@@ -1151,7 +1151,7 @@ options:
                         specified as message, then the program will read the
                         message from stdin. With '-' the whole message, all
                         lines, will be considered a single message and sent as
-                        one message.If your message is literally '-' then use
+                        one message. If your message is literally '-' then use
                         '\-' as message in the argument. '-' may appear in any
                         position, i.e. '-m "start" - "end"' will send 3
                         messages out of which the second one is read from
@@ -1476,8 +1476,8 @@ options:
                         data (if any) in JSON format. (c) a string containing
                         the URL. All strings must be UTF-8. There are a few
                         placeholders. They are: __homeserver__ (like
-                        https://matrix.example.org), __hostname__ (like
-                        matrix.example.org), __access_token__, __user_id__
+                        https://matrix.example.com), __hostname__ (like
+                        matrix.example.com), __access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
                         __room_id__. If a placeholder is found it is replaced
                         with the value from the local credentials file. An
@@ -1581,7 +1581,7 @@ options:
                         number of arguments forming pairs. You can have
                         multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
-                        like this: '#someRoomAlias:matrix.example.org'. Short
+                        like this: '#someRoomAlias:matrix.example.com'. Short
                         aliases like 'someRoomAlias' or '#someRoomAlias' are
                         also accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
@@ -1589,11 +1589,11 @@ options:
                         multiple times to the same room results in an error.
                         --room-put-alias is eqivalent to --room-set-alias.
   --room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
-                        Show room ids correspnding to room aliases. Details::
+                        Show room ids corresponding to room aliases. Details::
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
-                        looks like this: '#someRoomAlias:matrix.example.org'.
+                        looks like this: '#someRoomAlias:matrix.example.com'.
                         Short aliases like 'someRoomAlias' or '#someRoomAlias'
                         are also accepted. In case of a short alias, it will
                         be automatically prefixed with '#' and the homeserver
@@ -1608,7 +1608,7 @@ options:
                         multiple room aliases per room. So, you may delete
                         multiple aliases from the same room or from different
                         rooms. A room alias looks like this:
-                        '#someRoomAlias:matrix.example.org'. Short aliases
+                        '#someRoomAlias:matrix.example.com'. Short aliases
                         like 'someRoomAlias' or '#someRoomAlias' are also
                         accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
@@ -1792,7 +1792,7 @@ options:
                         consumed by humans, i.e. readable text. If you have
                         chosen 'json', the output will be formatted as JSON.
                         The content of the JSON object matches the data
-                        provided by the matrix-nio SDK. In some occassions the
+                        provided by the matrix-nio SDK. In some occasions the
                         output is enhanced by having a few extra data items
                         added for convenience. In most cases the output will
                         be processed by other programs rather than read by
