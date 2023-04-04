@@ -999,8 +999,8 @@ options:
                         created. For each created room one line with room id
                         and alias will be printed to stdout. If you are not
                         interested in an alias, provide an empty string like
-                        "".The alias provided must be in canonical local form,
-                        i.e. if you want a final full alias like
+                        "". The alias provided must be in canonical local
+                        form, i.e. if you want a final full alias like
                         "#SomeRoomAlias:matrix.example.com" you must provide
                         the string 'SomeRoomAlias'. The user must be permitted
                         to create rooms. Combine --room-create with --name and
@@ -1096,9 +1096,9 @@ options:
                         specifying a user. So, if you know the room, it is
                         preferred to use --room instead of --user. For b) and
                         c) --user can be specified in 3 ways: 1) full user id
-                        as in '@john:example.com', 2) partial user id as in
+                        as in '@john:example.org', 2) partial user id as in
                         '@john' when the user is on the same homeserver
-                        (example.com will be automatically appended), or 3) a
+                        (example.org will be automatically appended), or 3) a
                         display name as in 'john'. Be careful, when using
                         display names as they might not be unique, and you
                         could be sending to the wrong person. To see possible
@@ -1476,8 +1476,8 @@ options:
                         data (if any) in JSON format. (c) a string containing
                         the URL. All strings must be UTF-8. There are a few
                         placeholders. They are: __homeserver__ (like
-                        https://matrix.example.com), __hostname__ (like
-                        matrix.example.com), __access_token__, __user_id__
+                        https://matrix.example.org), __hostname__ (like
+                        matrix.example.org), __access_token__, __user_id__
                         (like @mc:matrix.example.com), __device_id__, and
                         __room_id__. If a placeholder is found it is replaced
                         with the value from the local credentials file. An
@@ -1581,7 +1581,7 @@ options:
                         number of arguments forming pairs. You can have
                         multiple room aliases per room. So, you may add
                         multiple aliases to the same room. A room alias looks
-                        like this: '#someRoomAlias:matrix.example.com'. Short
+                        like this: '#someRoomAlias:matrix.example.org'. Short
                         aliases like 'someRoomAlias' or '#someRoomAlias' are
                         also accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
@@ -1593,7 +1593,7 @@ options:
                         Resolves a room alias to the corresponding room id, or
                         multiple room aliases to their corresponding room ids.
                         Provide one or multiple room aliases. A room alias
-                        looks like this: '#someRoomAlias:matrix.example.com'.
+                        looks like this: '#someRoomAlias:matrix.example.org'.
                         Short aliases like 'someRoomAlias' or '#someRoomAlias'
                         are also accepted. In case of a short alias, it will
                         be automatically prefixed with '#' and the homeserver
@@ -1608,7 +1608,7 @@ options:
                         multiple room aliases per room. So, you may delete
                         multiple aliases from the same room or from different
                         rooms. A room alias looks like this:
-                        '#someRoomAlias:matrix.example.com'. Short aliases
+                        '#someRoomAlias:matrix.example.org'. Short aliases
                         like 'someRoomAlias' or '#someRoomAlias' are also
                         accepted. In case of a short alias, it will be
                         automatically prefixed with '#' and the homeserver
@@ -1827,7 +1827,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 6.0.1 2022-12-16. Enjoy, star on Github and contribute
+You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 

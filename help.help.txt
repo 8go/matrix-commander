@@ -23,7 +23,7 @@ matrix-commander supports these arguments:
   Perform verification.
 --logout ME|ALL
   Logout.
--c CREDETIALS_FILE, --credentials CREDETIALS_FILE
+-c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
   Specify location of credentials file.
 -s STORE_DIRECTORY, --store STORE_DIRECTORY
   Specify location of store directory.
@@ -153,7 +153,7 @@ BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc ...]
 ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
   Add aliases to rooms.
 --room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
-  Show room ids correspnding to room aliases.
+  Show room ids corresponding to room aliases.
 --room-delete-alias ROOM_ALIAS [ROOM_ALIAS ...]
   Delete one or multiple rooms aliases.
 --get-openid-token [USER ...]
@@ -196,5 +196,5 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 6.0.1 2022-12-16. Enjoy, star on Github and contribute
+You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

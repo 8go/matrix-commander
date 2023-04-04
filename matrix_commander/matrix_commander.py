@@ -92,8 +92,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2022-12-16"
-VERSIONNR = "6.0.1"
+VERSION = "2023-04-04"
+VERSIONNR = "6.0.2"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -1761,7 +1761,7 @@ def is_room(room_id: str) -> bool:
 
 
 def is_short_room_alias(room_id: str) -> bool:
-    """Determine if room identifier is a local part of canocial room alias.
+    """Determine if room identifier is a local part of canonical room alias.
 
     Local parts of canonical room aliases are of syntax: somealias
 
@@ -6047,16 +6047,19 @@ async def action_login() -> None:
             )
             gs.log.info(txt)
         else:
+            # isinstance(resp, LoginError) == true
             # cleanup
             await client.close()  # not yet in gs.
             store_delete(store_dir)  # empty, just created
+            # resp does not contain secrets
+            # resp is: message="Invalid username or password", code=M_FORBIDDEN
             txt = (
                 "E234: "
                 "Log in failed. "
                 "Most likely wrong credentials were entered. "
                 f"homeserver='{homeserver}'; device name='{device_name}'; "
                 f"user='{user_id}'; room_id='{room_id}'. "
-                f"Failed to log in: {privacy_filter(str(resp))}"
+                f"Failed to log in: {resp.message}, {str(resp.status_code)}"
             )
             gs.err_count += 1
             raise MatrixCommanderError(txt)
@@ -6714,7 +6717,7 @@ def main_inner(
         required=False,
         action="store_true",
         help="Print help. "
-        "Details:: ee also --usage for printing even less information, "
+        "Details:: See also --usage for printing even less information, "
         "and --manual for printing more detailed information.",
     )
     # see -h, see add_help=False
@@ -6876,7 +6879,7 @@ def main_inner(
         "While --logout neither removes the credentials nor the store, the "
         "logout action removes the device and makes the access-token stored "
         "in the credentials invalid. Hence, after a --logout, one must "
-        "manually remove creditials and store, and then perform a new "
+        "manually remove credentials and store, and then perform a new "
         f"--login to use {PROG_WITHOUT_EXT} again. "
         "You can perfectly use "
         f"{PROG_WITHOUT_EXT} without ever logging out. --logout is a cleanup "
@@ -6888,7 +6891,7 @@ def main_inner(
         required=False,
         type=str,
         default=CREDENTIALS_FILE_DEFAULT,
-        metavar="CREDETIALS_FILE",
+        metavar="CREDENTIALS_FILE",
         help="Specify location of credentials file. "
         "Details:: On first run, information about homeserver, "
         "user, room id, etc. will be written to a credentials "
@@ -6982,8 +6985,8 @@ def main_inner(
         "For each created room one line with room id and alias "
         "will be printed to stdout. "
         "If you are not interested in an "
-        'alias, provide an empty string like "".'
-        "The alias provided must be in canocial local form, i.e. "
+        'alias, provide an empty string like "". '
+        "The alias provided must be in canonical local form, i.e. "
         "if you want a final full alias like "
         '"#SomeRoomAlias:matrix.example.com" '
         "you must provide the string 'SomeRoomAlias'. "
@@ -7009,7 +7012,7 @@ def main_inner(
         "room id and alias will be printed to stdout. The user "
         "must be permitted to create rooms. Combine --room-dm-create "
         "with --name, --topic, --alias to add names, topics and "
-        "aliases to the room(s) to be created."
+        "aliases to the room(s) to be created. "
         "DM rooms are by default created encrypted; "
         "to overwrite that and to create a room with encryption disabled "
         "use '--plain'. "
@@ -7132,7 +7135,7 @@ def main_inner(
         "etc. For send actions '--user' is providing the functionality of "
         "'DM (direct messaging)'. For c) this option allows an alternative "
         "to specifying a room as destination for some --listen actions. "
-        "For d) this gives the otion to delete the device of a different "
+        "For d) this gives the option to delete the device of a different "
         "user. "
         f"----- What is a DM? {PROG_WITHOUT_EXT} tries to find a "
         "room that contains only the sender and the receiver, hence DM. "
@@ -7163,7 +7166,7 @@ def main_inner(
         metavar="USER",
         help="Specify user for --login. "
         "Details:: Optional argument to specify the user for --login. "
-        "This gives the otion to specify the user id for login. "
+        "This gives the option to specify the user id for login. "
         "For '--login sso' the --user-login is not needed as user id can be "
         "obtained from server via SSO. For '--login password', if not "
         "provided it will be queried via keyboard. A full user id like "
@@ -7242,7 +7245,7 @@ def main_inner(
         "character '-'. If '-' is specified as message, "
         "then the program will read the message from stdin. "
         "With '-' the whole message, all lines, will be considered "
-        "a single message and sent as one message."
+        "a single message and sent as one message. "
         "If your message is literally '-' then use '\\-' "
         "as message in the argument. "
         "'-' may appear in any position, i.e. '-m \"start\" - \"end\"' "
@@ -8035,7 +8038,7 @@ def main_inner(
         nargs="+",
         type=str,
         metavar="ROOM_ALIAS",
-        help="Show room ids correspnding to room aliases. "
+        help="Show room ids corresponding to room aliases. "
         "Details:: Resolves a room alias to the corresponding room id, "
         "or multiple room aliases to their corresponding room ids. "
         "Provide one or multiple room aliases. "
@@ -8368,7 +8371,7 @@ def main_inner(
         f"If you have chosen '{OUTPUT_JSON}', "
         "the output will be formatted as JSON. "
         "The content of the JSON object matches the data provided by the "
-        "matrix-nio SDK. In some occassions the output is enhanced "
+        "matrix-nio SDK. In some occasions the output is enhanced "
         "by having a few extra data items added for convenience. "
         "In most cases the output will be processed by other programs "
         "rather than read by humans. "
@@ -8476,7 +8479,7 @@ Login to and authenticate with the Matrix homeserver.
 Perform verification.
 <--logout> ME|ALL
 Logout.
-<-c> CREDETIALS_FILE, <--credentials> CREDETIALS_FILE
+<-c> CREDENTIALS_FILE, <--credentials> CREDENTIALS_FILE
 Specify location of credentials file.
 <-s> STORE_DIRECTORY, <--store> STORE_DIRECTORY
 Specify location of store directory.
@@ -8603,7 +8606,7 @@ Export all the Megolm decryption keys of this device.
 <--room-set-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], <--room-put-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
 Add aliases to rooms.
 <--room-resolve-alias> ROOM_ALIAS [ROOM_ALIAS ...]
-Show room ids correspnding to room aliases.
+Show room ids corresponding to room aliases.
 <--room-delete-alias> ROOM_ALIAS [ROOM_ALIAS ...]
 Delete one or multiple rooms aliases.
 <--get-openid-token> [USER ...]

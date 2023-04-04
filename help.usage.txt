@@ -3,7 +3,7 @@ Welcome to matrix-commander, a Matrix CLI client.
 usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--log-level DEBUG|INFO|WARNING|ERROR|CRITICAL [DEBUG|INFO|WARNING|ERROR|CRITICAL ...]]
                         [--verbose] [--login PASSWORD|SSO] [--verify [EMOJI]]
-                        [--logout ME|ALL] [-c CREDETIALS_FILE]
+                        [--logout ME|ALL] [-c CREDENTIALS_FILE]
                         [-s STORE_DIRECTORY] [-r ROOM [ROOM ...]]
                         [--room-default DEFAULT_ROOM]
                         [--room-create ROOM_ALIAS [ROOM_ALIAS ...]]
@@ -62,5 +62,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--sync FULL|OFF] [-o TEXT|JSON|JSON-MAX|JSON-SPEC]
                         [-v [PRINT|CHECK]]
 
-You are running version 6.0.1 2022-12-16. Enjoy, star on Github and contribute
+You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
