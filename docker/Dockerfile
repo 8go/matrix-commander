@@ -1,4 +1,4 @@
-FROM fedora:35
+FROM fedora:37
 
 # standard install packages: pip libolm-devel gcc python-devel python3-dbus
 # additional packages: libffi-devel libjpeg-devel zlib-devel (required on Raspberry Pi (4b, 32bit, running buster of Raspberry Pi OS))
