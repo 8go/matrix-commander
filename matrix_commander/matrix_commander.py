@@ -7407,7 +7407,7 @@ def main_inner(
         "Details:: If not specified, message will be sent "
         'as format "TEXT". If both --code and --emojize are '
         "specified then --code takes priority. This is "
-        "useful for sending emojis in shortcode form :boom:.",
+        "useful for sending emojis in shortcode form :collision:.",
     )
 
     # -s is already used for --store, -i for sPlit
