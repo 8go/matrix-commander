@@ -76,6 +76,8 @@ matrix-commander supports these arguments:
   Send message as format "MARKDOWN".
 -k, --code
   Send message as format "CODE".
+-j, --emojize
+  Send message after emojizing.
 -p SEPARATOR, --split SEPARATOR
   Split message text into multiple Matrix messages.
 --config CONFIG_FILE
@@ -196,5 +198,5 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
+You are running version 7.0.0 2023-04-12. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

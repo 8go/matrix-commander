@@ -19,7 +19,6 @@ import argparse
 import ast
 import asyncio
 import datetime
-import emoji
 import errno
 import getpass
 import json
@@ -44,6 +43,7 @@ from urllib.parse import quote, urlparse
 
 import aiofiles
 import aiofiles.os
+import emoji
 import magic
 import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
@@ -93,8 +93,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-04-04"
-VERSIONNR = "6.0.2"
+VERSION = "2023-04-12"
+VERSIONNR = "7.0.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -8551,7 +8551,7 @@ Send message as format "MARKDOWN".
 <-k>, <--code>
 Send message as format "CODE".
 <-j>, <--emojize>
-Emojize message (Convert shortcodes to Unicode).
+Send message after emojizing.
 <-p> SEPARATOR, <--split> SEPARATOR
 Split message text into multiple Matrix messages.
 <--config> CONFIG_FILE

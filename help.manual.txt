@@ -39,7 +39,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [-m TEXT [TEXT ...]] [-i IMAGE_FILE [IMAGE_FILE ...]]
                         [-a AUDIO_FILE [AUDIO_FILE ...]] [-f FILE [FILE ...]]
                         [-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]] [-w]
-                        [-z] [-k] [-p SEPARATOR] [--config CONFIG_FILE]
+                        [-z] [-k] [-j] [-p SEPARATOR] [--config CONFIG_FILE]
                         [--proxy PROXY] [-n] [--encrypted]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
@@ -487,6 +487,11 @@ options:
                         priority. This is useful for sending ASCII-art or
                         tabbed output like tables as a fixed-sized font will
                         be used for display.
+  -j, --emojize         Send message after emojizing. Details:: If not
+                        specified, message will be sent as format "TEXT". If
+                        both --code and --emojize are specified then --code
+                        takes priority. This is useful for sending emojis in
+                        shortcode form :collision:.
   -p SEPARATOR, --split SEPARATOR
                         Split message text into multiple Matrix messages.
                         Details:: If set, split the message(s) into multiple
@@ -1085,5 +1090,5 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
+You are running version 7.0.0 2023-04-12. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

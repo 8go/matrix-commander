@@ -21,7 +21,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [-m TEXT [TEXT ...]] [-i IMAGE_FILE [IMAGE_FILE ...]]
                         [-a AUDIO_FILE [AUDIO_FILE ...]] [-f FILE [FILE ...]]
                         [-e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]] [-w]
-                        [-z] [-k] [-p SEPARATOR] [--config CONFIG_FILE]
+                        [-z] [-k] [-j] [-p SEPARATOR] [--config CONFIG_FILE]
                         [--proxy PROXY] [-n] [--encrypted]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
@@ -62,5 +62,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--sync FULL|OFF] [-o TEXT|JSON|JSON-MAX|JSON-SPEC]
                         [-v [PRINT|CHECK]]
 
-You are running version 6.0.2 2023-04-04. Enjoy, star on Github and contribute
+You are running version 7.0.0 2023-04-12. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
