@@ -171,6 +171,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Sending MarkDown messages
 - Message splitting before sending
 - Sending Code-formatted messages
+- Sending emojis in messages via shorthand
 - Sending to one room
 - Sending to multiple rooms
 - Sending image files (photos, etc.)
@@ -397,6 +398,8 @@ and automatically decrypted for you.
       - pip3 install --user --upgrade matrix-nio[e2e]
     - python3 package markdown must be installed to support MarkDown format
       - pip3 install --user --upgrade markdown
+    - python3 package emoji must be installed to support emojis in text messages
+      - pip3 install --user --upgrade emoji
     - python3 package python_magic must be installed to support image sending
       - pip3 install --user --upgrade python_magic
     - if (and only if) you want OS notification support, then the python3
@@ -502,6 +505,9 @@ $ matrix-commander -m msg1 msg2 msg3 # sends 3 messages
 $ df -h | matrix-commander --code # formatting for code/tables
 $ matrix-commander -m "<b>BOLD</b> and <i>ITALIC</i>" --html
 $ matrix-commander -m "- bullet1" --markdown
+$ matrix-commander -m "I :red_heart: you" --emojize
+$ matrix-commander -m "Well done :clapping_hands:" --emojize
+# See https://unicode.org/emoji/charts/full-emoji-list.html for emoji list
 $ # take input from an RSS feed and split large RSS entries into multiple
 $ # Matrix messages wherever the pattern "\n\n\n" is found
 $ rssfeed | matrix-commander --split "\n\n\n"
