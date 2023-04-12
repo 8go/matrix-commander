@@ -1939,6 +1939,6 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
   - :heart: and :thumbsup: to @fyfe, @berlincount, @ezwen, @Scriptkiddi,
     @pelzvieh, @mizlan, @edwinsage, @jschwartzentruber, @nirgal, @benneti,
     @opk12, @pataquets, @KizzyCode, @murlock1000, @Benjamin-Loison,
-    @barathrm, etc.
+    @barathrm, @jonathandmoore, etc.
 - Enjoy!
 - Give it a :star: star on GitHub! Pull requests are welcome  :heart:
