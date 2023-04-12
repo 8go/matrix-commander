@@ -27,7 +27,7 @@ alt="MC> logo" height="150">
 alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
-<img src="https://pypi.org/static/images/logo-large.6bdbb439.svg"
+<img src="https://pypi.org/static/images/logo-large.9f732b5f.svg"
 alt="get it on PyPi" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://hub.docker.com/r/matrixcommander/matrix-commander">
