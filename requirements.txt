@@ -3,6 +3,7 @@ aiofiles>=0.6.0
 argparse
 asyncio
 datetime
+emoji
 markdown
 matrix-nio[e2e]>=0.14.1
 notify2
