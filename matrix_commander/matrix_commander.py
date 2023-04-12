@@ -19,6 +19,7 @@ import argparse
 import ast
 import asyncio
 import datetime
+import emoji
 import errno
 import getpass
 import json
@@ -2910,6 +2911,11 @@ async def send_message(client, rooms, message):  # noqa: C901
     elif gs.pa.html:
         gs.log.debug('Sending message in format "html".')
         formatted_message = message  # the same for the time being
+        content["format"] = "org.matrix.custom.html"  # add to dict
+        content["formatted_body"] = formatted_message
+    elif gs.pa.emojize:
+        gs.log.debug('Sending message in format "emojized".')
+        formatted_message = emoji.emojize(message)  # convert emoji shortcodes if present
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     else:
@@ -7391,6 +7397,19 @@ def main_inner(
         "like tables as a fixed-sized font will be used "
         "for display.",
     )
+    #  -j for emoJize
+    ap.add_argument(
+        "-j",
+        "--emojize",
+        required=False,
+        action="store_true",
+        help='Send message after emojizing. '
+        "Details:: If not specified, message will be sent "
+        'as format "TEXT". If both --code and --emojize are '
+        "specified then --code takes priority. This is "
+        "useful for sending emojis in shortcode form :collision:.",
+    )
+
     # -s is already used for --store, -i for sPlit
     ap.add_argument(
         "-p",
@@ -8531,6 +8550,8 @@ Send message as format "HTML".
 Send message as format "MARKDOWN".
 <-k>, <--code>
 Send message as format "CODE".
+<-j>, <--emojize>
+Emojize message (Convert shortcodes to Unicode).
 <-p> SEPARATOR, <--split> SEPARATOR
 Split message text into multiple Matrix messages.
 <--config> CONFIG_FILE
