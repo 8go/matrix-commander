@@ -51,12 +51,13 @@ from markdown import markdown
 from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
                  DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
                  DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, ErrorResponse, JoinedMembersError,
-                 JoinedRoomsError, JoinError, KeyVerificationCancel,
-                 KeyVerificationEvent, KeyVerificationKey, KeyVerificationMac,
-                 KeyVerificationStart, LocalProtocolError, LoginInfoError,
-                 LoginResponse, LogoutError, MatrixRoom, MessageDirection,
-                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
+                 EncryptionError, ErrorResponse, InviteMemberEvent,
+                 JoinedMembersError, JoinedRoomsError, JoinError,
+                 KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginInfoError, LoginResponse,
+                 LogoutError, MatrixRoom, MessageDirection, PresenceGetError,
+                 PresenceSetError, ProfileGetAvatarResponse,
                  ProfileGetDisplayNameError, ProfileGetError,
                  ProfileSetAvatarResponse, ProfileSetDisplayNameError,
                  RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
@@ -93,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-04-12"
-VERSIONNR = "7.0.0"
+VERSION = "2023-04-19"
+VERSIONNR = "7.1.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -185,10 +186,18 @@ OUTPUT_DEFAULT = OUTPUT_TEXT
 README_FILE_RAW_URL = (
     "https://raw.githubusercontent.com/8go/matrix-commander/master/README.md"
 )
+INVITES_LIST = "list"
+INVITES_JOIN = "join"
+INVITES_LIST_JOIN = "list+join"
+INVITES_UNUSED_DEFAULT = None  # use None if --room-invites is not specified
+INVITES_USED_DEFAULT = (
+    INVITES_LIST  # use 'list' by default with --room-invites
+)
+
 # increment this number and use new incremented number for next warning
 # last unique Wxxx warning number used: W112:
 # increment this number and use new incremented number for next error
-# last unique Exxx error number used: E248:
+# last unique Exxx error number used: E249:
 
 
 class LooseVersion:
@@ -561,6 +570,60 @@ class Callbacks(object):
     def __init__(self, client):
         """Store AsyncClient."""
         self.client = client
+
+    async def invite_callback(self, room, event):
+        """Handle an incoming invite event.
+
+        If an invite is received, then list or join the room specified
+        in the invite.
+        """
+        try:
+            gs.log.debug(
+                f"message_callback(): for room {room} received this "
+                f"event: type: {type(event)}, "
+                f"event: {event}"
+            )
+            gs.log.debug(
+                f"Got invite to room {room.room_id} from {event.sender}."
+            )
+
+            # list
+            if (
+                gs.pa.room_invites.lower() == INVITES_LIST
+                or gs.pa.room_invites.lower() == INVITES_LIST_JOIN
+            ):
+                # output format controlled via --output flag
+                text = f"{room.room_id}"
+                # we use the dictionary.
+                json_max = {"room_id": room.room_id}
+                json_ = json_max.copy()
+                json_spec = None
+                print_output(
+                    gs.pa.output,
+                    text=text,
+                    json_=json_,
+                    json_max=json_max,
+                    json_spec=json_spec,
+                )
+
+            # join
+            if (
+                gs.pa.room_invites.lower() == INVITES_JOIN
+                or gs.pa.room_invites.lower() == INVITES_LIST_JOIN
+            ):
+                result = await self.client.join(room.room_id)
+                if type(result) == JoinError:
+                    gs.log.error(
+                        f"E249: Error joining room {room.room_id}: "
+                        f"{result.message}",
+                    )
+                    gs.err_count += 1
+                else:
+                    # Successfully joined room
+                    gs.log.info(f"Joined room {room.room_id} successfully.")
+
+        except BaseException:
+            gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
 
     # according to pylama: function too complex: C901 # noqa: C901
     async def message_callback(self, room: MatrixRoom, event):  # noqa: C901
@@ -2915,7 +2978,9 @@ async def send_message(client, rooms, message):  # noqa: C901
         content["formatted_body"] = formatted_message
     elif gs.pa.emojize:
         gs.log.debug('Sending message in format "emojized".')
-        formatted_message = emoji.emojize(message)  # convert emoji shortcodes if present
+        formatted_message = emoji.emojize(
+            message
+        )  # convert emoji shortcodes if present
         content["format"] = "org.matrix.custom.html"  # add to dict
         content["formatted_body"] = formatted_message
     else:
@@ -3378,6 +3443,7 @@ async def listen_forever(client: AsyncClient) -> None:
             RedactionEvent,
         ),
     )
+    client.add_event_callback(callbacks.invite_callback, (InviteMemberEvent,))
     print(
         "This program is ready and listening for its Matrix messages. "
         "To stop program type Control-C on keyboard or send signal "
@@ -3399,6 +3465,7 @@ async def listen_once(client: AsyncClient) -> None:
     # Set up event callbacks
     callbacks = Callbacks(client)
     client.add_event_callback(callbacks.message_callback, (RoomMessage,))
+    client.add_event_callback(callbacks.invite_callback, (InviteMemberEvent,))
     # We want to get out quickly, so we reduced timeout to 10 sec.
     # We want to get messages and quit, so we call sync() instead of
     # sync_forever().
@@ -6505,6 +6572,21 @@ def initial_check_of_args() -> None:  # noqa: C901
             f'For --version currently only "{PRINT}" '
             f'or "{CHECK}" is allowed as keyword.'
         )
+    elif gs.pa.room_invites and (
+        gs.pa.room_invites.lower() != INVITES_LIST
+        and gs.pa.room_invites.lower() != INVITES_JOIN
+        and gs.pa.room_invites.lower() != INVITES_LIST_JOIN
+    ):
+        t = (
+            f'For --room-invites currently only "{INVITES_LIST}" '
+            f'"{INVITES_JOIN}" or "{INVITES_LIST_JOIN}" are allowed as '
+            "keywords."
+        )
+    elif gs.pa.room_invites and gs.pa.listen not in (FOREVER, ONCE):
+        t = (
+            "For --room-invites to work you must also be listening. "
+            'Use "--listen once" or "--listen forever".'
+        )
     # allow verify with everything
     # allow send with everything
     # allow listen with everything
@@ -7077,7 +7159,8 @@ def main_inner(
         "Details:: Specify the user(s) as arguments to --user. "
         "Specify the rooms as arguments to this option, i.e. "
         "as arguments to --room-invite. "
-        "The user must have permissions to invite users.",
+        "The user must have permissions to invite users. "
+        "Don't confuse this option with --room-invites.",
     )
     ap.add_argument(
         "--room-ban",
@@ -7403,7 +7486,7 @@ def main_inner(
         "--emojize",
         required=False,
         action="store_true",
-        help='Send message after emojizing. '
+        help="Send message after emojizing. "
         "Details:: If not specified, message will be sent "
         'as format "TEXT". If both --code and --emojize are '
         "specified then --code takes priority. This is "
@@ -8412,6 +8495,28 @@ def main_inner(
         "will print no output. ",
     )
     ap.add_argument(
+        "--room-invites",
+        required=False,
+        type=str,
+        default=INVITES_UNUSED_DEFAULT,  # when --room-invites is not used
+        nargs="?",  # makes the word optional
+        # when --room-invites is used, but text is not added
+        const=INVITES_USED_DEFAULT,
+        metavar="LIST|JOIN|LIST+JOIN",
+        help="List room invitations and/or join invited rooms. "
+        "Details:: This option takes zero or one argument. "
+        f"If no argument is given, '{INVITES_LIST}' is assumed which will "
+        f"list all room invitation events as they are received. "
+        f"'{INVITES_JOIN}' will join the room(s) each time a room invitation "
+        "is received. "
+        f"'{INVITES_LIST_JOIN}' will do both, list the invitations as well "
+        "as automatically join the rooms to which an invitation was received. "
+        "This option only has effect if listening once or forever! "
+        "So use '--listen once' or '--listen forever' together "
+        "with this option. "
+        "Don't confuse this option with --room-invite.",
+    )
+    ap.add_argument(
         "-v",  # incompatible change Dec 2022, -v moved here from --verify
         "-V",  # exception, allow also uppercase V
         "--version",
@@ -8666,6 +8771,8 @@ Specify a device name, for use by certain actions.
 Choose synchronization options.
 <-o> TEXT|JSON|JSON-MAX|JSON-SPEC, <--output> TEXT|JSON|JSON-MAX|JSON-SPEC
 Select an output format.
+<--room-invites> [LIST|JOIN|LIST+JOIN]
+List room invitations and/or join invited rooms.
 <-v> [PRINT|CHECK], -V [PRINT|CHECK], <--version> [PRINT|CHECK]
 Print version information or check for updates.
 """.replace(
