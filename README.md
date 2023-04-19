@@ -197,6 +197,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Banning from rooms
 - Unbanning from rooms
 - Kicking from rooms
+- Accepting room invites
 - Supports renaming of device
 - Supports getting and setting display name
 - Supports getting and setting presence
@@ -644,6 +645,11 @@ $ # delete 2 images from 2 rooms
 $ matrix-commander --room-redact \
     '\!someroomId1:example.com' '\$someEventId1' 'Image deleted, obsolete info'
     '\!someroomId2:example.com' '\$someEventId2' 'Image deleted, outdated'
+$ # list room invitations
+$ matrix-commander --listen once --room-invites list
+$ # accepting room invitations, automatically joining rooms to which one is 
+$ # invited to
+$ matrix-commander --listen forever --room-invites list+join
 $ # print its own user id
 $ matrix-commander --whoami
 $ # skip SSL certificate verification for a homeserver without SSL
