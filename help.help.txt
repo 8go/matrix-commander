@@ -200,5 +200,5 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 7.1.0 2023-04-19. Enjoy, star on Github and contribute
+You are running version 7.2.0 2023-04-20. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

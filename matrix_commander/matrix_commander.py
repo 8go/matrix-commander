@@ -94,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-04-19"
-VERSIONNR = "7.1.0"
+VERSION = "2023-04-20"
+VERSIONNR = "7.2.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -533,9 +533,9 @@ async def download_mxc(
     """
     nio_version = pkg_resources.get_distribution("matrix-nio").version
     # version incompatibility between matrix-nio 0.19.0 and 0.20+
-    # https://mtrx.sytes.net/OIukKBUUpPsAbBGBxuKVIEo
-    # server_name = "mtrx.sytes.net"
-    # media_id = "OIukKBUUpPsAbBEGBxuKVIEo"
+    # https://matrix.example.com/Abc123
+    # server_name = "matrix.example.com"
+    # media_id = "Abc123"
     # matrix-nio v0.19.0 has: download(server_name: str, media_id: str, ..)
     # convert mxc to server_name and media_id
     # v0.20+ : resp = await client.download(mxc=mxc, filename=filename)
@@ -583,44 +583,90 @@ class Callbacks(object):
                 f"event: type: {type(event)}, "
                 f"event: {event}"
             )
+            # There are MULTIPLE events received!
+            # event 1:
+            # InviteMemberEvent(source={'type': 'm.room.member',
+            #   'state_key': '@jane:matrix.example.com',
+            #   'sender': '@jane:matrix.example.com'},
+            # sender='@jane:matrix.example.com',
+            # state_key='@jane:matrix.example.com',
+            # membership='join',
+            # prev_membership=None,
+            # content={'membership': 'join', 'displayname': 'M',
+            #   'avatar_url': '...'}, prev_content=None)
+            # event 2:
+            # InviteMemberEvent(source={'type': 'm.room.member',
+            #   'sender': '@jane:matrix.example.com',
+            #   'state_key': '@john:matrix.example.com',
+            #   'origin_server_ts': 1681986390778,
+            #   'unsigned': {'replaces_state': '$xxx',
+            #       'prev_content': {'membership': 'leave'},
+            #       'prev_sender': '@john:matrix.example.com', 'age': 13037},
+            #   'event_id': 'xxx'},
+            # sender='@jane:matrix.example.com',
+            # state_key='@john:matrix.example.com',
+            # membership='invite',
+            # prev_membership='leave',
+            # content={'membership': 'invite', 'displayname': 'bot',
+            #   'avatar_url': 'xxx'}, prev_content={'membership': 'leave'})
+
             gs.log.debug(
-                f"Got invite to room {room.room_id} from {event.sender}."
+                f"Got invite event for room {room.room_id} from "
+                f"{event.sender}. "
+                f"Event shows membership as '{event.membership}'."
             )
 
-            # list
-            if (
-                gs.pa.room_invites.lower() == INVITES_LIST
-                or gs.pa.room_invites.lower() == INVITES_LIST_JOIN
-            ):
-                # output format controlled via --output flag
-                text = f"{room.room_id}"
-                # we use the dictionary.
-                json_max = {"room_id": room.room_id}
-                json_ = json_max.copy()
-                json_spec = None
-                print_output(
-                    gs.pa.output,
-                    text=text,
-                    json_=json_,
-                    json_max=json_max,
-                    json_spec=json_spec,
+            if event.membership == "invite":
+                gs.log.debug(
+                    "Event will be processed because it shows "
+                    f"membership as '{event.membership}'."
                 )
-
-            # join
-            if (
-                gs.pa.room_invites.lower() == INVITES_JOIN
-                or gs.pa.room_invites.lower() == INVITES_LIST_JOIN
-            ):
-                result = await self.client.join(room.room_id)
-                if type(result) == JoinError:
-                    gs.log.error(
-                        f"E249: Error joining room {room.room_id}: "
-                        f"{result.message}",
+                # list
+                if (
+                    gs.pa.room_invites == INVITES_LIST
+                    or gs.pa.room_invites == INVITES_LIST_JOIN
+                ):
+                    # output format controlled via --output flag
+                    text = (
+                        f"{room.room_id}{SEP}m.room.member"
+                        f"{SEP}{event.membership}"
                     )
-                    gs.err_count += 1
-                else:
-                    # Successfully joined room
-                    gs.log.info(f"Joined room {room.room_id} successfully.")
+                    # we use the dictionary.
+                    json_max = {"room_id": room.room_id}
+                    json_max.update({"event": "m.room.member"})
+                    json_max.update({"membership": event.membership})
+                    json_ = json_max.copy()
+                    json_spec = None
+                    print_output(
+                        gs.pa.output,
+                        text=text,
+                        json_=json_,
+                        json_max=json_max,
+                        json_spec=json_spec,
+                    )
+
+                # join
+                if (
+                    gs.pa.room_invites == INVITES_JOIN
+                    or gs.pa.room_invites == INVITES_LIST_JOIN
+                ):
+                    result = await self.client.join(room.room_id)
+                    if type(result) == JoinError:
+                        gs.log.error(
+                            f"E249: Error joining room {room.room_id}: "
+                            f"{result.message}",
+                        )
+                        gs.err_count += 1
+                    else:
+                        # Successfully joined room
+                        gs.log.info(
+                            f"Joined room {room.room_id} successfully."
+                        )
+            else:
+                gs.log.debug(
+                    "Event will be skipped because it shows "
+                    f"membership as '{event.membership}'."
+                )
 
         except BaseException:
             gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
@@ -3443,7 +3489,14 @@ async def listen_forever(client: AsyncClient) -> None:
             RedactionEvent,
         ),
     )
-    client.add_event_callback(callbacks.invite_callback, (InviteMemberEvent,))
+    if gs.pa.room_invites:
+        gs.log.debug(
+            "Registering to listen to events of type "
+            "InviteMemberEvent. Listening to room invites."
+        )
+        client.add_event_callback(
+            callbacks.invite_callback, (InviteMemberEvent,)
+        )
     print(
         "This program is ready and listening for its Matrix messages. "
         "To stop program type Control-C on keyboard or send signal "
@@ -3456,6 +3509,35 @@ async def listen_forever(client: AsyncClient) -> None:
     await client.sync_forever(timeout=30000, full_state=True)
 
 
+async def listen_invites_once(client: AsyncClient) -> None:
+    """Listen once exclusively for room invites, then quit.
+
+    Get all the room invitations that are currently queued up and waiting.
+    List them or join these rooms. Then leave.
+    """
+    # Set up event callbacks
+    callbacks = Callbacks(client)
+    gs.log.debug(
+        "Registering to listen to events of type "
+        "InviteMemberEvent. Listening to room invites."
+    )
+    client.add_event_callback(callbacks.invite_callback, (InviteMemberEvent,))
+    # We want to get out quickly, so we reduced timeout to 10 sec.
+    # We want to get messages and quit, so we call sync() instead of
+    # sync_forever().
+    resp = await client.sync(timeout=10000, full_state=False)
+    if isinstance(resp, SyncResponse):
+        gs.log.debug(
+            f"Sync successful. Response is: {privacy_filter(str(resp))}"
+        )
+    else:
+        gs.log.error(
+            "E160: " f"Sync failed. Error is: {privacy_filter(str(resp))}"
+        )
+    # sync() forces the message_callback() to fire
+    # for each new message presented in the sync().
+
+
 async def listen_once(client: AsyncClient) -> None:
     """Listen once, then quit.
 
@@ -3465,7 +3547,14 @@ async def listen_once(client: AsyncClient) -> None:
     # Set up event callbacks
     callbacks = Callbacks(client)
     client.add_event_callback(callbacks.message_callback, (RoomMessage,))
-    client.add_event_callback(callbacks.invite_callback, (InviteMemberEvent,))
+    if gs.pa.room_invites:
+        gs.log.debug(
+            "Registering to listen to events of type "
+            "InviteMemberEvent. Listening to room invites."
+        )
+        client.add_event_callback(
+            callbacks.invite_callback, (InviteMemberEvent,)
+        )
     # We want to get out quickly, so we reduced timeout to 10 sec.
     # We want to get messages and quit, so we call sync() instead of
     # sync_forever().
@@ -6197,6 +6286,8 @@ async def async_main() -> None:
             await action_roomsetget()
         if gs.send_action:
             await action_send()
+        if gs.pa.room_invites and gs.pa.listen not in (FOREVER, ONCE):
+            await listen_invites_once(gs.client)
         if gs.listen_action:
             await action_listen()
         if gs.pa.logout:
@@ -6418,6 +6509,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.pa.sync = gs.pa.sync.lower()
     if gs.pa.output is not None:
         gs.pa.output = gs.pa.output.lower()
+    if gs.pa.room_invites:
+        gs.pa.room_invites = gs.pa.room_invites.lower()
 
     if (
         gs.pa.message
@@ -6573,20 +6666,20 @@ def initial_check_of_args() -> None:  # noqa: C901
             f'or "{CHECK}" is allowed as keyword.'
         )
     elif gs.pa.room_invites and (
-        gs.pa.room_invites.lower() != INVITES_LIST
-        and gs.pa.room_invites.lower() != INVITES_JOIN
-        and gs.pa.room_invites.lower() != INVITES_LIST_JOIN
+        gs.pa.room_invites != INVITES_LIST
+        and gs.pa.room_invites != INVITES_JOIN
+        and gs.pa.room_invites != INVITES_LIST_JOIN
     ):
         t = (
-            f'For --room-invites currently only "{INVITES_LIST}" '
+            f'For --room-invites currently only "{INVITES_LIST}", '
             f'"{INVITES_JOIN}" or "{INVITES_LIST_JOIN}" are allowed as '
             "keywords."
         )
-    elif gs.pa.room_invites and gs.pa.listen not in (FOREVER, ONCE):
-        t = (
-            "For --room-invites to work you must also be listening. "
-            'Use "--listen once" or "--listen forever".'
-        )
+    # elif gs.pa.room_invites and gs.pa.listen not in (FOREVER, ONCE):
+    #     t = (
+    #         "For --room-invites to work you must also be listening. "
+    #         'Use "--listen once" or "--listen forever".'
+    #     )
     # allow verify with everything
     # allow send with everything
     # allow listen with everything
@@ -8506,14 +8599,27 @@ def main_inner(
         help="List room invitations and/or join invited rooms. "
         "Details:: This option takes zero or one argument. "
         f"If no argument is given, '{INVITES_LIST}' is assumed which will "
-        f"list all room invitation events as they are received. "
+        "list all room invitation events as they are received. "
+        "Listing will print the room id and other information to standard "
+        "output. "
         f"'{INVITES_JOIN}' will join the room(s) each time a room invitation "
         "is received. "
         f"'{INVITES_LIST_JOIN}' will do both, list the invitations as well "
         "as automatically join the rooms to which an invitation was received. "
-        "This option only has effect if listening once or forever! "
-        "So use '--listen once' or '--listen forever' together "
-        "with this option. "
+        "'--room-invites' can be combined with '--listen'. "
+        "If and only if '--listen forever' is used, will the program "
+        "listen continuously for room invites. "
+        "In all other cases, the program only looks for room invitation "
+        "events once; and it does so before any possible listening to "
+        "messages. "
+        "Warning: events are usually delivered once. So, if you listen "
+        "for and list invites you will get them and list them the first "
+        "time you run '--room-invites list'. On the second run of "
+        "'--room-invites list' the events will not be replayed and "
+        "not be listed. "
+        "Hence, if you list the invites, you might want to store the output "
+        "(room id) so that you can join the room later with '--room-join' "
+        "for example. "
         "Don't confuse this option with --room-invite.",
     )
     ap.add_argument(

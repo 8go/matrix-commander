@@ -1836,14 +1836,25 @@ options:
                         Details:: This option takes zero or one argument. If
                         no argument is given, 'list' is assumed which will
                         list all room invitation events as they are received.
-                        'join' will join the room(s) each time a room
-                        invitation is received. 'list+join' will do both, list
-                        the invitations as well as automatically join the
-                        rooms to which an invitation was received. This option
-                        only has effect if listening once or forever! So use '
-                        --listen once' or '--listen forever' together with
-                        this option. Don't confuse this option with --room-
-                        invite.
+                        Listing will print the room id and other information
+                        to standard output. 'join' will join the room(s) each
+                        time a room invitation is received. 'list+join' will
+                        do both, list the invitations as well as automatically
+                        join the rooms to which an invitation was received. '
+                        --room-invites' can be combined with '--listen'. If
+                        and only if '--listen forever' is used, will the
+                        program listen continuously for room invites. In all
+                        other cases, the program only looks for room
+                        invitation events once; and it does so before any
+                        possible listening to messages. Warning: events are
+                        usually delivered once. So, if you listen for and list
+                        invites you will get them and list them the first time
+                        you run '--room-invites list'. On the second run of '
+                        --room-invites list' the events will not be replayed
+                        and not be listed. Hence, if you list the invites, you
+                        might want to store the output (room id) so that you
+                        can join the room later with '--room-join' for
+                        example. Don't confuse this option with --room-invite.
   -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
                         Print version information or check for updates.
                         Details:: This option takes zero or one argument. If
@@ -1859,7 +1870,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.1.0 2023-04-19. Enjoy, star on Github and contribute
+You are running version 7.2.0 2023-04-20. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 
