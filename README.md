@@ -268,7 +268,7 @@ Wherever possible end-to-end encryption will be used. For e2ee to work
 efficiently a `store` directory is needed to store e2ee data persistently.
 The default location for the store directory is a local directory named
 `store`. Alternatively, as a secondary choice the program looks for a store
-directory in $HOME/.local/shared/matrix-commander/store/. The user can always
+directory in $HOME/.local/share/matrix-commander/store/. The user can always
 specify a different location via the --store argument. The `store`
 directory will usually be created on the first run.
 
