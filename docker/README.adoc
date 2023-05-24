@@ -68,8 +68,7 @@ docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --verify
 
 === How to deal with pipes
 
-When using docker, please understand how docker works with pipes. Read issue 27
-https://github.com/8go/matrix-commander/issues/27
+When using docker, please understand how docker works with pipes. Read issue https://github.com/8go/matrix-commander/issues/27
 
 This has nothing to do with matrix-commander, but nontheless here are some examples.
 
@@ -90,9 +89,7 @@ The above line works, because -t is *NOT* used.
 
 = matrix-commander with Docker on Raspberry Pi (4b, 32bit, running buster of Raspberry Pi OS)
 
-See Issue #25 for more info:
-
-https://github.com/8go/matrix-commander/issues/25
+See Issue https://github.com/8go/matrix-commander/issues/25 for more info:
 
 The libraries
 ```
