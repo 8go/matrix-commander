@@ -46,7 +46,7 @@ This folder must be provided to further `run` commands using the `/data` mountpo
 
 Run this command to initialize the `matrix-commander` data folder with new credentials − you must answer all the questions that will pop up interactively (homeserver, username, etc.):
 ```
-docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --no-ssl
+docker run --rm -ti -v /my/chosen/folder:/data:z matrix-commander --login password
 ```
 
 You can now use this data folder to send messages or verify your session.
