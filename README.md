@@ -253,10 +253,10 @@ On creation the credentials file will by default be created in the local
 directory, so the users sees it right away. This is fine if you have
 only one or a few credential files, but for better maintainability
 it is suggested to place your credentials files into directory
-$HOME/.config/matrix-commander/. When the program looks for
+`$HOME/.config/matrix-commander/`. When the program looks for
 a credentials file it will first look in local directory and then
 as secondary choice it will look in directory
-$HOME/.config/matrix-commander/.
+`$HOME/.config/matrix-commander/`.
 
 If you want to re-use an existing device id and an existing
 access token, you can do so as well, just manually edit the
@@ -268,7 +268,7 @@ Wherever possible end-to-end encryption will be used. For e2ee to work
 efficiently a `store` directory is needed to store e2ee data persistently.
 The default location for the store directory is a local directory named
 `store`. Alternatively, as a secondary choice the program looks for a store
-directory in $HOME/.local/share/matrix-commander/store/. The user can always
+directory in `$HOME/.local/share/matrix-commander/store/`. The user can always
 specify a different location via the --store argument. The `store`
 directory will usually be created on the first run.
 
@@ -315,10 +315,10 @@ For sending messages the program supports various text formats:
 6) split: splits messages into multiple units at given pattern
 
 Photos and images that can be sent. That includes files like
-.jpg, .gif, .png or .svg.
+`.jpg`, `.gif`, `.png` or `.svg`.
 
-Arbitrary files like .txt, .pdf, .doc, audio files like .mp3
-or video files like .mp4 can also be sent.
+Arbitrary files like `.txt`, `.pdf`, `.doc`, audio files like `.mp3`
+or video files like `.mp4` can also be sent.
 
 Matrix events like sending an emoji reaction, replying as a thread,
 message edits can be sent.
