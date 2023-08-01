@@ -55,7 +55,7 @@ You can now use this data folder to send messages or verify your session.
 === Send a message to a room
 
 Given an initialized data folder, run this command to send a message to a room:
-```
+```bash
 docker run --rm -v /my/chosen/folder:/data:z matrix-commander -r "<room id>" -m "<some message>"
 ```
 
@@ -73,15 +73,15 @@ When using docker, please understand how docker works with pipes. Read issue htt
 This has nothing to do with matrix-commander, but nontheless here are some examples.
 
 In a nutshell:
-```
+```bash
 df -h | docker run --rm -v ./data:/data matrix-commander --code
 ```
 The above line will *NOT* work. This is not how pipes work in docker.
-```
+```bash
 docker run --rm -ti -v ./data:/data matrix-commander -k -m "$(df -h| head -2)"
 ```
 The above line works, as there is no pipe into docker.
-```
+```bash
 df -h | head -2 | docker run --rm -i -v ./data:/data matrix-commander --code
 ```
 The above line works, because -t is *NOT* used.

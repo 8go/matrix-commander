@@ -471,10 +471,10 @@ and automatically decrypted for you.
   in [tests/test-send.py](
   https://github.com/8go/matrix-commander/blob/master/tests/test-send.py).
 
-```
+```bash
 $ matrix-commander --login password # first run; will configure everything
 $ matrix-commander --login sso # alternative first run with Single Sign-On;
-$   # this will configure everything on a headless server w/o a browser
+$ # this will configure everything on a headless server w/o a browser
 $ # this created a credentials.json file, and a store directory.
 $ # optionally, if you want you can move credentials to app config directory
 $ mkdir $HOME/.config/matrix-commander # optional
