@@ -6701,7 +6701,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         )
     elif (gs.pa.sync is not None) and not (gs.send_action):
         t = (
-            "Only if a send action is provided is it meaningful to specify "
+            "Only if a send action is provided it is meaningful to specify "
             "--sync. Remove --sync or add a send action. "
             "Adjust your arguments accordingly."
         )
