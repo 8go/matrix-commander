@@ -4,7 +4,7 @@ If you want to run `matrix-commander` using Docker, there is an official image
 available on https://hub.docker.com/r/matrixcommander/matrix-commander[Docker Hub]
 built from source on each commit and hence easier to run, since only Docker is
 required (:clap: to @pataquets for his PR).
-The image is based on the latest version of Fedora (35 as of Jun '22).
+The image is based on the latest version of Fedora (37 as of Aug '23).
 There is a `linux/amd64` and a `linux/arm64` version available.
 Download/update your local image pulling it by doing:
 
