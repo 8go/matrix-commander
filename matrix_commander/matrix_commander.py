@@ -95,7 +95,7 @@ except ImportError:
 
 # version number
 VERSION = "2023-10-10"
-VERSIONNR = "7.3.0"
+VERSIONNR = "7.3.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -6686,6 +6686,9 @@ def initial_check_of_args() -> None:  # noqa: C901
         STDIN_MESSAGE + STDIN_IMAGE + STDIN_AUDIO + STDIN_FILE + STDIN_EVENT
     )
 
+    if gs.pa.download_media_name == "" and gs.pa.download_media:
+        gs.pa.download_media_name = MEDIA_NAME_DEFAULT
+
     # Secondly, the checks
     if gs.pa.config:
         t = (
@@ -6811,7 +6814,7 @@ def initial_check_of_args() -> None:  # noqa: C901
             "either. Specify --download-media "
             f"and run program again. ({gs.pa.download_media_name})"
         )
-    elif gs.pa.download_media_name not in (
+    elif gs.pa.download_media and gs.pa.download_media_name not in (
         MEDIA_NAME_SOURCE,
         MEDIA_NAME_CLEAN,
         MEDIA_NAME_EVENTID,
@@ -7848,7 +7851,7 @@ def main_inner(
     ap.add_argument(
         "--download-media-name",
         required=False,
-        default=MEDIA_NAME_DEFAULT,
+        default="",  # if --download-media-name is not used
         type=str,  # method to derive filename
         metavar="SOURCE|CLEAN|EVENTID",
         help="Specify the method to derive the media filename. "
