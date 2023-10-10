@@ -23,7 +23,7 @@ alt="MC> logo" height="150">
 
 <p>
 <a href="https://matrix.org/docs/projects/client/matrix-commander">
-<img src="https://matrix.org/docs/projects/images/made-for-matrix.png"
+<img src="https://github.com/matrix-org/matrix.org/blob/main/static/images/matrix-logo.svg"
 alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
