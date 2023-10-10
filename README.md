@@ -247,7 +247,7 @@ be performed fully in batch.
 
 Since the credentials file holds an access token it
 should be protected and secured. One can use different
-credential files for different users or different rooms.
+credential files for different users (or different default rooms).
 
 On creation the credentials file will by default be created in the local
 directory, so the users sees it right away. This is fine if you have
@@ -647,7 +647,7 @@ $ matrix-commander --room-redact \
     '\!someroomId2:example.com' '\$someEventId2' 'Image deleted, outdated'
 $ # list room invitations
 $ matrix-commander --listen once --room-invites list
-$ # accepting room invitations, automatically joining rooms to which one is 
+$ # accepting room invitations, automatically joining rooms to which one is
 $ # invited to
 $ matrix-commander --listen forever --room-invites list+join
 $ # print its own user id
@@ -797,8 +797,9 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--proxy PROXY] [-n] [--encrypted]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
-                        [--download-media [DOWNLOAD_DIRECTORY]] [--os-notify]
-                        [--set-device-name DEVICE_NAME]
+                        [--download-media [DOWNLOAD_DIRECTORY]]
+                        [--download-media-name SOURCE|CLEAN|EVENTID]
+                        [--os-notify] [--set-device-name DEVICE_NAME]
                         [--set-display-name DISPLAY_NAME] [--get-display-name]
                         [--set-presence ONLINE|OFFLINE|UNAVAILABLE]
                         [--get-presence] [--upload FILE [FILE ...]]
@@ -1342,12 +1343,30 @@ options:
                         Download media files while listening. Details:: If set
                         and listening, then program will download received
                         media files (e.g. image, audio, video, text, PDF
-                        files). media will be downloaded to local directory.
-                        By default, media will be downloaded to is "./media/".
-                        You can overwrite default with your preferred
-                        directory. If media is encrypted it will be decrypted
-                        and stored decrypted. By default media files will not
-                        be downloaded.
+                        files). By default, media will be downloaded to this
+                        directory: "./media/". You can overwrite default with
+                        your preferred directory. If you provide a relative
+                        path, the relative path will be relative to the local
+                        directory. foo will become ./foo. foo/foo will become
+                        ./foo/foo and only works if ./foo already exists.
+                        Absolute paths will remein unchanged. /tmp will remain
+                        /tmp. /tmp/foo will be /tmp/foo. If media is encrypted
+                        it will be decrypted and stored decrypted. By default
+                        media files will not be downloaded.
+  --download-media-name SOURCE|CLEAN|EVENTID
+                        Specify the method to derive the media filename.
+                        Details:: This argument is optional. Currently three
+                        choices are offered: 'source', 'clean' and 'eventid'.
+                        'source' means the value specified by the source
+                        (sender) will be used. If the sender, i.e. source,
+                        specifies a value that is not a valid filename, then a
+                        failure will occur and the media file will not be
+                        saved. 'clean' means that all dangerous characters in
+                        the name provided by the source will be replaced by an
+                        underscore to create a valid file name. 'eventid'
+                        means that the name provided by the source will be
+                        ignored and the event-id will be used instead. If not
+                        specified it defaults to 'clean'.
   --os-notify           Notify me of arriving messages. Details:: If set and
                         listening, then program will attempt to visually
                         notify of arriving messages through the operating
@@ -1870,7 +1889,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.2.0 2023-04-20. Enjoy, star on Github and contribute
+You are running version 7.3.0 2023-10-10. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 

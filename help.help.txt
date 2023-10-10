@@ -98,6 +98,8 @@ matrix-commander supports these arguments:
   Print event ids of received messages.
 --download-media [DOWNLOAD_DIRECTORY]
   Download media files while listening.
+--download-media-name SOURCE|CLEAN|EVENTID
+  Specify the method to derive the media filename.
 --os-notify
   Notify me of arriving messages.
 --set-device-name DEVICE_NAME
@@ -200,5 +202,5 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 7.2.0 2023-04-20. Enjoy, star on Github and contribute
+You are running version 7.3.0 2023-10-10. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

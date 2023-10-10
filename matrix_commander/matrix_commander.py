@@ -94,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-04-20"
-VERSIONNR = "7.2.0"
+VERSION = "2023-10-10"
+VERSIONNR = "7.3.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -181,6 +181,15 @@ OUTPUT_JSON_MAX = "json-max"
 # adhere to Spec and hence print a JSON object. All other print nothing.
 OUTPUT_JSON_SPEC = "json-spec"
 OUTPUT_DEFAULT = OUTPUT_TEXT
+
+# source, as provided by sender
+MEDIA_NAME_SOURCE = "source"
+# cleaned up. Source but with dangeraous chars replaced with _
+MEDIA_NAME_CLEAN = "clean"
+# use event-id as media file name
+MEDIA_NAME_EVENTID = "eventid"
+MEDIA_NAME_DEFAULT = MEDIA_NAME_CLEAN
+
 # location of README.md file if it is not found on local harddisk
 # used for --manual
 README_FILE_RAW_URL = (
@@ -722,8 +731,26 @@ class Callbacks(object):
                         msg_url += " [Download of media file failed]"
                     else:
                         media_data = resp.body
+                        method = gs.pa.download_media_name
+                        if method == MEDIA_NAME_SOURCE:
+                            newfn = event.body
+                        elif method == MEDIA_NAME_EVENTID:
+                            newfn = event.event_id
+                        else:
+                            # event.body is not trustworthy
+                            # and can contain garbage characters
+                            # such as / or \ which will cause file open
+                            # to fail. Replace those.
+                            newfn = "".join(
+                                [
+                                    x if (x.isalnum() or x in "._- ~") else "_"
+                                    for x in event.body
+                                ]
+                            )
+                        gs.log.debug(f"Media file name method is : {method}")
+                        gs.log.debug(f"New file name for media is : {newfn}")
                         filename = choose_available_filename(
-                            os.path.join(gs.pa.download_media, event.body)
+                            os.path.join(gs.pa.download_media, newfn)
                         )
                         async with aiofiles.open(filename, "wb") as f:
                             await f.write(media_data)
@@ -752,8 +779,26 @@ class Callbacks(object):
                         msg_url += " [Download of media file failed]"
                     else:
                         media_data = resp.body
+                        method = gs.pa.download_media_name
+                        if method == MEDIA_NAME_SOURCE:
+                            newfn = event.body
+                        elif method == MEDIA_NAME_EVENTID:
+                            newfn = event.event_id
+                        else:
+                            # event.body is not trustworthy
+                            # and can contain garbage characters
+                            # such as / or \ which will cause file open
+                            # to fail. Replace those.
+                            newfn = "".join(
+                                [
+                                    x if (x.isalnum() or x in "._- ~") else "_"
+                                    for x in event.body
+                                ]
+                            )
+                        gs.log.debug(f"Media file name method is : {method}")
+                        gs.log.debug(f"New file name for media is : {newfn}")
                         filename = choose_available_filename(
-                            os.path.join(gs.pa.download_media, event.body)
+                            os.path.join(gs.pa.download_media, newfn)
                         )
                         async with aiofiles.open(filename, "wb") as f:
                             await f.write(
@@ -6509,6 +6554,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.pa.sync = gs.pa.sync.lower()
     if gs.pa.output is not None:
         gs.pa.output = gs.pa.output.lower()
+    if gs.pa.download_media_name is not None:
+        gs.pa.download_media_name = gs.pa.download_media_name.lower()
     if gs.pa.room_invites:
         gs.pa.room_invites = gs.pa.room_invites.lower()
 
@@ -6756,6 +6803,23 @@ def initial_check_of_args() -> None:  # noqa: C901
             "then --download-media must not be used "
             "either. Specify --listen or --tail "
             f"and run program again. ({gs.pa.download_media})"
+        )
+    elif gs.pa.download_media_name != "" and (not gs.pa.download_media):
+        t = (
+            "If --download-media is not used, "
+            "then --download-media-name must not be used "
+            "either. Specify --download-media "
+            f"and run program again. ({gs.pa.download_media_name})"
+        )
+    elif gs.pa.download_media_name not in (
+        MEDIA_NAME_SOURCE,
+        MEDIA_NAME_CLEAN,
+        MEDIA_NAME_EVENTID,
+    ):
+        t = (
+            "Incorrect value given for --download-media-name. "
+            f"Only '{MEDIA_NAME_SOURCE}', '{MEDIA_NAME_CLEAN}', "
+            f"'{MEDIA_NAME_EVENTID}' are allowed."
         )
     elif gs.pa.listen == TAIL and (gs.pa.tail <= 0):
         t = (
@@ -7769,12 +7833,38 @@ def main_inner(
         "Details:: If set and listening, "
         "then program will download "
         "received media files (e.g. image, audio, video, text, PDF files). "
-        "media will be downloaded to local directory. "
-        "By default, media will be downloaded to "
-        f'is "{MEDIA_DIR_DEFAULT}". '
+        "By default, media will be downloaded to this directory: "
+        f'"{MEDIA_DIR_DEFAULT}". '
         "You can overwrite default with your preferred directory. "
+        "If you provide a relative path, the relative path will be relative "
+        "to the local directory. foo will become ./foo. "
+        "foo/foo will become ./foo/foo and only works if ./foo already "
+        "exists. "
+        "Absolute paths will remein unchanged. /tmp will remain /tmp. "
+        "/tmp/foo will be /tmp/foo. "
         "If media is encrypted it will be decrypted and stored decrypted. "
         "By default media files will not be downloaded.",
+    )
+    ap.add_argument(
+        "--download-media-name",
+        required=False,
+        default=MEDIA_NAME_DEFAULT,
+        type=str,  # method to derive filename
+        metavar="SOURCE|CLEAN|EVENTID",
+        help="Specify the method to derive the media filename. "
+        "Details:: This argument is optional. "
+        "Currently three choices are offered: 'source', 'clean' and "
+        "'eventid'. "
+        "'source' means the value specified by the source (sender) "
+        "will be used. If the sender, i.e. source, specifies a value "
+        "that is not a valid filename, then a failure will occur and "
+        "the media file will not be saved. "
+        "'clean' means that all dangerous characters in the name "
+        "provided by the source will be replaced "
+        "by an underscore to create a valid file name. "
+        "'eventid' means that the name provided by the source will be "
+        "ignored and the event-id will be used instead. "
+        f"If not specified it defaults to '{MEDIA_NAME_DEFAULT}'. ",
     )
     ap.add_argument(
         # "-o", # incompatible change Dec 2022, -o moved to --output
@@ -8783,6 +8873,8 @@ Print your own messages as well.
 Print event ids of received messages.
 <--download-media> [DOWNLOAD_DIRECTORY]
 Download media files while listening.
+<--download-media-name> SOURCE|CLEAN|EVENTID
+Specify the method to derive the media filename.
 <--os-notify>
 Notify me of arriving messages.
 <--set-device-name> DEVICE_NAME
