@@ -659,6 +659,8 @@ $ matrix-commander --ssl-certificate mycert.crt -m "using my own cert"
 $ # download and decrypt media files like images, audio, PDF, etc.
 $ # and store downloaded files in directory "mymedia"
 $ matrix-commander --listen forever --listen-self --download-media mymedia
+$ # download media files using event-id as file names
+$ matrix-commander -l --download-media --download-media-name eventid
 $ # create rooms without name and topic, just with alias, use a simple alias
 $ matrix-commander --room-create roomAlias1
 $ # don't use a well formed alias like '#roomAlias1:example.com' as it will
@@ -798,7 +800,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [-l [NEVER|ONCE|FOREVER|TAIL|ALL]] [-t [NUMBER]] [-y]
                         [--print-event-id]
                         [--download-media [DOWNLOAD_DIRECTORY]]
-                        [--download-media-name SOURCE|CLEAN|EVENTID]
+                        [--download-media-name SOURCE|CLEAN|EVENTID|TIME]
                         [--os-notify] [--set-device-name DEVICE_NAME]
                         [--set-display-name DISPLAY_NAME] [--get-display-name]
                         [--set-presence ONLINE|OFFLINE|UNAVAILABLE]
@@ -1353,20 +1355,30 @@ options:
                         /tmp. /tmp/foo will be /tmp/foo. If media is encrypted
                         it will be decrypted and stored decrypted. By default
                         media files will not be downloaded.
-  --download-media-name SOURCE|CLEAN|EVENTID
+  --download-media-name SOURCE|CLEAN|EVENTID|TIME
                         Specify the method to derive the media filename.
-                        Details:: This argument is optional. Currently three
-                        choices are offered: 'source', 'clean' and 'eventid'.
-                        'source' means the value specified by the source
-                        (sender) will be used. If the sender, i.e. source,
-                        specifies a value that is not a valid filename, then a
-                        failure will occur and the media file will not be
-                        saved. 'clean' means that all dangerous characters in
-                        the name provided by the source will be replaced by an
-                        underscore to create a valid file name. 'eventid'
-                        means that the name provided by the source will be
-                        ignored and the event-id will be used instead. If not
-                        specified it defaults to 'clean'.
+                        Details:: This argument is optional. Currently four
+                        choices are offered: 'source', 'clean', 'eventid', and
+                        'time'. 'source' means the value specified by the
+                        source (sender) will be used. If the sender, i.e.
+                        source, specifies a value that is not a valid
+                        filename, then a failure will occur and the media file
+                        will not be saved. 'clean' means that all unusual
+                        characters in the name provided by the source will be
+                        replaced by an underscore to create a valid file name.
+                        'eventid' means that the name provided by the source
+                        will be ignored and the event-id will be used instead.
+                        'time' means that the name provided by the source will
+                        be ignored and the current time at the receiver will
+                        be used instead. As an example, if the source/sender
+                        provided 'image(1)!.jpg' as name for a given media
+                        file then 'source' will store the media using filename
+                        'image(1)!.jpg', 'clean' will store it as
+                        'image_1__.jpg', 'eventid' as something like
+                        '$rsad57dafs57asfag45gsFjdTXW1dsfroBiO2IsidKk', and
+                        'time' as something like '20231012_152234_266600'
+                        (YYYYMMDD_HHMMSS_MICROSECONDS). If not specified this
+                        value defaults to 'clean'.
   --os-notify           Notify me of arriving messages. Details:: If set and
                         listening, then program will attempt to visually
                         notify of arriving messages through the operating
@@ -1889,7 +1901,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.3.1 2023-10-10. Enjoy, star on Github and contribute
+You are running version 7.4.0 2023-10-12. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 

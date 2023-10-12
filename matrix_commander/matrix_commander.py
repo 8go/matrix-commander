@@ -94,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-10-10"
-VERSIONNR = "7.3.1"
+VERSION = "2023-10-12"
+VERSIONNR = "7.4.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -182,13 +182,20 @@ OUTPUT_JSON_MAX = "json-max"
 OUTPUT_JSON_SPEC = "json-spec"
 OUTPUT_DEFAULT = OUTPUT_TEXT
 
-# source, as provided by sender
+# source, use media file name as provided by sender
 MEDIA_NAME_SOURCE = "source"
-# cleaned up. Source but with dangeraous chars replaced with _
+# clean up source name. Use source name but with unusual chars replaced with _
 MEDIA_NAME_CLEAN = "clean"
-# use event-id as media file name
+# ignore source provided name, use event-id as media file name
+# Looks like this $rsad57dafs57asfag45gsFjdTXW1dsfroBiO2IsidKk'
 MEDIA_NAME_EVENTID = "eventid"
+# ignore source provided name, use current time at receiver as media file name
+# Looks like this '20231012_152234_266600', date_time_microseconds
+MEDIA_NAME_TIME = "time"
+# defaults to "clean"
 MEDIA_NAME_DEFAULT = MEDIA_NAME_CLEAN
+# chars allowed in a clean name: alphanumerical and these
+MEDIA_NAME_CLEAN_CHARS = "._- ~$"
 
 # location of README.md file if it is not found on local harddisk
 # used for --manual
@@ -498,6 +505,51 @@ def choose_available_filename(filename):
         return filename
 
 
+def derive_media_filename_with_path(event):
+    """Derive file name under which to store a given media file.
+
+    Depending on --download-media-name derive the corresponding file
+    name under which to store the downloaded media file. Note that
+    the file name giveb be the source, i.e. the sender, cannot be trusted.
+    The source can specify and provide any string, even invalid file
+    names or names containing backslash or slash and similar.
+
+    Adds path as given in --download-media to file name.
+
+    As last step function adds a sequential number, iff necessary, to assure
+    that the file does not yet exist and that no file is overwritten
+    (if multiple media files have the same name).
+    """
+    method = gs.pa.download_media_name
+    if method == MEDIA_NAME_SOURCE:
+        newfn = event.body
+    elif method == MEDIA_NAME_EVENTID:
+        newfn = event.event_id
+    elif method == MEDIA_NAME_TIME:
+        # e.g. '20231012_152234_266600' (YYYYMMDD_HHMMSS_MICROSECONDS)
+        newfn = "{date:%Y%m%d_%H%M%S_%f}".format(date=datetime.datetime.now())
+    else:
+        # event.body is not trustworthy
+        # and can contain garbage characters
+        # such as / or \ which will cause file open
+        # to fail. Replace those.
+        newfn = "".join(
+            [
+                x if (x.isalnum() or x in MEDIA_NAME_CLEAN_CHARS) else "_"
+                for x in event.body
+            ]
+        )
+    gs.log.debug(f"Media file name method is: {method}")
+    gs.log.debug(f"New file name for media is: {newfn}")
+    filename_with_path = choose_available_filename(
+        os.path.join(gs.pa.download_media, newfn)
+    )
+    gs.log.debug(
+        f"Unique file name for media with path is: {filename_with_path}"
+    )
+    return filename_with_path
+
+
 async def synchronize(client: AsyncClient) -> SyncResponse:
     """Synchronize with server, e.g. in order to get rooms.
 
@@ -731,27 +783,7 @@ class Callbacks(object):
                         msg_url += " [Download of media file failed]"
                     else:
                         media_data = resp.body
-                        method = gs.pa.download_media_name
-                        if method == MEDIA_NAME_SOURCE:
-                            newfn = event.body
-                        elif method == MEDIA_NAME_EVENTID:
-                            newfn = event.event_id
-                        else:
-                            # event.body is not trustworthy
-                            # and can contain garbage characters
-                            # such as / or \ which will cause file open
-                            # to fail. Replace those.
-                            newfn = "".join(
-                                [
-                                    x if (x.isalnum() or x in "._- ~") else "_"
-                                    for x in event.body
-                                ]
-                            )
-                        gs.log.debug(f"Media file name method is : {method}")
-                        gs.log.debug(f"New file name for media is : {newfn}")
-                        filename = choose_available_filename(
-                            os.path.join(gs.pa.download_media, newfn)
-                        )
+                        filename = derive_media_filename_with_path(event)
                         async with aiofiles.open(filename, "wb") as f:
                             await f.write(media_data)
                             # Set atime and mtime of file to event timestamp
@@ -779,27 +811,7 @@ class Callbacks(object):
                         msg_url += " [Download of media file failed]"
                     else:
                         media_data = resp.body
-                        method = gs.pa.download_media_name
-                        if method == MEDIA_NAME_SOURCE:
-                            newfn = event.body
-                        elif method == MEDIA_NAME_EVENTID:
-                            newfn = event.event_id
-                        else:
-                            # event.body is not trustworthy
-                            # and can contain garbage characters
-                            # such as / or \ which will cause file open
-                            # to fail. Replace those.
-                            newfn = "".join(
-                                [
-                                    x if (x.isalnum() or x in "._- ~") else "_"
-                                    for x in event.body
-                                ]
-                            )
-                        gs.log.debug(f"Media file name method is : {method}")
-                        gs.log.debug(f"New file name for media is : {newfn}")
-                        filename = choose_available_filename(
-                            os.path.join(gs.pa.download_media, newfn)
-                        )
+                        filename = derive_media_filename_with_path(event)
                         async with aiofiles.open(filename, "wb") as f:
                             await f.write(
                                 crypto.attachments.decrypt_attachment(
@@ -6818,11 +6830,12 @@ def initial_check_of_args() -> None:  # noqa: C901
         MEDIA_NAME_SOURCE,
         MEDIA_NAME_CLEAN,
         MEDIA_NAME_EVENTID,
+        MEDIA_NAME_TIME,
     ):
         t = (
             "Incorrect value given for --download-media-name. "
             f"Only '{MEDIA_NAME_SOURCE}', '{MEDIA_NAME_CLEAN}', "
-            f"'{MEDIA_NAME_EVENTID}' are allowed."
+            f"'{MEDIA_NAME_EVENTID}', '{MEDIA_NAME_TIME}' are allowed."
         )
     elif gs.pa.listen == TAIL and (gs.pa.tail <= 0):
         t = (
@@ -7853,21 +7866,31 @@ def main_inner(
         required=False,
         default="",  # if --download-media-name is not used
         type=str,  # method to derive filename
-        metavar="SOURCE|CLEAN|EVENTID",
+        metavar="SOURCE|CLEAN|EVENTID|TIME",
         help="Specify the method to derive the media filename. "
         "Details:: This argument is optional. "
-        "Currently three choices are offered: 'source', 'clean' and "
-        "'eventid'. "
+        "Currently four choices are offered: 'source', 'clean', "
+        "'eventid', and 'time'. "
         "'source' means the value specified by the source (sender) "
         "will be used. If the sender, i.e. source, specifies a value "
         "that is not a valid filename, then a failure will occur and "
         "the media file will not be saved. "
-        "'clean' means that all dangerous characters in the name "
+        "'clean' means that all unusual characters in the name "
         "provided by the source will be replaced "
         "by an underscore to create a valid file name. "
         "'eventid' means that the name provided by the source will be "
         "ignored and the event-id will be used instead. "
-        f"If not specified it defaults to '{MEDIA_NAME_DEFAULT}'. ",
+        "'time' means that the name provided by the source will be "
+        "ignored and the current time at the receiver will be used instead. "
+        "As an example, if the source/sender provided 'image(1)!.jpg' as "
+        "name for a given media file "
+        "then 'source' will store the media using filename 'image(1)!.jpg', "
+        "'clean' will store it as 'image_1__.jpg', "
+        "'eventid' as something like "
+        "'$rsad57dafs57asfag45gsFjdTXW1dsfroBiO2IsidKk', "
+        "and 'time' as something like "
+        "'20231012_152234_266600' (YYYYMMDD_HHMMSS_MICROSECONDS). "
+        f"If not specified this value defaults to '{MEDIA_NAME_DEFAULT}'. ",
     )
     ap.add_argument(
         # "-o", # incompatible change Dec 2022, -o moved to --output
@@ -8876,7 +8899,7 @@ Print your own messages as well.
 Print event ids of received messages.
 <--download-media> [DOWNLOAD_DIRECTORY]
 Download media files while listening.
-<--download-media-name> SOURCE|CLEAN|EVENTID
+<--download-media-name> SOURCE|CLEAN|EVENTID|TIME
 Specify the method to derive the media filename.
 <--os-notify>
 Notify me of arriving messages.
