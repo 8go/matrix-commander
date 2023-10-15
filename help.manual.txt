@@ -26,6 +26,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--room-default DEFAULT_ROOM]
                         [--room-create ROOM_ALIAS [ROOM_ALIAS ...]]
                         [--room-dm-create USER [USER ...]]
+                        [--room-dm-create-allow-duplicates]
                         [--room-join ROOM [ROOM ...]]
                         [--room-leave ROOM [ROOM ...]]
                         [--room-forget ROOM [ROOM ...]]
@@ -280,9 +281,27 @@ options:
                         --topic, --alias to add names, topics and aliases to
                         the room(s) to be created. DM rooms are by default
                         created encrypted; to overwrite that and to create a
-                        room with encryption disabled use '--plain'. Room id,
-                        room alias, encryption and other fields are printed as
-                        output, one line per created room.
+                        room with encryption disabled use '--plain'. See
+                        option '--room-dm-create-allow-duplicates'. If not
+                        used, then an invitation-accepted DM room is searched.
+                        If an existing DM room is found, no new DM room will
+                        be created. If currently no invitation-accepted DM
+                        room exists or --room-dm-create-allow-duplicates is
+                        used, then a new DM will be created. Note, that one
+                        can create/have any number of DM rooms with the same
+                        person. Room id, room alias, encryption and other
+                        fields are printed as output, one line per created
+                        room. If a room is not created because one already
+                        exists, then the room id of the first DM room found is
+                        printed, but neither the alias nor other fields.
+  --room-dm-create-allow-duplicates
+                        Allow creating duplicate DM rooms. Details:: By
+                        default, if this option is bot used duplicates are
+                        avoided. Actions that support this option are: --room-
+                        dm-create. To overwrite that default and to allow the
+                        creation of a DM room even if a DM room already
+                        exists, use '--room-dm-create-allow-duplicates'. See
+                        the --room-dm-create commands.
   --room-join ROOM [ROOM ...]
                         Join one room or multiple rooms. Details:: One or
                         multiple room aliases can be specified. The room (or
@@ -1145,5 +1164,5 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.4.0 2023-10-12. Enjoy, star on Github and contribute
+You are running version 7.5.0 2023-10-15. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

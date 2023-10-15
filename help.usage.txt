@@ -8,6 +8,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--room-default DEFAULT_ROOM]
                         [--room-create ROOM_ALIAS [ROOM_ALIAS ...]]
                         [--room-dm-create USER [USER ...]]
+                        [--room-dm-create-allow-duplicates]
                         [--room-join ROOM [ROOM ...]]
                         [--room-leave ROOM [ROOM ...]]
                         [--room-forget ROOM [ROOM ...]]
@@ -64,5 +65,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--room-invites [LIST|JOIN|LIST+JOIN]]
                         [-v [PRINT|CHECK]]
 
-You are running version 7.4.0 2023-10-12. Enjoy, star on Github and contribute
+You are running version 7.5.0 2023-10-15. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

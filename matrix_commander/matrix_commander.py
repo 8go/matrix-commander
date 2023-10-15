@@ -94,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-10-12"
-VERSIONNR = "7.4.0"
+VERSION = "2023-10-15"
+VERSIONNR = "7.5.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -213,7 +213,7 @@ INVITES_USED_DEFAULT = (
 # increment this number and use new incremented number for next warning
 # last unique Wxxx warning number used: W112:
 # increment this number and use new incremented number for next error
-# last unique Exxx error number used: E249:
+# last unique Exxx error number used: E251
 
 
 class LooseVersion:
@@ -1612,7 +1612,7 @@ async def determine_dm_rooms(
     """
     rooms = []
     if not users:
-        gs.log.debug(f"Room(s) from --user: {rooms}, no users were specified.")
+        gs.log.debug(f"Room(s) from --user: {users}, no users were specified.")
         return rooms
     sender = credentials["user_id"]  # who am i
     gs.log.debug(f"Trying to get members for all rooms of sender: {sender}")
@@ -1692,7 +1692,127 @@ async def determine_dm_rooms(
             )
             gs.err_count += 1
     rooms = list(dict.fromkeys(rooms))  # remove duplicates in list
-    gs.log.debug(f"Room(s) from --user: {rooms}")
+    gs.log.debug(
+        f"Found these DM room(s) for these users: "
+        f"users: {users}, rooms: {rooms}"
+    )
+    return rooms
+
+
+async def determine_dm_rooms_for_user(
+    user: str, client: AsyncClient, credentials: dict
+) -> list:
+    """Determine the DM rooms for one user.
+
+    These rooms we label DM (direct messaging) rooms.
+    By that we means rooms that only have 2 members, and these two
+    members being the sender and the recipient in question.
+    We do not care about 'is_group' or 'is_direct' flags (hints).
+
+    If given a user and known the sender, we try to find a matching room.
+    There might be 0, 1, or more matching rooms. If 0, then giver error
+    and the user should run --room-invite first. if 1 found, use it.
+    If more than 1 found, just use 1 of them arbitrarily.
+
+    The steps are:
+    - get all rooms where sender is member
+    - get all members to these rooms
+    - check if there is a room with just 2 members and them
+      being sender and recipient (user from users arg)
+
+    In order to match a user to a RoomMember we allow 3 choices:
+    - user_id: perfect match, is unique, full user id, e.g. "@user:example.org"
+    - user_id without homeserver domain: partial user id, e.g. "@user"
+      this partial user will be completed by adding the homeserver of the
+      sender to the end, i.e. assuming that sender and receiver are on the
+      same homeserver.
+    - display name: be careful, display names are NOT unique, you could be
+      mistaken and by error send to the wrong person.
+      '--joined-members "*"' shows you the display names in the middle column
+
+    Arguments:
+    ---------
+        users: list(str): list of user_ids
+            try to find a matching DM room for each user
+        client: AsyncClient: client, allows as to query the server
+        credentials: dict: allows to get the user_id of sender
+
+    Returns a list of found DM rooms. List may be empty if no matches were
+    found.
+
+    """
+    rooms = []
+    if not user:
+        gs.log.debug(f"Room(s) from user: {user}, no user was specified.")
+        return rooms
+    sender = credentials["user_id"]  # who am i
+    gs.log.debug(f"Trying to get members for all rooms of sender: {sender}")
+    resp = await client.joined_rooms()
+    if isinstance(resp, JoinedRoomsError):
+        gs.log.error(
+            "E249: "
+            f"joined_rooms failed with {privacy_filter(str(resp))}. "
+            "Not able to "
+            "get all rooms. "
+            f"Not able to find DM rooms for sender {sender}. "
+        )
+        gs.err_count += 1
+        senderrooms = []
+    else:
+        gs.log.debug(
+            f"joined_rooms successful with {privacy_filter(str(resp))}"
+        )
+        senderrooms = resp.rooms
+    for room in senderrooms:
+        resp = await client.joined_members(room)
+        if isinstance(resp, JoinedMembersError):
+            gs.log.error(
+                "E250: "
+                f"joined_members failed with {privacy_filter(str(resp))}. "
+                "Not able to "
+                f"get room members for room {room}. "
+                f"Not able to find DM rooms for sender {sender}. "
+                f"Not able to know if DM room for user {user} exists."
+            )
+            gs.err_count += 1
+        else:
+            # resp.room_id
+            # resp.members = List[RoomMember] ; RoomMember
+            # member.user_id
+            # member.display_name
+            # member.avatar_url
+            gs.log.debug(
+                f"joined_members successful with {privacy_filter(str(resp))}"
+            )
+            if resp.members and len(resp.members) == 2:
+                if resp.members[0].user_id == sender:
+                    # sndr = resp.members[0]
+                    rcvr = resp.members[1]
+                elif resp.members[1].user_id == sender:
+                    # sndr = resp.members[1]
+                    rcvr = resp.members[0]
+                else:
+                    # sndr = None
+                    rcvr = None
+                    gs.log.error(
+                        "E251: "
+                        f"Sender does not match {privacy_filter(str(resp))}"
+                    )
+                    gs.err_count += 1
+                if (
+                    rcvr
+                    and user == rcvr.user_id
+                    or short_user_name_to_user_id(user, credentials)
+                    == rcvr.user_id
+                    or user == rcvr.display_name
+                ):
+                    rooms.append(resp.room_id)
+    rooms = list(dict.fromkeys(rooms))  # remove duplicates in list
+    if not rooms:
+        gs.log.debug(f"No DM room found for user {user}.")
+    gs.log.debug(
+        f"Found these DM room(s) for this user: user: {user}, rooms: {rooms}"
+    )
     return rooms
 
 
@@ -2051,7 +2171,43 @@ async def action_room_dm_create(client: AsyncClient, credentials: dict):
             f'room aliases "{room_aliases}", '
             f'names "{names}", and topics "{topics}".'
         )
+        gs.log.debug(
+            "Option --room-dm-create-allow-duplicates has value "
+            f"{gs.pa.room_dm_create_allow_duplicates}."
+        )
         for user in users:
+            # see Issue #140
+            if not gs.pa.room_dm_create_allow_duplicates:
+                existing_dm_rooms = await determine_dm_rooms_for_user(
+                    user, client, credentials
+                )
+                if existing_dm_rooms:
+                    room_id = existing_dm_rooms[0]
+                    gs.log.info(
+                        f'DM room(s) with user "{user}" '
+                        "already exist(s). These DM rooms were found: "
+                        f"{existing_dm_rooms}. "
+                        "Not creating a new room. "
+                        "Ignoring --room-dm-create for this "
+                        f"user {user}."
+                    )
+                    # output format controlled via --output flag
+                    text = f"{room_id}"
+                    # Object of type RoomCreateResponse is not JSON
+                    # serializable, hence we use the dictionary.
+                    json_max = {}  # empty dict
+                    # resp has only 1 useful useful member: room_id
+                    json_max.update({"room_id": room_id})  # add dict items
+                    json_ = json_max.copy()
+                    json_spec = None
+                    print_output(
+                        gs.pa.output,
+                        text=text,
+                        json_=json_,
+                        json_max=json_max,
+                        json_spec=json_spec,
+                    )
+                    continue
             try:
                 alias = room_aliases[index]
                 alias = alias.replace(r"\!", "!")  # remove possible escape
@@ -7277,8 +7433,31 @@ def main_inner(
         "DM rooms are by default created encrypted; "
         "to overwrite that and to create a room with encryption disabled "
         "use '--plain'. "
+        "See option '--room-dm-create-allow-duplicates'. If not used, "
+        "then an invitation-accepted DM room is searched. If an existing "
+        "DM room is found, no new DM room will be created. If currently "
+        "no invitation-accepted DM room exists or "
+        "--room-dm-create-allow-duplicates is used, then a new DM will be "
+        "created. Note, that one can create/have any number of DM rooms "
+        "with the same person. "
         "Room id, room alias, encryption and other fields "
-        "are printed as output, one line per created room.",
+        "are printed as output, one line per created room. "
+        "If a room is not created because one already exists, "
+        "then the room id of the first DM room found is printed, "
+        "but neither the alias nor other fields.",
+    )
+    ap.add_argument(
+        "--room-dm-create-allow-duplicates",
+        required=False,
+        action="store_true",
+        help="Allow creating duplicate DM rooms. "
+        "Details:: By default, if this option is bot used "
+        "duplicates are avoided. "
+        "Actions that support this option are: --room-dm-create. "
+        "To overwrite that default and to allow the creation of a DM room "
+        "even if a DM room already exists, "
+        "use '--room-dm-create-allow-duplicates'. "
+        "See the --room-dm-create commands.",
     )
     ap.add_argument(
         "--room-join",
@@ -8837,6 +9016,8 @@ Specify the default room at --login.
 Create one or multiple rooms for given alias(es).
 <--room-dm-create> USER [USER ...]
 Create one or multiple DM rooms with the specified users.
+<--room-dm-create-allow-duplicates>
+Allow creating duplicate DM rooms.
 <--room-join> ROOM [ROOM ...]
 Join one room or multiple rooms.
 <--room-leave> ROOM [ROOM ...]
