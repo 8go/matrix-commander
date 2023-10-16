@@ -23,7 +23,7 @@ jobs:
 
       # Required if building multi-arch images
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - id: buildx
         name: Set up Docker Buildx
