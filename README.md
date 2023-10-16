@@ -581,8 +581,12 @@ $ matrix-commander --joined-rooms
 $ # list all the members of 2 specific rooms
 $ matrix-commander --joined-members '!someroomId1:example.com' \
     '!someroomId2:example.com'
-$ # list all the members of all rooms  that I am member of
+$ # list all the members of all rooms that I am member of
 $ matrix-commander --joined-members '*'
+$ # list all the joined DM rooms of 1 specific user
+$ matrix-commander --joined-dm-rooms '@user1:example.com'
+$ # list all the joined DM rooms that I am member of
+$ matrix-commander --joined-dm-rooms '*'
 $ # set presence
 $ matrix-commander --set-presence "unavailable"
 $ # get presence of matrix-commander itself
@@ -810,6 +814,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--delete-mxc MXC_URI [MXC_URI ...]]
                         [--delete-mxc-before TIMESTAMP [TIMESTAMP ...]]
                         [--joined-rooms] [--joined-members ROOM [ROOM ...]]
+                        [--joined-dm-rooms USER [USER ...]]
                         [--mxc-to-http MXC_URI [MXC_URI ...]] [--devices]
                         [--discovery-info] [--login-info]
                         [--content-repository-config]
@@ -1510,6 +1515,15 @@ options:
                         rooms. Details:: If you want to print the joined
                         members of all rooms that you are member of, then use
                         the special character '*'.
+  --joined-dm-rooms USER [USER ...]
+                        Print the list of joined DM rooms for one or multiple
+                        users. Details:: For each user specified, it prints
+                        all DM rooms that you share with the specified user.
+                        There might be 0, 1, or multiple DM rooms for a given
+                        user. Short user names like 'john' can be also be
+                        given. If you want to print all DM rooms that you are
+                        member of, then use the special character '*'. For
+                        each DM room found a single line of output is printed.
   --mxc-to-http MXC_URI [MXC_URI ...]
                         Convert MXC URIs to HTTP URLs. Details:: Convert one
                         or more matrix content URIs to the corresponding HTTP
@@ -1920,7 +1934,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.5.0 2023-10-15. Enjoy, star on Github and contribute
+You are running version 7.6.0 2023-10-16. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 

@@ -36,6 +36,7 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--delete-mxc MXC_URI [MXC_URI ...]]
                         [--delete-mxc-before TIMESTAMP [TIMESTAMP ...]]
                         [--joined-rooms] [--joined-members ROOM [ROOM ...]]
+                        [--joined-dm-rooms USER [USER ...]]
                         [--mxc-to-http MXC_URI [MXC_URI ...]] [--devices]
                         [--discovery-info] [--login-info]
                         [--content-repository-config]
@@ -65,5 +66,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--room-invites [LIST|JOIN|LIST+JOIN]]
                         [-v [PRINT|CHECK]]
 
-You are running version 7.5.0 2023-10-15. Enjoy, star on Github and contribute
+You are running version 7.6.0 2023-10-16. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

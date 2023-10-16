@@ -126,6 +126,8 @@ matrix-commander supports these arguments:
   Print the list of joined rooms.
 --joined-members ROOM [ROOM ...]
   Print the list of joined members for one or multiple rooms.
+--joined-dm-rooms USER [USER ...]
+  Print the list of joined DM rooms for one or multiple users.
 --mxc-to-http MXC_URI [MXC_URI ...]
   Convert MXC URIs to HTTP URLs.
 --devices, --get-devices
@@ -204,5 +206,5 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 7.5.0 2023-10-15. Enjoy, star on Github and contribute
+You are running version 7.6.0 2023-10-16. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

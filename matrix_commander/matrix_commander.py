@@ -94,8 +94,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2023-10-15"
-VERSIONNR = "7.5.0"
+VERSION = "2023-10-16"
+VERSIONNR = "7.6.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -211,9 +211,9 @@ INVITES_USED_DEFAULT = (
 )
 
 # increment this number and use new incremented number for next warning
-# last unique Wxxx warning number used: W112:
+# last unique Wxxx warning number used: W113:
 # increment this number and use new incremented number for next error
-# last unique Exxx error number used: E251
+# last unique Exxx error number used: E254:
 
 
 class LooseVersion:
@@ -1671,9 +1671,8 @@ async def determine_dm_rooms(
                     )
                     gs.err_count += 1
                 for user in users:
-                    if (
-                        rcvr
-                        and user == rcvr.user_id
+                    if rcvr and (
+                        user == rcvr.user_id
                         or short_user_name_to_user_id(user, credentials)
                         == rcvr.user_id
                         or user == rcvr.display_name
@@ -1799,9 +1798,8 @@ async def determine_dm_rooms_for_user(
                         f"Sender does not match {privacy_filter(str(resp))}"
                     )
                     gs.err_count += 1
-                if (
-                    rcvr
-                    and user == rcvr.user_id
+                if rcvr and (
+                    user == rcvr.user_id
                     or short_user_name_to_user_id(user, credentials)
                     == rcvr.user_id
                     or user == rcvr.display_name
@@ -4747,6 +4745,138 @@ async def action_joined_members(
             )
 
 
+async def action_joined_dm_rooms(
+    client: AsyncClient, credentials: dict
+) -> None:
+    """Get and list my DM rooms while already being logged in."""
+    senderrooms = []
+    usersdict = {}  # empty dict
+    users = gs.pa.joined_dm_rooms
+    userslong = []  # short user ids are converted into full user ids
+    if "*" in users:
+        userslong = list("*")
+    else:
+        for user in users:
+            if is_short_user_id(user):
+                userslong.append(short_user_name_to_user_id(user, credentials))
+            else:
+                userslong.append(user)
+    if not users:
+        gs.log.warning(
+            "W113: "
+            "No membership action(s) were performed because no users "
+            "were specified. Use --joined-dm-rooms option and specify users."
+        )
+        gs.warn_count += 1
+        return
+    sender = credentials["user_id"]  # who am i
+    gs.log.debug(
+        f"Trying to get DM rooms for these users: {users}, " f"{userslong}"
+    )
+    resp = await client.joined_rooms()
+    if isinstance(resp, JoinedRoomsError):
+        gs.log.error(
+            "E252: "
+            "joined_rooms failed with "
+            f"{privacy_filter(str(resp))}. Not able to "
+            "get all rooms as specified by '*'. "
+            "The DM room listing will be missing."
+        )
+        gs.err_count += 1
+        return
+    else:
+        gs.log.debug(
+            f"joined_rooms successful with {privacy_filter(str(resp))}"
+        )
+        senderrooms = resp.rooms
+    for room in senderrooms:
+        room = room.replace(r"\!", "!")  # remove possible escape
+        resp = await client.joined_members(room)
+        if isinstance(resp, JoinedMembersError):
+            gs.log.error(
+                "E253: "
+                f"joined_members failed with {privacy_filter(str(resp))}"
+            )
+            gs.err_count += 1
+        else:
+            gs.log.debug(
+                f"joined_members successful with {privacy_filter(str(resp))}"
+            )
+            if resp.members and len(resp.members) == 2:
+                if resp.members[0].user_id == sender:
+                    # sndr = resp.members[0]
+                    rcvr = resp.members[1]
+                elif resp.members[1].user_id == sender:
+                    # sndr = resp.members[1]
+                    rcvr = resp.members[0]
+                else:
+                    # sndr = None
+                    rcvr = None
+                    gs.log.error(
+                        "E254: "
+                        f"Sender does not match {privacy_filter(str(resp))}"
+                    )
+                    gs.err_count += 1
+                if rcvr and (
+                    "*" in userslong
+                    or rcvr.user_id in userslong
+                    # displayname does not work like this code:
+                    # display name would be considered short user id
+                    # and converted to full user id.
+                    # or (
+                    #     rcvr.display_name in userslong
+                    #     and not is_user_id(rcvr.display_name)
+                    # )
+                ):
+                    if rcvr.user_id in usersdict:
+                        usersdict[rcvr.user_id].append(
+                            {
+                                "room_id": resp.room_id,
+                                "members": resp.members.copy(),
+                            }
+                        )
+                    else:
+                        usersdict[rcvr.user_id] = [
+                            {
+                                "room_id": resp.room_id,
+                                "members": resp.members.copy(),
+                            }
+                        ]
+    gs.log.debug(f"usersdict is {usersdict}")
+    for user in usersdict:
+        gs.log.debug(f"user is {user}")
+        for room in usersdict[user]:
+            gs.log.debug(f"room is {room}")
+            # members = List[RoomMember] ; RoomMember
+            # output format controlled via --output flag
+            text = user + SEP + room["room_id"]
+            for member in room["members"]:
+                # convert None to ''
+                text += (
+                    SEP
+                    + zn(member.user_id)
+                    + SEP
+                    + zn(member.display_name)
+                    + SEP
+                    + zn(member.avatar_url)
+                )
+            text = text.strip()
+            # Object of type xxxResponse is not JSON
+            # serializable, hence we use the dictionary.
+            json_max = room
+            # json_max.update({"key": value})  # add dict items
+            json_max.update({"user_id": user})  # add dict items
+            json_ = json_max.copy()
+            json_spec = None
+            print_output(
+                gs.pa.output,
+                text=text,
+                json_=json_,
+                json_max=json_max,
+                json_spec=json_spec,
+            )
+
+
 async def action_mxc_to_http(client: AsyncClient, credentials: dict) -> None:
     """Convert MXC URI to HTTP URL while already logged in."""
     for mxc in gs.pa.mxc_to_http:
@@ -5926,6 +6056,8 @@ async def action_roomsetget() -> None:
             await action_joined_rooms(gs.client, gs.credentials)
         if gs.pa.joined_members:
             await action_joined_members(gs.client, gs.credentials)
+        if gs.pa.joined_dm_rooms:
+            await action_joined_dm_rooms(gs.client, gs.credentials)
         if gs.pa.mxc_to_http:
             await action_mxc_to_http(gs.client, gs.credentials)
         if gs.pa.devices:
@@ -6788,6 +6920,7 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.download
         or gs.pa.joined_rooms
         or gs.pa.joined_members
+        or gs.pa.joined_dm_rooms
         or gs.pa.mxc_to_http
         or gs.pa.devices
         or gs.pa.discovery_info
@@ -8273,6 +8406,23 @@ def main_inner(
         "you are member of, then use the special character '*'.",
     )
     ap.add_argument(
+        # no single char flag
+        "--joined-dm-rooms",
+        required=False,
+        action="extend",
+        nargs="+",
+        type=str,
+        metavar="USER",
+        help="Print the list of joined DM rooms for one or multiple users. "
+        "Details:: For each user specified, it prints all DM rooms that you "
+        "share with the specified user. There might be 0, 1, or multiple "
+        "DM rooms for a given user. "
+        "Short user names like 'john' can be also be given. "
+        "If you want to print all DM rooms that "
+        "you are member of, then use the special character '*'. "
+        "For each DM room found a single line of output is printed. ",
+    )
+    ap.add_argument(
         "--mxc-to-http",
         required=False,
         action="extend",
@@ -9106,6 +9256,8 @@ Delete old objects from the content repository
 Print the list of joined rooms.
 <--joined-members> ROOM [ROOM ...]
 Print the list of joined members for one or multiple rooms.
+<--joined-dm-rooms> USER [USER ...]
+Print the list of joined DM rooms for one or multiple users.
 <--mxc-to-http> MXC_URI [MXC_URI ...]
 Convert MXC URIs to HTTP URLs.
 <--devices,> <--get-devices>
