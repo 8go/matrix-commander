@@ -6273,7 +6273,7 @@ async def action_login() -> None:
     else:
         raise MatrixCommanderError(
             "E226: "
-            "--login specifies invalid authenticatin method "
+            "--login specifies invalid authentication method "
             f"'{method}'. Only 'password' and 'sso' allowed."
         ) from None
     if gs.pa.homeserver:
