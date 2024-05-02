@@ -2035,7 +2035,7 @@ See [GPL3 at FSF](https://www.fsf.org/licensing/).
 
 - [matrix-nio](https://github.com/poljar/matrix-nio/)
 - [matrix-commander](https://github.com/8go/matrix-commander/)
-- [matrix-commander-tui](https://github.com/8go/matrix-commander/matrix_commander)
+- [matrix-commander-tui](matrix_commander/matrix-commander-tui)
 - [matrix-commander-rs](https://github.com/8go/matrix-commander-rs/)
 - [nostr-commander-rs](https://github.com/8go/nostr-commander-rs/)
 - [matrix-nostr-bridge](https://github.com/8go/matrix-nostr-bridge/)
