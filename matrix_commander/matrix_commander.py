@@ -4916,7 +4916,7 @@ async def action_devices(client: AsyncClient, credentials: dict) -> None:
                 + SEP
                 + rr.display_name
                 + SEP
-                + rr.last_seen_ip
+                + str(rr.last_seen_ip)
                 + SEP
                 + str(rr.last_seen_date)
                 + "\n"
