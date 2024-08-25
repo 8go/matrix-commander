@@ -35,6 +35,7 @@ import textwrap
 import traceback
 import urllib.request
 import uuid
+from importlib import metadata
 from os import R_OK, access
 from os.path import isfile
 from ssl import SSLContext
@@ -45,37 +46,93 @@ import aiofiles
 import aiofiles.os
 import emoji
 import magic
-import pkg_resources
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (AsyncClient, AsyncClientConfig, ContentRepositoryConfigError,
-                 DeleteDevicesAuthResponse, DeleteDevicesError, DevicesError,
-                 DiscoveryInfoError, DownloadError, EnableEncryptionBuilder,
-                 EncryptionError, ErrorResponse, InviteMemberEvent,
-                 JoinedMembersError, JoinedRoomsError, JoinError,
-                 KeyVerificationCancel, KeyVerificationEvent,
-                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
-                 LocalProtocolError, LoginInfoError, LoginResponse,
-                 LogoutError, MatrixRoom, MessageDirection, PresenceGetError,
-                 PresenceSetError, ProfileGetAvatarResponse,
-                 ProfileGetDisplayNameError, ProfileGetError,
-                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
-                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
-                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
-                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
-                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
-                 RoomGetStateResponse, RoomGetVisibilityResponse,
-                 RoomInviteError, RoomKickError, RoomLeaveError,
-                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
-                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
-                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
-                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
-                 RoomMessageVideo, RoomNameEvent, RoomPreset,
-                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
-                 RoomResolveAliasError, RoomResolveAliasResponse,
-                 RoomSendError, RoomUnbanError, RoomVisibility, SyncError,
-                 SyncResponse, ToDeviceError, UnknownEvent, UpdateDeviceError,
-                 UploadError, UploadResponse, crypto, responses)
+from nio import (
+    AsyncClient,
+    AsyncClientConfig,
+    ContentRepositoryConfigError,
+    DeleteDevicesAuthResponse,
+    DeleteDevicesError,
+    DevicesError,
+    DiscoveryInfoError,
+    DownloadError,
+    EnableEncryptionBuilder,
+    EncryptionError,
+    ErrorResponse,
+    InviteMemberEvent,
+    JoinedMembersError,
+    JoinedRoomsError,
+    JoinError,
+    KeyVerificationCancel,
+    KeyVerificationEvent,
+    KeyVerificationKey,
+    KeyVerificationMac,
+    KeyVerificationStart,
+    LocalProtocolError,
+    LoginInfoError,
+    LoginResponse,
+    LogoutError,
+    MatrixRoom,
+    MessageDirection,
+    PresenceGetError,
+    PresenceSetError,
+    ProfileGetAvatarResponse,
+    ProfileGetDisplayNameError,
+    ProfileGetError,
+    ProfileSetAvatarResponse,
+    ProfileSetDisplayNameError,
+    RedactedEvent,
+    RedactionEvent,
+    RoomAliasEvent,
+    RoomBanError,
+    RoomCreateError,
+    RoomDeleteAliasResponse,
+    RoomEncryptedAudio,
+    RoomEncryptedFile,
+    RoomEncryptedImage,
+    RoomEncryptedMedia,
+    RoomEncryptedVideo,
+    RoomEncryptionEvent,
+    RoomForgetError,
+    RoomGetStateResponse,
+    RoomGetVisibilityResponse,
+    RoomInviteError,
+    RoomKickError,
+    RoomLeaveError,
+    RoomMemberEvent,
+    RoomMessage,
+    RoomMessageAudio,
+    RoomMessageEmote,
+    RoomMessageFile,
+    RoomMessageFormatted,
+    RoomMessageImage,
+    RoomMessageMedia,
+    RoomMessageNotice,
+    RoomMessagesError,
+    RoomMessageText,
+    RoomMessageUnknown,
+    RoomMessageVideo,
+    RoomNameEvent,
+    RoomPreset,
+    RoomPutAliasResponse,
+    RoomReadMarkersError,
+    RoomRedactError,
+    RoomResolveAliasError,
+    RoomResolveAliasResponse,
+    RoomSendError,
+    RoomUnbanError,
+    RoomVisibility,
+    SyncError,
+    SyncResponse,
+    ToDeviceError,
+    UnknownEvent,
+    UpdateDeviceError,
+    UploadError,
+    UploadResponse,
+    crypto,
+    responses,
+)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -592,7 +649,7 @@ async def download_mxc(
     filename : str
         optional name of file for storing download
     """
-    nio_version = pkg_resources.get_distribution("matrix-nio").version
+    nio_version = metadata.version("matrix-nio")
     # version incompatibility between matrix-nio 0.19.0 and 0.20+
     # https://matrix.example.com/Abc123
     # server_name = "matrix.example.com"
@@ -3108,7 +3165,7 @@ async def send_image(client, rooms, image):  # noqa: C901
             "w": width,  # width in pixel
             "h": height,  # height in pixel
             # "thumbnail_url": None,  # TODO
-            "xyz.amorgan.blurhash": blurhash
+            "xyz.amorgan.blurhash": blurhash,
             # "thumbnail_file": None,
         },
         "msgtype": "m.image",
@@ -3305,7 +3362,14 @@ async def stream_messages_from_pipe(client, rooms):
     rooms : list of room_ids
 
     """
-    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+    stdin_ready = select.select(
+        [
+            sys.stdin,
+        ],
+        [],
+        [],
+        0.0,
+    )[  # noqa
         0
     ]  # noqa
     if not stdin_ready:
@@ -3354,7 +3418,14 @@ def get_messages_from_pipe() -> list:
     Currently there is at most 1 msg in the returned list.
     """
     messages = []
-    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+    stdin_ready = select.select(
+        [
+            sys.stdin,
+        ],
+        [],
+        [],
+        0.0,
+    )[  # noqa
         0
     ]  # noqa
     if not stdin_ready:
@@ -3434,7 +3505,14 @@ def get_messages_from_keyboard() -> list:
             "other send operations or --version provided in arguments."
         )
         return messages  # return empty list because mesgs in -m
-    stdin_ready = select.select([sys.stdin,], [], [], 0.0)[  # noqa
+    stdin_ready = select.select(
+        [
+            sys.stdin,
+        ],
+        [],
+        [],
+        0.0,
+    )[  # noqa
         0
     ]  # noqa
     if not stdin_ready:
@@ -5657,7 +5735,7 @@ async def action_get_openid_token(
 ) -> None:
     """Get OpenId token(s) for itself or users while already logged in."""
     if not HAVE_OPENID:
-        nio_version = pkg_resources.get_distribution("matrix-nio").version
+        nio_version = metadata.version("matrix-nio")
         gs.log.error(
             "E205: "
             f"You are running matrix-nio version {nio_version}. "
@@ -6716,23 +6794,47 @@ def check_version() -> None:
     pkg = PROG_WITHOUT_EXT
     ver = VERSIONNR  # default, fallback
     try:
-        ver = pkg_resources.get_distribution(pkg).version
-    except Exception:
+        ver_pip = metadata.version(pkg)  # from installed pip package
+    except Exception as e:
+        gs.log.debug(
+            f"Failed to get version from meta-data of pip package {pkg}. "
+            f"Exception {e}"
+        )
         pass  # if installed via git clone, package will not exists
+    else:
+        if ver_pip != ver:
+            gs.log.info(
+                f"Looks like you have 2 versions of {pkg} installed. "
+                f"One version via pip with version number {ver_pip}. "
+                f"And another version outside of pip with version {ver}. "
+                "You are currently executing the version outside of pip "
+                f"with version number {ver}. We advise you on whether to "
+                "upgrade the version you are currently running."
+            )
+    gs.log.debug(f"Version of currently executed package {pkg} is {ver}.")
 
     installed_version = LooseVersion(ver)
     # fetch package metadata from PyPI
     pypi_url = f"https://pypi.org/pypi/{pkg}/json"
-    response = urllib.request.urlopen(pypi_url).read().decode()
-    latest_version = max(
-        LooseVersion(s) for s in json.loads(response)["releases"].keys()
-    )
-    if installed_version >= latest_version:
-        utd = "You are up-to-date!"
+    gs.log.debug(f"getting version data from URL {pypi_url}")
+    try:
+        response = urllib.request.urlopen(pypi_url).read().decode()
+    except Exception as e:
+        gs.log.warning(
+            "Could not obtain version info from " f"{pypi_url} for you. ({e})"
+        )
+        latest_version = "unknown"
+        utd = "Try again later."
     else:
-        utd = "Consider updating!"
+        latest_version = max(
+            LooseVersion(s) for s in json.loads(response)["releases"].keys()
+        )
+        if installed_version >= latest_version:
+            utd = "You are up-to-date!"
+        else:
+            utd = "Consider updating!"
     version_info = (
-        f"package: {pkg}, installed: {installed_version}, "
+        f"package: {pkg}, running: {installed_version}, "
         f"latest: {latest_version} ==> {utd}"
     )
     gs.log.debug(version_info)
@@ -6740,7 +6842,7 @@ def check_version() -> None:
     text = version_info
     json_max = {
         "package": f"{pkg}",
-        "version_installed": f"{installed_version}",
+        "version_running": f"{installed_version}",
         "version_latest": f"{latest_version}",
         "comment": f"{utd}",
     }
@@ -6759,7 +6861,7 @@ def check_version() -> None:
 
 def version() -> None:
     """Print version info."""
-    nio_version = pkg_resources.get_distribution("matrix-nio").version
+    nio_version = metadata.version("matrix-nio")
     python_version = sys.version
     python_version_nr = (
         str(sys.version_info.major)
