@@ -22,7 +22,7 @@ src="https://raw.githubusercontent.com/8go/matrix-commander/master/logos/mc.svg"
 alt="MC> logo" height="150">
 
 <p>
-<a href="https://matrix.org/docs/projects/client/matrix-commander">
+<a href="https://matrix.org/ecosystem/clients/matrix-commander/">
 <img src="https://github.com/matrix-org/matrix.org/blob/main/static/images/matrix-logo.svg"
 alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
