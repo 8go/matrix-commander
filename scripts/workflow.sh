@@ -103,15 +103,16 @@ done
 
 PS3='Please enter your choice: '
 OPT1="git add dist/ # must do this! commit -a will not include them"
-OPT2="git status # what is the current status"
+OPT2="git add README.md VERSION help.help.txt help.manual.txt help.usage.txt matrix_commander/matrix_commander.py setup.cfg"
+OPT3="git status # what is the current status"
 OPTC="Continue"
 OPTQ="Quit"
-options=("$OPT1" "$OPT2" "$OPTC" "$OPTQ")
+options=("$OPT1" "$OPT2" "$OPT3" "$OPTC" "$OPTQ")
 select opt in "${options[@]}"; do
     if [ "${REPLY,,}" == "c" ]; then opt="$OPTC"; fi
     if [ "${REPLY,,}" == "q" ]; then opt="$OPTQ"; fi
     case ${opt} in
-    "$OPT1" | "$OPT2")
+    "$OPT1" | "$OPT2" | "$OPT3")
         OPTE=${opt%%#*} # remove everything after first #
         echo "Performing: $OPTE"
         $OPTE

@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import traceback
 import urllib.request
 import uuid
@@ -41,6 +42,7 @@ from os.path import isfile
 from ssl import SSLContext
 from typing import Literal, Optional, Union
 from urllib.parse import quote, urlparse
+from uuid import uuid4
 
 import aiofiles
 import aiofiles.os
@@ -48,91 +50,38 @@ import emoji
 import magic
 from aiohttp import ClientConnectorError, ClientSession, TCPConnector, web
 from markdown import markdown
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    ContentRepositoryConfigError,
-    DeleteDevicesAuthResponse,
-    DeleteDevicesError,
-    DevicesError,
-    DiscoveryInfoError,
-    DownloadError,
-    EnableEncryptionBuilder,
-    EncryptionError,
-    ErrorResponse,
-    InviteMemberEvent,
-    JoinedMembersError,
-    JoinedRoomsError,
-    JoinError,
-    KeyVerificationCancel,
-    KeyVerificationEvent,
-    KeyVerificationKey,
-    KeyVerificationMac,
-    KeyVerificationStart,
-    LocalProtocolError,
-    LoginInfoError,
-    LoginResponse,
-    LogoutError,
-    MatrixRoom,
-    MessageDirection,
-    PresenceGetError,
-    PresenceSetError,
-    ProfileGetAvatarResponse,
-    ProfileGetDisplayNameError,
-    ProfileGetError,
-    ProfileSetAvatarResponse,
-    ProfileSetDisplayNameError,
-    RedactedEvent,
-    RedactionEvent,
-    RoomAliasEvent,
-    RoomBanError,
-    RoomCreateError,
-    RoomDeleteAliasResponse,
-    RoomEncryptedAudio,
-    RoomEncryptedFile,
-    RoomEncryptedImage,
-    RoomEncryptedMedia,
-    RoomEncryptedVideo,
-    RoomEncryptionEvent,
-    RoomForgetError,
-    RoomGetStateResponse,
-    RoomGetVisibilityResponse,
-    RoomInviteError,
-    RoomKickError,
-    RoomLeaveError,
-    RoomMemberEvent,
-    RoomMessage,
-    RoomMessageAudio,
-    RoomMessageEmote,
-    RoomMessageFile,
-    RoomMessageFormatted,
-    RoomMessageImage,
-    RoomMessageMedia,
-    RoomMessageNotice,
-    RoomMessagesError,
-    RoomMessageText,
-    RoomMessageUnknown,
-    RoomMessageVideo,
-    RoomNameEvent,
-    RoomPreset,
-    RoomPutAliasResponse,
-    RoomReadMarkersError,
-    RoomRedactError,
-    RoomResolveAliasError,
-    RoomResolveAliasResponse,
-    RoomSendError,
-    RoomUnbanError,
-    RoomVisibility,
-    SyncError,
-    SyncResponse,
-    ToDeviceError,
-    UnknownEvent,
-    UpdateDeviceError,
-    UploadError,
-    UploadResponse,
-    crypto,
-    responses,
-)
+from nio import (AsyncClient, AsyncClientConfig, BaseRoomKeyRequest,
+                 ContentRepositoryConfigError, DeleteDevicesAuthResponse,
+                 DeleteDevicesError, DevicesError, DiscoveryInfoError,
+                 DownloadError, DummyEvent, EnableEncryptionBuilder,
+                 EncryptedToDeviceEvent, EncryptionError, ErrorResponse, Event,
+                 ForwardedRoomKeyEvent, InviteMemberEvent, JoinedMembersError,
+                 JoinedRoomsError, JoinError, KeyVerificationAccept,
+                 KeyVerificationCancel, KeyVerificationEvent,
+                 KeyVerificationKey, KeyVerificationMac, KeyVerificationStart,
+                 LocalProtocolError, LoginInfoError, LoginResponse,
+                 LogoutError, MatrixRoom, MessageDirection, OlmEvent,
+                 PresenceGetError, PresenceSetError, ProfileGetAvatarResponse,
+                 ProfileGetDisplayNameError, ProfileGetError,
+                 ProfileSetAvatarResponse, ProfileSetDisplayNameError,
+                 RedactedEvent, RedactionEvent, RoomAliasEvent, RoomBanError,
+                 RoomCreateError, RoomDeleteAliasResponse, RoomEncryptedAudio,
+                 RoomEncryptedFile, RoomEncryptedImage, RoomEncryptedMedia,
+                 RoomEncryptedVideo, RoomEncryptionEvent, RoomForgetError,
+                 RoomGetStateResponse, RoomGetVisibilityResponse,
+                 RoomInviteError, RoomKeyEvent, RoomKeyRequest,
+                 RoomKeyRequestCancellation, RoomKickError, RoomLeaveError,
+                 RoomMemberEvent, RoomMessage, RoomMessageAudio,
+                 RoomMessageEmote, RoomMessageFile, RoomMessageFormatted,
+                 RoomMessageImage, RoomMessageMedia, RoomMessageNotice,
+                 RoomMessagesError, RoomMessageText, RoomMessageUnknown,
+                 RoomMessageVideo, RoomNameEvent, RoomPreset,
+                 RoomPutAliasResponse, RoomReadMarkersError, RoomRedactError,
+                 RoomResolveAliasError, RoomResolveAliasResponse,
+                 RoomSendError, RoomUnbanError, RoomVisibility, SyncError,
+                 SyncResponse, ToDeviceError, ToDeviceEvent, ToDeviceMessage,
+                 UnknownEvent, UnknownToDeviceEvent, UpdateDeviceError,
+                 UploadError, UploadResponse, crypto, responses)
 from PIL import Image
 from xdg import BaseDirectory
 
@@ -151,8 +100,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2024-08-23"
-VERSIONNR = "7.6.3"
+VERSION = "2024-09-04"
+VERSIONNR = "7.7.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -194,7 +143,13 @@ PID_DIR_DEFAULT = os.path.normpath(os.path.expanduser("~/.run/"))
 PID_FILE_DEFAULT = os.path.normpath(
     PID_DIR_DEFAULT + "/" + PROG_WITHOUT_EXT + "." + str(uuid.uuid4()) + ".pid"
 )
-EMOJI = "emoji"  # verification type
+DEFAULT_LOG_LEVEL_LOWER_MODULE = logging.WARNING
+# verification type, wait for incoming verification request
+VERIFY_EMOJI = "emoji"
+# verification type, send an outgoing verification request
+VERIFY_EMOJI_REQ = "emojireq"
+VERIFY_MANUAL = "manual"  # verification type
+VERIFY_DEFAULT = VERIFY_EMOJI
 PRINT = "print"  # version type
 CHECK = "check"  # version type
 ONCE = "once"  # listening type
@@ -208,7 +163,7 @@ LISTEN_DEFAULT = NEVER
 TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
 TAIL_USED_DEFAULT = 10  # get the last 10 msgs by default with --tail
 VERIFY_UNUSED_DEFAULT = None  # use None if --verify is not specified
-VERIFY_USED_DEFAULT = EMOJI  # use 'emoji' by default with --verify
+VERIFY_USED_DEFAULT = VERIFY_DEFAULT  # use 'emoji' by default with --verify
 VERSION_UNUSED_DEFAULT = None  # use None if --version is not specified
 VERSION_USED_DEFAULT = PRINT  # use 'print' by default with --version
 SET_DEVICE_NAME_UNUSED_DEFAULT = None  # use None if option is not specified
@@ -268,9 +223,9 @@ INVITES_USED_DEFAULT = (
 )
 
 # increment this number and use new incremented number for next warning
-# last unique Wxxx warning number used: W113:
+# last unique Wxxx warning number used: W114:
 # increment this number and use new incremented number for next error
-# last unique Exxx error number used: E254:
+# last unique Exxx error number used: E258:
 
 
 class LooseVersion:
@@ -697,7 +652,7 @@ class Callbacks(object):
         """
         try:
             gs.log.debug(
-                f"message_callback(): for room {room} received this "
+                f"invite_callback(): for room {room} received this "
                 f"event: type: {type(event)}, "
                 f"event: {event}"
             )
@@ -769,7 +724,7 @@ class Callbacks(object):
                     or gs.pa.room_invites == INVITES_LIST_JOIN
                 ):
                     result = await self.client.join(room.room_id)
-                    if type(result) == JoinError:
+                    if isinstance(result, JoinError):
                         gs.log.error(
                             f"E249: Error joining room {room.room_id}: "
                             f"{result.message}",
@@ -1039,11 +994,282 @@ class Callbacks(object):
     # according to linter: function is too complex, C901
     async def to_device_callback(self, event):  # noqa: C901
         """Handle events sent to device."""
+        gs.log.debug(f"to_device_callback(): {event}")
+
+        # Added Aug 2024, see
+        # https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.Client.get_active_key_requests
+        key_share_cb(event)  # TODO TOFIX : shall I leave this code in?
+
         try:
             client = self.client
 
-            if isinstance(event, KeyVerificationStart):  # first step
-                """first step: receive KeyVerificationStart
+            if (
+                event.source["type"] == "m.key.verification.request"
+            ):  # new first step
+                """New first step in new flow: receive a request proposing
+                a set of verification methods, and in this case respond
+                saying we only support SAS verification.
+                """
+                gs.log.info(
+                    "Got 'verification request'."
+                    "Waiting for other device to accept SAS method..."
+                )
+                # send back 'ready'
+                # see: https://spec.matrix.org/v1.9/client-server-api/#mroommessagemkeyverificationrequest
+                txid = event.source["content"]["transaction_id"]
+                recipient = event.sender
+                recipient_device = event.source["content"]["from_device"]
+                kvr_event = ToDeviceMessage(
+                    type="m.key.verification.ready",
+                    recipient=recipient,
+                    recipient_device=recipient_device,
+                    content={
+                        "from_device": gs.client.device_id,
+                        "methods": [
+                            "m.sas.v1"
+                        ],  # we accept only emoji as type, not QR code
+                        "transaction_id": txid,
+                    },
+                )
+                resp = await gs.client.to_device(kvr_event, txid)
+                if isinstance(resp, ToDeviceError):
+                    gs.log.error(
+                        f"to_device() for m.key.verification.ready failed with {resp}. "
+                        "Could not send a key verification ready msg."
+                    )
+                gs.log.debug(
+                    f"A verification invitation was sent to user {recipient} "
+                    f"on device {recipient_device} with transaction_id {txid}."
+                )
+
+            elif (
+                event.source["type"] == "m.key.verification.ready"
+            ):  # new first step
+                """New first step in new flow: receive a request proposing
+                a set of verification methods, and in this case respond
+                saying we only support SAS verification.
+                """
+                gs.log.info(
+                    "Got 'verification ready'. "
+                    "Waiting for other device to accept SAS method..."
+                )
+                # # TODO TOFIX
+                # #  After "ready" I am awaiting a "start"
+                # if "m.sas.v1" not in event.source["content"]["methods"]:
+                #     gs.log.error(
+                #         "Other device does not support SAS authentication. "
+                #         f"Methods: {event.source['content']['methods']}."
+                #     )
+                #     return
+                # assert client.device_id is not None
+                # assert client.user_id is not None
+                # txid = event.source["content"]["transaction_id"]
+                # ready_event = ToDeviceMessage(
+                #     type="m.key.verification.ready",
+                #     recipient=event.sender,
+                #     recipient_device=event.source["content"]["from_device"],
+                #     content={
+                #         "from_device": client.device_id,
+                #         "methods": ["m.sas.v1"],
+                #         "transaction_id": txid,
+                #     },
+                # )
+                # resp = await client.to_device(ready_event, txid)
+                # if isinstance(resp, ToDeviceError):
+                #     gs.log.error(
+                #         f"to_device failed with {resp}. "
+                #         "Could not propose to use SAS for verification."
+                #     )
+            elif event.source["type"] == "m.key.verification.start":
+                gs.log.info(
+                    "Got 'verification start'. "
+                    "Waiting for other device to accept SAS method..."
+                )
+                gs.log.info(
+                    "We started verification = "
+                    f"{client.key_verifications[event.transaction_id].we_started_it}"
+                )
+                # now accept
+                if "emoji" not in event.short_authentication_string:
+                    gs.log.error(
+                        "E107: "
+                        "Other device does not support emoji verification. "
+                        f"{event.short_authentication_string}."
+                    )
+                    return
+                # TODO TOFIX this was replaced by sas_accept_verification(), delete it for sure?
+                # resp = await client.accept_key_verification(
+                #     event.transaction_id
+                # )
+                sas = client.key_verifications[event.transaction_id]
+                todevice_msg = sas.accept_verification()
+                gs.log.debug(f"accept msg is: {todevice_msg}")
+                resp = await client.to_device(todevice_msg)
+                if isinstance(resp, ToDeviceError):
+                    gs.log.error(
+                        "E108: "
+                        "accept_key_verification failed with error "
+                        f"'{privacy_filter(str(resp))}'."
+                    )
+
+            elif event.source["type"] == "m.key.verification.key":
+                gs.log.info("Got 'verification key'. ")
+                gs.log.info(
+                    "Handshake initiator? We started verification = "
+                    f"{client.key_verifications[event.transaction_id].we_started_it}"
+                )
+                # now send key back
+                sas = client.key_verifications[event.transaction_id]
+                gs.log.debug(f"sas {sas} {sas.verified_devices}")
+
+                todevice_msg = sas.share_key()
+                gs.log.debug(f"shared key msg is: {todevice_msg}")
+                resp = await client.to_device(todevice_msg)
+                if isinstance(resp, ToDeviceError):
+                    gs.log.error(
+                        "E109: "
+                        "to_device failed with error "
+                        f"'{privacy_filter(str(resp))}'."
+                    )
+
+                # sas = client.key_verifications[event.transaction_id]
+
+                print(
+                    f"{sas.get_emoji()}",
+                    file=sys.stdout,
+                    flush=True,
+                )
+
+                yn = input("Do the emojis match? (Y/N) (C for Cancel) ")
+                if yn.lower() == "y":
+                    print(
+                        "Match! The verification for this "
+                        "device will be accepted.",
+                        file=sys.stdout,
+                        flush=True,
+                    )
+                    sas.accept_sas()
+                    # # TODO TOFIX
+                    # # confirm_short_auth_string() sends sas.get_mac()
+                    # # we now send the MAC manually after we receive peer's MAC
+                    # resp = await client.confirm_short_auth_string(
+                    #     event.transaction_id
+                    # )
+                    # if isinstance(resp, ToDeviceError):
+                    #     gs.log.error(
+                    #         "E111: "
+                    #         "confirm_short_auth_string failed with "
+                    #         f"error '{privacy_filter(str(resp))}'."
+                    #     )
+
+                elif yn.lower() == "n":  # no, don't match, reject
+                    print(
+                        "No match! Device will NOT be verified. "
+                        "Verification will be rejected.",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    resp = await client.cancel_key_verification(
+                        event.transaction_id, reject=True
+                    )
+                    if isinstance(resp, ToDeviceError):
+                        gs.log.error(
+                            "E112: "
+                            "cancel_key_verification failed with "
+                            f"'{privacy_filter(str(resp))}'."
+                        )
+                else:  # C or anything for cancel
+                    print(
+                        "Cancelled by user! Verification will be cancelled.",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    resp = await client.cancel_key_verification(
+                        event.transaction_id, reject=False
+                    )
+                    if isinstance(resp, ToDeviceError):
+                        gs.log.error(
+                            "E113: "
+                            "cancel_key_verification failed with "
+                            f"'{privacy_filter(str(resp))}'."
+                        )
+
+            elif event.source["type"] == "m.key.verification.mac":
+                gs.log.info("Got 'verification mac'. ")
+                # now send mac back
+                sas = client.key_verifications[event.transaction_id]
+                gs.log.debug(f"sas {sas}")
+                try:
+                    todevice_msg = sas.get_mac()
+                    gs.log.debug(f"mac msg is {todevice_msg}")
+                    todevice_msg = client.confirm_key_verification(
+                        event.transaction_id
+                    )
+                    gs.log.debug(f"mac msg is {todevice_msg}")
+                except LocalProtocolError as e:
+                    # e.g. it might have been cancelled by ourselves
+                    gs.log.error(
+                        "E114: "
+                        f"Cancelled or protocol error: Reason: {e}.\n"
+                        f"Verification with {event.sender} not concluded. "
+                        "Try again?"
+                    )
+                else:
+                    # TODO TOFIX as of Sept 1, 2024, when Element in browser
+                    # receives our MAC it gives error:
+                    # code='m.key_mismatch',
+                    # reason='The expected key did not match the verified one'
+                    resp = await client.to_device(todevice_msg)
+                    if isinstance(resp, ToDeviceError):
+                        gs.log.error(
+                            "E115: "
+                            "to_device failed with error "
+                            f"'{privacy_filter(str(resp))}'."
+                        )
+                    else:
+                        gs.log.debug(
+                            f"verified devices {sas.verified_devices}"
+                        )
+                        gs.log.debug("to_device() sent mac successfully.")
+
+            elif event.source["type"] == "m.key.verification.done":
+                # Extra step in new flow: once we have completed the SAS
+                # verification successfully, send a 'done' to-device event
+                # to the other device to assert that the verification was
+                # successful.
+                sas = client.key_verifications[event.transaction_id]
+
+                done_message = ToDeviceMessage(
+                    type="m.key.verification.done",
+                    recipient=event.sender,
+                    recipient_device=sas.other_olm_device.device_id,
+                    content={
+                        "transaction_id": event.transaction_id,
+                    },
+                )
+                resp = await client.to_device(done_message, sas.transaction_id)
+                if isinstance(resp, ToDeviceError):
+                    client.log.error(
+                        f"Communicating 'verification done' failed with {resp}"
+                    )
+
+            elif event.source["type"] == "m.key.verification.cancel":
+                gs.log.info(
+                    "Got 'verification cancel' from "
+                    f"sender {event.sender}, "
+                    f"transaction_id {event.transaction_id}, "
+                    f"code {event.code} and "
+                    f"reason {event.reason}."
+                )
+                print(
+                    "To give up hit Control-C.",
+                    file=sys.stdout,
+                    flush=True,
+                )
+                # ignore, nothing to do
+
+            elif isinstance(event, KeyVerificationStart):  # old first step
+                """old first step: receive KeyVerificationStart
                 KeyVerificationStart(
                     source={'content':
                             {'method': 'm.sas.v1',
@@ -1162,6 +1388,7 @@ class Callbacks(object):
                             "confirm_short_auth_string failed with "
                             f"error '{privacy_filter(str(resp))}'."
                         )
+
                 elif yn.lower() == "n":  # no, don't match, reject
                     print(
                         "No match! Device will NOT be verified. "
@@ -1229,21 +1456,31 @@ class Callbacks(object):
                             "to_device failed with error "
                             f"'{privacy_filter(str(resp))}'."
                         )
-                    gs.log.info(
-                        f"sas.we_started_it = {sas.we_started_it}\n"
-                        f"sas.sas_accepted = {sas.sas_accepted}\n"
-                        f"sas.canceled = {sas.canceled}\n"
-                        f"sas.timed_out = {sas.timed_out}\n"
-                        f"sas.verified = {sas.verified}\n"
-                        f"sas.verified_devices = {sas.verified_devices}\n"
-                    )
-                    print(
-                        "Emoji verification was successful!\n"
-                        "Verify with other devices or hit Control-C to "
-                        "continue.",
-                        file=sys.stdout,
-                        flush=True,
-                    )
+                    else:
+                        gs.log.debug("to_device() sent mac successfully.")
+            elif (
+                event.source["type"] == "m.key.verification.done"
+            ):  # new final step
+                # Final step, other device acknowledges verification success.
+                txid = event.source["content"]["transaction_id"]
+                sas = client.key_verifications[txid]
+
+                gs.log.info(
+                    f"sas.we_started_it = {sas.we_started_it}\n"
+                    f"sas.sas_accepted = {sas.sas_accepted}\n"
+                    f"sas.canceled = {sas.canceled}\n"
+                    f"sas.timed_out = {sas.timed_out}\n"
+                    f"sas.verified = {sas.verified}\n"
+                    f"sas.verified_devices = {sas.verified_devices}\n"
+                )
+                print(
+                    "Emoji verification was successful!\n"
+                    "Verify with other devices or hit Control-C to "
+                    "continue.",
+                    file=sys.stdout,
+                    flush=True,
+                )
+
             else:
                 gs.log.error(
                     "E116: "
@@ -6174,32 +6411,302 @@ async def action_roomsetget() -> None:
         gs.err_count += 1
 
 
-async def action_verify() -> None:
-    """Verify while already logged in."""
+# See https://github.com/matrix-nio/matrix-nio/blob/main/examples/manual_encrypted_verify.py
+# See https://matrix-nio.readthedocs.io/en/latest/examples.html#manual-encryption-key-verification
+def trust_devices(user_id: str, device_list: Optional[str] = None) -> None:
+    """Trusts the devices of a user.
+
+    If no device_list is provided, all of the users devices are trusted. If
+    one is provided, only the devices with IDs in that list are trusted.
+
+    Arguments:
+        user_id {str} -- the user ID whose devices should be trusted.
+
+    Keyword Arguments:
+        device_list {Optional[str]} -- The full list of device IDs to trust
+            from that user (default: {None})
+    """
+    user_device_store = gs.client.device_store[user_id]
+    if not user_device_store:  # dict is empty, no devices found
+        gs.log.warning(
+            f"User {user_id}'s device store is empty. Does the user exist? "
+            "Is the user_id correct? Do you have permissions?"
+        )
+    gs.log.debug(f"User {user_id}'s device store: {user_device_store}")
+
+    # The device store contains a dictionary of device IDs and known
+    # OlmDevices for all users that share a room with us, including us.
+
+    counter = 0
+    # We can only run this after a first sync. We have to populate our
+    # device store and that requires syncing with the server.
+    for device_id, olm_device in user_device_store.items():
+        if device_list and device_id not in device_list:
+            # a list of trusted devices was provided, but this ID is not in
+            # that list. That's an issue.
+            gs.log.debug(
+                f"Not enabling trust for {device_id} as it's not "
+                f"in {user_id}'s pre-approved list."
+            )
+            continue
+
+        if user_id == gs.client.user_id and device_id == gs.client.device_id:
+            # We cannot explicitly trust the device user is using
+            gs.log.info(
+                "We cannot explicitly trust the device user is using. "
+                f"A device cannot trust itself. user_id =  {user_id}, device_id = {device_id}."
+            )
+            continue
+
+        gs.client.verify_device(olm_device)
+        gs.log.info(f"Trusting {device_id} from user {user_id}")
+        counter += 1
+
+    if counter == 0:
+        gs.log.info(
+            f"Could not trust device(s) {device_list} from user {user_id}. "
+            "Are the device ids correct?"
+        )
+
+
+# See https://github.com/matrix-nio/matrix-nio/blob/main/examples/manual_encrypted_verify.py
+# See https://matrix-nio.readthedocs.io/en/latest/examples.html#manual-encryption-key-verification
+# It is usually a bad idea to just trust all devices of someone.
+# But if requested it will be done.
+async def action_verify_manual() -> None:
+    """Verify devices manually while already logged in."""
     if not gs.client and not gs.credentials:
         gs.log.error(
             "E216: " "Client or credentials not set. Skipping action."
         )
         gs.err_count += 1
         return
+    gs.log.debug(
+        f"In action_verify_manual() with user {gs.pa.user} "
+        f"and device {gs.pa.device}."
+    )
+    if gs.pa.user is None:
+        # no user, defaulting to myself
+        # get name of myself
+        user_to_trust = gs.credentials["user_id"]
+    elif len(gs.pa.user) != 1:
+        # too many users
+        gs.log.error(
+            f"E257: expected exactly 1 user with --user, found {gs.pa.user}."
+        )
+        return
+    else:
+        user_to_trust = gs.pa.user[0]
+    if is_short_user_id(user_to_trust):
+        user_to_trust = short_user_name_to_user_id(
+            user_to_trust, gs.credentials
+        )
+    if gs.pa.device is None:
+        gs.log.error(
+            f"E258: expected exactly 1 device with --device, found {gs.pa.device}."
+        )
+        return
+    device_to_trust = gs.pa.device
+
+    # Here we create a coroutine that we can call in asyncio.gather later,
+    # along with sync_forever and any other API-related coroutines you'd like
+    # to do.
+    async def after_first_sync():
+        # We'll wait for the first firing of 'synced' before trusting devices.
+        # client.synced is an asyncio event that fires any time nio syncs. This
+        # code doesn't run in a loop, so it only fires once
+        gs.log.debug("Awaiting sync")
+        await gs.client.synced.wait()
+
+        # In practice, you want to have a list of previously-known device IDs
+        # for each user you want to trust. user id and device ids
+        trust_devices(user_to_trust, [device_to_trust])
+        print(
+            "Hit Control-C to continue.",
+            file=sys.stdout,
+            flush=True,
+        )
+
+    after_first_sync_task = asyncio.create_task(after_first_sync())
+
+    # We use full_state=True here to pull any room invites that occurred or
+    # messages sent in rooms _before_ this program connected to the
+    # Matrix server
+    sync_forever_task = asyncio.create_task(
+        gs.client.sync_forever(30000, full_state=True)
+    )
+
+    await asyncio.gather(
+        # The order here IS significant! You have to register the task to trust
+        # devices FIRST since it awaits the first sync
+        after_first_sync_task,
+        sync_forever_task,
+    )
+
+
+# Added Aug 2024, see https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.Client.get_active_key_requests
+# A to-device callback that verifies devices that
+# request room keys and continues the room key sharing process.
+# Note that a single user/device can have multiple key requests
+# queued up.
+def key_share_cb(event):
+    gs.log.debug(f"In key_share_cb(): received event {event}")
+    if isinstance(event, BaseRoomKeyRequest):
+        user_id = event.sender
+        device_id = event.requesting_device_id
+        device = gs.client.device_store[user_id][device_id]
+        gs.log.debug(
+            f"Verifying device {device} in key_share_cb() "
+            f"upon receiving event {event}."
+        )
+        gs.log.info(f"Verifying device {device}")
+        gs.client.verify_device(device)
+        gs.log.debug(f"In key_share_cb() with event {event}.")
+        for request in gs.client.get_active_key_requests(user_id, device_id):
+            gs.log.debug(f"In key_share_cb() handling request {request}.")
+            gs.client.continue_key_share(request)
+
+
+async def action_verify_emoji() -> None:
+    """Verify via emoji while already logged in."""
+    if not gs.client and not gs.credentials:
+        gs.log.error(
+            "E216: " "Client or credentials not set. Skipping action."
+        )
+        gs.err_count += 1
+        return
+
+    # Ideas for sending out the initial request for verification
+    #
+    # create_key_verification(device)[source]
+    #     Start a new key verification process with the given device.
+    #     Parameters:   device (OlmDevice) – The device which we would like to verify
+    #     Return type:  ToDeviceMessage
+    #     Returns a ToDeviceMessage that should be sent to to the homeserver.
+    #
+    # async to_device(message, tx_id=None)[source]
+    #     Send a to-device message.
+    #     Calls receive_response() to update the client state if necessary.
+    #     Returns either a ToDeviceResponse if the request was successful or a ToDeviceError if there was an error with the request.
+    #     Parameters: message (ToDeviceMessage) – The message that should be sent out.
+    #                 tx_id (str, optional) – The transaction ID for this message. Should be unique.
+    #     Return type: Union[ToDeviceResponse, ToDeviceError]
+    #
+
+    if gs.pa.verify == VERIFY_EMOJI_REQ:
+        # pro-actively send out an initial request to perform emoji verification
+        # send a 'request'
+        # must be sent to a specific user (can be itself) with a specific device
+        # see: https://spec.matrix.org/v1.9/client-server-api/#mroommessagemkeyverificationrequest
+        txid = str(uuid4())
+        if not gs.pa.user:
+            # get presence name of myself
+            recipient = gs.credentials["user_id"]
+        else:
+            recipient = gs.pa.user[0]
+            if len(gs.pa.user) > 1:
+                gs.log.warning(
+                    "W114: "
+                    "Warning. "
+                    "--user specifies more then one user. If --user is used at "
+                    "all, then exactly one user should be given."
+                )
+                gs.warn_count += 1
+        recipient_device = gs.pa.device
+        kvr_event = ToDeviceMessage(
+            type="m.key.verification.request",
+            recipient=recipient,
+            recipient_device=recipient_device,
+            content={
+                "from_device": gs.client.device_id,
+                "methods": ["m.sas.v1"],  # we accept only emoji as type, no QR
+                "timestamp": round(time.time() * 1000),
+                "transaction_id": txid,
+            },
+        )
+        resp = await gs.client.to_device(kvr_event, txid)
+        if isinstance(resp, ToDeviceError):
+            gs.log.error(
+                f"to_device() for m.key.verification.request failed with {resp}. "
+                "Could not send a key verification request msg."
+            )
+        else:
+            gs.log.debug(
+                f"A verification reqest was sent to user {recipient} "
+                f"on device {recipient_device} with transaction_id {txid}."
+            )
+
     try:
         # Set up event callbacks
         callbacks = Callbacks(gs.client)
-        gs.client.add_to_device_callback(
-            callbacks.to_device_callback, (KeyVerificationEvent,)
-        )
         # Sync encryption keys with the server
         # Required for participating in encrypted rooms
         if gs.client.should_upload_keys:
             await gs.client.keys_upload()
+        if gs.pa.verify == VERIFY_EMOJI_REQ:
+            helptext = (
+                f"{PROG_WITHOUT_EXT} sent a request to the "
+                f"peer device '{recipient_device}'. "
+                f"{PROG_WITHOUT_EXT} is ready and waiting for "
+                f"the peer '{recipient}' to "
+                "accept the emoji verification with us by selecting 'Accept', "
+                "'Verify with another device', 'Verify by Emoji' or "
+                "some similar 'Verify' action "
+                "in their Matrix client. It seems to be broken on newer "
+                "versions of Element."
+            )
+        else:
+            helptext = (
+                f"{PROG_WITHOUT_EXT} is ready and waiting for the other "
+                "party to initiate an emoji verification with us by selecting "
+                "'Verify by Emoji', 'Verify with another device', "
+                "or some similar 'Verify' action "
+                "in their Matrix client. Newer versions of Element seem "
+                "to no longer support this."
+            )
         print(
-            f"{PROG_WITHOUT_EXT} is ready and waiting for the other party to "
-            "initiate an emoji verification with us by selecting "
-            "'Verify by Emoji' "
-            "in their Matrix client. Read --verify instructions in --manual "
-            "carefully to assist you in how to do this quickly.",
+            helptext,
             file=sys.stdout,
             flush=True,
+        )
+        # Aug 2024: no longer working with Element phone app,
+        # no longer working with Element webpage
+        # Added events "ToDeviceEvent, Event" just to test.
+        # That did not fix it.
+        # The solution was:
+        # https://github.com/matrix-nio/matrix-nio/issues/512
+        # https://github.com/matrix-nio/matrix-nio/issues/430
+        # https://github.com/wreald/matrix-nio/commit/5cb8e99965bcb622101b1d6ad6fa86f5a9debb9a
+        # TODO TOFIX clean up this arg list
+        gs.client.add_to_device_callback(
+            callbacks.to_device_callback,
+            # (KeyVerificationEvent, UnknownToDeviceEvent, ToDeviceEvent, Event),
+            (
+                KeyVerificationEvent,
+                UnknownToDeviceEvent,
+                ToDeviceEvent,
+                Event,
+                BaseRoomKeyRequest,
+                DummyEvent,
+                EncryptedToDeviceEvent,
+                ForwardedRoomKeyEvent,
+                KeyVerificationAccept,
+                KeyVerificationCancel,
+                KeyVerificationKey,
+                KeyVerificationMac,
+                KeyVerificationStart,
+                OlmEvent,
+                RoomKeyEvent,
+                RoomKeyRequest,
+                RoomKeyRequestCancellation,
+            ),
+        )
+        # TODO TOFIX, remove this code once fixed
+        # for debugging only, tried to see if anything is received on room events
+        # answer: nothing of interest was received in room events
+        gs.client.add_event_callback(
+            callbacks.message_callback,
+            (Event),
         )
         # the sync_loop will be terminated by user hitting Control-C
         await gs.client.sync_forever(timeout=30000, full_state=True)
@@ -6699,10 +7206,17 @@ async def async_main() -> None:
             await action_login()  # explicit login
         else:
             await implicit_login()
-        if gs.pa.verify:
-            await action_verify()
+        if gs.pa.verify and (
+            gs.pa.verify == VERIFY_EMOJI or gs.pa.verify == VERIFY_EMOJI_REQ
+        ):
+            await action_verify_emoji()
             gs.log.debug(
                 "Keyboard interrupt received after Emoji verification."
+            )
+        if gs.pa.verify and (gs.pa.verify == VERIFY_MANUAL):
+            await action_verify_manual()
+            gs.log.debug(
+                "Keyboard interrupt received after Manual verification."
             )
         rooms_to_long_room_names()  # complete room names
         if gs.room_action or gs.setget_action:
@@ -6960,6 +7474,8 @@ def initial_check_of_args() -> None:  # noqa: C901
         gs.pa.download_media_name = gs.pa.download_media_name.lower()
     if gs.pa.room_invites:
         gs.pa.room_invites = gs.pa.room_invites.lower()
+    if gs.pa.verify:
+        gs.pa.verify = gs.pa.verify.lower()
 
     if (
         gs.pa.message
@@ -7109,8 +7625,25 @@ def initial_check_of_args() -> None:  # noqa: C901
             "If --encrypted is used --store must be set too. "
             "Specify --store and run program again."
         )
-    elif gs.pa.verify and (gs.pa.verify.lower() != EMOJI):
-        t = f'For --verify currently only "{EMOJI}" is allowed as keyword.'
+    elif (
+        gs.pa.verify
+        and (gs.pa.verify != VERIFY_EMOJI)
+        and (gs.pa.verify != VERIFY_EMOJI_REQ)
+        and (gs.pa.verify != VERIFY_MANUAL)
+    ):
+        t = (
+            f'For --verify currently only "{VERIFY_EMOJI}", '
+            f'"{VERIFY_EMOJI_REQ}" and "{VERIFY_MANUAL}" '
+            "are allowed as keyword."
+        )
+    elif gs.pa.verify and (
+        (gs.pa.verify == VERIFY_EMOJI_REQ or gs.pa.verify == VERIFY_MANUAL)
+        and not gs.pa.device
+    ):
+        t = (
+            f"For --verify {VERIFY_MANUAL} and --verify {VERIFY_EMOJI_REQ} "
+            "a device must be specified with --device."
+        )
     elif gs.pa.version and (
         gs.pa.version.lower() != PRINT and gs.pa.version.lower() != CHECK
     ):
@@ -7146,9 +7679,12 @@ def initial_check_of_args() -> None:  # noqa: C901
         or gs.pa.get_display_name
         or gs.pa.get_presence
         or gs.pa.delete_device
+        or gs.pa.verify == VERIFY_MANUAL
+        or gs.pa.verify == VERIFY_EMOJI_REQ
     ):
         t = (
             "If --user is specified, only a send action, a room action, "
+            "--verify manual, --verify emojireq, "
             "--get-display-name, --get-presence, or --delete-device can be "
             "done. Adjust your arguments accordingly."
         )
@@ -7481,7 +8017,8 @@ def main_inner(
         help="Perform verification. "
         "Details:: By default, no "
         "verification is performed. "
-        f'Possible values are: "{EMOJI}". '
+        f'Possible values are: "{VERIFY_EMOJI}", "{VERIFY_EMOJI_REQ}",'
+        f'and "{VERIFY_MANUAL}". '
         "If verification is desired, run this program in the "
         "foreground (not as a service) and without a pipe. "
         "While verification is optional it is highly recommended, and it "
@@ -7492,27 +8029,39 @@ def main_inner(
         "will be printed on stdout and the user has to respond "
         "via the keyboard to accept or reject verification. "
         "Once verification is complete, the program may be "
-        "run as a service. Verification is best done as follows: "
-        "Perform a cross-device verification, that means, perform a "
-        "verification between two devices of the *same* user. For that, "
-        "open (e.g.) Element in a browser, make sure Element is using the "
-        f"same user account as the {PROG_WITHOUT_EXT} user (specified with "
-        "--user-login at --login). Now in the Element webpage go to the room "
-        f"that is the {PROG_WITHOUT_EXT} default room (specified with "
-        "--room-default at --login). OK, in the web-browser you are now the "
-        f"same user and in the same room as {PROG_WITHOUT_EXT}. "
-        "Now click the round 'i' 'Room Info' icon, then click 'People', "
-        f"click the appropriate user (the {PROG_WITHOUT_EXT} user), "
-        "click red 'Not Trusted' text "
-        "which indicated an untrusted device, then click the square "
-        "'Interactively verify by Emoji' button (one of 3 button choices). "
-        f"At this point both web-page and {PROG_WITHOUT_EXT} in terminal "
-        "show a set of emoji icons and names. Compare them visually. "
+        "run as a service. "
+        "Manual verification requires you to specify a user with --user and "
+        "a device with --device. "
+        "Manual verification is a minimal one-way verification. "
+        "In short, you are trusting the device specified with --device, "
+        "belonging to user specified with --user, but that does not "
+        "enable this device to trust you back. It is a one-way trust. "
+        "For more info read: "
+        "https://matrix-nio.readthedocs.io/en/latest/examples.html#manual-encryption-key-verification. "
+        "Emoji verification is best done as follows: "
+        "The type 'emoji' waits for someone else to send a verification "
+        "request, which it will then accept and go through the verification "
+        "process. Type 'emojireq' (proactively) sends a verification request "
+        "to a device specified with --device belonging to a user "
+        "specified with --user. It then waits for the peer to accept the "
+        "verification request in order to inter into the verification "
+        "process. "
+        "Different Matrix clients perfrom verification differently "
+        "and have different GUI elements. "
+        "Find the button that says 'Accept', 'Verify with another device', "
+        "'Verify', "
+        "'Interactively verify by Emoji' or similar. "
+        "Once both accept emoji verification "
+        f"{PROG_WITHOUT_EXT} will "
+        "show a set of emoji icons and names in the terminal. "
+        "Compare them visually. "
         "Confirm on both sides (Yes, They Match, Got it), finally click OK. "
         "You should see a green shield and also see that the "
-        f"{PROG_WITHOUT_EXT} device is now green and verified in the webpage. "
+        f"{PROG_WITHOUT_EXT} device is now green and verified. "
         "In the terminal you should see a text message indicating success. "
-        "You should now be verified across all devices and across all users.",
+        "Verification is done one device at a time. "
+        "Currently for known reasons the verification feature is partially "
+        "broken. Read the issue on Github for more details. ",
     )
     ap.add_argument(
         "--logout",
@@ -7803,7 +8352,7 @@ def main_inner(
         "in combination with a) room actions like --room-invite, --room-ban, "
         "--room-unban, etc. and b) send actions like -m, -i, -f, etc. "
         "c) some listen actions --listen, as well as d) actions like "
-        "--delete-device. "
+        "--delete-device and e) --verify manual, --verify emojireq. "
         "In case of a) this option --user specifies the users "
         "to be used with room commands (like invite, ban, etc.). "
         "In case of b) the option --user can be used as an alternative "
@@ -9067,7 +9616,8 @@ def main_inner(
         help="Specify a device name, for use by certain actions. "
         "Details:: It is an optional argument. "
         "By default --device is ignored and not used. "
-        "It is used by '--login' action. "
+        "It is used by '--login', '--verify manual' "
+        "and '--verify emojireq' actions. "
         "If not provided for --login the user will be queried via keyboard. "
         "If you want the default value specify ''. "
         "Multiple devices (with different device id) may have the same device "
@@ -9463,7 +10013,7 @@ Print version information or check for updates.
             f"Welcome to {PROG_WITHOUT_EXT}, a Matrix CLI client. ─── "
             "On first run use --login to log in, to authenticate. "
             "On second run we suggest to use --verify to get verified. "
-            "Emoji verification is built-in which can be used "
+            "Verification is built-in which can be used "
             "to verify devices. "
             "On further runs this program implements a simple Matrix CLI "
             "client that can send messages, listen to messages, verify "
@@ -9553,6 +10103,17 @@ Print version information or check for updates.
                     f"Log level is set for modules below {PROG_WITHOUT_EXT}. "
                     f"log_level={gs.pa.log_level[1]}"
                 )
+    if not gs.pa.log_level or len(gs.pa.log_level) < 2:
+        # set default log level for modules below (matrix-nio)
+        default_log_level = logging.getLogger().level
+        gs.log.debug(f"getLevel = {default_log_level}")
+        logging.getLogger().setLevel(DEFAULT_LOG_LEVEL_LOWER_MODULE)
+        gs.log.debug(
+            f"Log level is set for modules below {PROG_WITHOUT_EXT}. "
+            f"log_level={DEFAULT_LOG_LEVEL_LOWER_MODULE}"
+        )
+        gs.log.setLevel(default_log_level)
+
     if gs.pa.debug > 0:
         if gs.pa.debug > 1:
             # turn on debug logging for EVERYTHING

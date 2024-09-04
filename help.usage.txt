@@ -66,5 +66,5 @@ usage: matrix-commander [--usage] [-h] [--manual] [--readme] [-d]
                         [--room-invites [LIST|JOIN|LIST+JOIN]]
                         [-v [PRINT|CHECK]]
 
-You are running version 7.6.3 2024-08-23. Enjoy, star on Github and contribute
+You are running version 7.7.0 2024-09-04. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

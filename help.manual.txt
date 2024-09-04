@@ -1,6 +1,6 @@
 Welcome to matrix-commander, a Matrix CLI client. ─── On first run use --login
 to log in, to authenticate. On second run we suggest to use --verify to get
-verified. Emoji verification is built-in which can be used to verify devices. On
+verified. Verification is built-in which can be used to verify devices. On
 further runs this program implements a simple Matrix CLI client that can send
 messages, listen to messages, verify devices, etc. It can send one or multiple
 message to one or multiple Matrix rooms and/or users. The text messages can be
@@ -149,41 +149,49 @@ options:
                         where there is no browser installed or accessible.
   --verify [EMOJI]      Perform verification. Details:: By default, no
                         verification is performed. Possible values are:
-                        "emoji". If verification is desired, run this program
-                        in the foreground (not as a service) and without a
-                        pipe. While verification is optional it is highly
-                        recommended, and it is recommended to be done right
-                        after (or together with) the --login action.
-                        Verification is always interactive, i.e. it required
-                        keyboard input. Verification questions will be printed
-                        on stdout and the user has to respond via the keyboard
-                        to accept or reject verification. Once verification is
-                        complete, the program may be run as a service.
-                        Verification is best done as follows: Perform a cross-
-                        device verification, that means, perform a
-                        verification between two devices of the *same* user.
-                        For that, open (e.g.) Element in a browser, make sure
-                        Element is using the same user account as the matrix-
-                        commander user (specified with --user-login at
-                        --login). Now in the Element webpage go to the room
-                        that is the matrix-commander default room (specified
-                        with --room-default at --login). OK, in the web-
-                        browser you are now the same user and in the same room
-                        as matrix-commander. Now click the round 'i' 'Room
-                        Info' icon, then click 'People', click the appropriate
-                        user (the matrix-commander user), click red 'Not
-                        Trusted' text which indicated an untrusted device,
-                        then click the square 'Interactively verify by Emoji'
-                        button (one of 3 button choices). At this point both
-                        web-page and matrix-commander in terminal show a set
-                        of emoji icons and names. Compare them visually.
-                        Confirm on both sides (Yes, They Match, Got it),
-                        finally click OK. You should see a green shield and
-                        also see that the matrix-commander device is now green
-                        and verified in the webpage. In the terminal you
-                        should see a text message indicating success. You
-                        should now be verified across all devices and across
-                        all users.
+                        "emoji", "emojireq",and "manual". If verification is
+                        desired, run this program in the foreground (not as a
+                        service) and without a pipe. While verification is
+                        optional it is highly recommended, and it is
+                        recommended to be done right after (or together with)
+                        the --login action. Verification is always
+                        interactive, i.e. it required keyboard input.
+                        Verification questions will be printed on stdout and
+                        the user has to respond via the keyboard to accept or
+                        reject verification. Once verification is complete,
+                        the program may be run as a service. Manual
+                        verification requires you to specify a user with
+                        --user and a device with --device. Manual verification
+                        is a minimal one-way verification. In short, you are
+                        trusting the device specified with --device, belonging
+                        to user specified with --user, but that does not
+                        enable this device to trust you back. It is a one-way
+                        trust. For more info read: https://matrix-
+                        nio.readthedocs.io/en/latest/examples.html#manual-
+                        encryption-key-verification. Emoji verification is
+                        best done as follows: The type 'emoji' waits for
+                        someone else to send a verification request, which it
+                        will then accept and go through the verification
+                        process. Type 'emojireq' (proactively) sends a
+                        verification request to a device specified with
+                        --device belonging to a user specified with --user. It
+                        then waits for the peer to accept the verification
+                        request in order to inter into the verification
+                        process. Different Matrix clients perfrom verification
+                        differently and have different GUI elements. Find the
+                        button that says 'Accept', 'Verify with another
+                        device', 'Verify', 'Interactively verify by Emoji' or
+                        similar. Once both accept emoji verification matrix-
+                        commander will show a set of emoji icons and names in
+                        the terminal. Compare them visually. Confirm on both
+                        sides (Yes, They Match, Got it), finally click OK. You
+                        should see a green shield and also see that the
+                        matrix-commander device is now green and verified. In
+                        the terminal you should see a text message indicating
+                        success. Verification is done one device at a time.
+                        Currently for known reasons the verification feature
+                        is partially broken. Read the issue on Github for more
+                        details.
   --logout ME|ALL       Logout. Details:: Logout this or all devices from the
                         Matrix homeserver. This requires exactly one argument.
                         Two choices are offered: 'me' and 'all'. Provide one
@@ -353,10 +361,11 @@ options:
                         --room-invite, --room-ban, --room-unban, etc. and b)
                         send actions like -m, -i, -f, etc. c) some listen
                         actions --listen, as well as d) actions like --delete-
-                        device. In case of a) this option --user specifies the
-                        users to be used with room commands (like invite, ban,
-                        etc.). In case of b) the option --user can be used as
-                        an alternative to specifying a room as destination for
+                        device and e) --verify manual, --verify emojireq. In
+                        case of a) this option --user specifies the users to
+                        be used with room commands (like invite, ban, etc.).
+                        In case of b) the option --user can be used as an
+                        alternative to specifying a room as destination for
                         text (-m), images (-i), etc. For send actions '--user'
                         is providing the functionality of 'DM (direct
                         messaging)'. For c) this option allows an alternative
@@ -1087,12 +1096,13 @@ options:
   --device DEVICE_NAME  Specify a device name, for use by certain actions.
                         Details:: It is an optional argument. By default
                         --device is ignored and not used. It is used by '--
-                        login' action. If not provided for --login the user
-                        will be queried via keyboard. If you want the default
-                        value specify ''. Multiple devices (with different
-                        device id) may have the same device name. In short,
-                        the same device name can be assigned to multiple
-                        different devices if desired.
+                        login', '--verify manual' and '--verify emojireq'
+                        actions. If not provided for --login the user will be
+                        queried via keyboard. If you want the default value
+                        specify ''. Multiple devices (with different device
+                        id) may have the same device name. In short, the same
+                        device name can be assigned to multiple different
+                        devices if desired.
   --sync FULL|OFF       Choose synchronization options. Details:: This option
                         decides on whether the program synchronizes the state
                         with the server before a 'send' action. Currently two
@@ -1174,5 +1184,5 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.6.3 2024-08-23. Enjoy, star on Github and contribute
+You are running version 7.7.0 2024-09-04. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
