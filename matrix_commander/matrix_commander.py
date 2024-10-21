@@ -100,8 +100,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2024-09-04"
-VERSIONNR = "7.7.0"
+VERSION = "2024-10-21"
+VERSIONNR = "7.7.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -2967,7 +2967,10 @@ async def send_event(client, rooms, event):  # noqa: C901
         for room_id in rooms:
             room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
-                room_id, message_type=message_type, content=content
+                room_id,
+                message_type=message_type,
+                content=content,
+                ignore_unverified_devices=True,
             )
             if isinstance(resp, RoomSendError):
                 gs.log.error(
@@ -3139,8 +3142,8 @@ async def send_file(client, rooms, file):  # noqa: C901
         )
         gs.log.info(
             f'file="{file}"; mime_type="{mime_type}"; '
-            f'filessize="{file_stat.st_size}"'
-            f"Failed to upload: {privacy_filter(str(resp))}"
+            f'filessize="{file_stat.st_size}"; '
+            f"Failed to upload: Server response: {privacy_filter(str(resp))}"
         )
 
     # determine msg_type:
@@ -3172,7 +3175,10 @@ async def send_file(client, rooms, file):  # noqa: C901
         for room_id in rooms:
             room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
-                room_id, message_type="m.room.message", content=content
+                room_id,
+                message_type="m.room.message",
+                content=content,
+                ignore_unverified_devices=True,
             )
             if isinstance(resp, RoomSendError):
                 gs.log.error(
@@ -3386,8 +3392,8 @@ async def send_image(client, rooms, image):  # noqa: C901
         )
         gs.log.info(
             f'file="{image}"; mime_type="{mime_type}"; '
-            f'filessize="{file_stat.st_size}"'
-            f"Failed to upload: {privacy_filter(str(resp))}"
+            f'filessize="{file_stat.st_size}"; '
+            f"Failed to upload: Server response: {privacy_filter(str(resp))}"
         )
 
     # TODO compute thumbnail, upload thumbnail to Server
@@ -3423,7 +3429,10 @@ async def send_image(client, rooms, image):  # noqa: C901
         for room_id in rooms:
             room_id = await map_roominfo_to_roomid(client, room_id)
             resp = await client.room_send(
-                room_id, message_type="m.room.message", content=content
+                room_id,
+                message_type="m.room.message",
+                content=content,
+                ignore_unverified_devices=True,
             )
             if isinstance(resp, RoomSendError):
                 gs.log.error(
@@ -4687,7 +4696,7 @@ async def action_upload(client: AsyncClient, credentials: dict) -> None:
                 "E172: "
                 "Failed to upload. "
                 f'file="{filename}"; mime_type="{mime_type}"; '
-                f"filessize={file_stat.st_size}; encrypt={encrypt}"
+                f"filessize={file_stat.st_size}; encrypt={encrypt}; "
                 f"Server response: {privacy_filter(str(resp))}"
             )
             gs.err_count += 1

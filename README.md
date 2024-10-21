@@ -1944,7 +1944,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.7.0 2024-09-04. Enjoy, star on Github and contribute
+You are running version 7.7.1 2024-10-21. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 
