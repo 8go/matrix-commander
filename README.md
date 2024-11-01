@@ -1616,16 +1616,17 @@ options:
                         room alias (e.g. '#SomeRoomAlias:matrix.example.com'),
                         or short alias (e.g. 'SomeRoomAlias' or
                         '#SomeRoomAlias'). As response room id, room display
-                        name, room canonical alias, room topic, room creator,
-                        and room encryption are printed. One line per room
-                        will be printed. Since either room id or room alias
-                        are accepted as input and both room id and room alias
-                        are given as output, one can hence use this option to
-                        map from room id to room alias as well as vice versa
-                        from room alias to room id. Do not confuse this option
-                        with the options '--get-display-name' and '--set-
-                        display-name', which get/set the user display name,
-                        not the room display name.
+                        name, room canonical alias, room topic, and room
+                        encryption are printed. One line per room will be
+                        printed. If --output is set to JSON a lot more
+                        information will be printed. Since either room id or
+                        room alias are accepted as input and both room id and
+                        room alias are given as output, one can hence use this
+                        option to map from room id to room alias as well as
+                        vice versa from room alias to room id. Do not confuse
+                        this option with the options '--get-display-name' and
+                        '--set-display-name', which get/set the user display
+                        name, not the room display name.
   --get-client-info     Print client information. Details:: Print information
                         kept in the client, i.e. matrix-commander. Output is
                         printed in JSON format.
@@ -1944,7 +1945,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 7.7.1 2024-10-21. Enjoy, star on Github and contribute
+You are running version 8.0.0 2024-11-01. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 

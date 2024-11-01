@@ -100,8 +100,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2024-10-21"
-VERSIONNR = "7.7.1"
+VERSION = "2024-11-01"
+VERSIONNR = "8.0.0"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -5646,13 +5646,15 @@ async def action_get_room_info(client: AsyncClient, credentials: dict) -> None:
                 f"room id is {room_id}, "
                 f"room display name is {room_displayname}, "
                 f"room is {room}. "
+                f"room dict is {room.__dict__}. "
             )
             resp = room
             # output format controlled via --output flag
             text = (
                 f"{room_id}{SEP}{room_displayname}{SEP}"
-                f"{room.canonical_alias}{SEP}{room.topic}{SEP}"
-                f"{room.creator}{SEP}{room.encrypted}"
+                f"{room.canonical_alias}{SEP}{room.topic}"
+                f"{SEP}{room.encrypted}"
+                # f"{SEP}{room.own_user_id}"
                 # f"{SEP}{user_id}"
             )
             # Object of type xxxResponse is not JSON
@@ -9234,8 +9236,9 @@ def main_inner(
         "or short alias (e.g. 'SomeRoomAlias' or '#SomeRoomAlias'). "
         "As response "
         "room id, room display name, room canonical alias, room topic, "
-        "room creator, and room encryption "
+        "and room encryption "
         "are printed. One line per room will be printed. "
+        "If --output is set to JSON a lot more information will be printed. "
         "Since either room id or room alias are accepted as input and both "
         "room id and room alias are given as output, one can hence use this "
         "option to map from room id to room alias "
