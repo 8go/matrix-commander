@@ -100,8 +100,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2024-11-01"
-VERSIONNR = "8.0.0"
+VERSION = "2024-11-21"
+VERSIONNR = "8.0.1"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
