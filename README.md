@@ -37,6 +37,16 @@ alt="get it on Docker Hub" height="100"></a>
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
+- announcing *digital attestation of releases on PyPi.org*. Please read:
+  [PyPi blog article on digital attestation](https://blog.pypi.org/posts/2024-11-14-pypi-now-supports-digital-attestations/).
+  `matrix-commander` releases are now digitally attested on
+  [PyPi](https://pypi.org/project/matrix-commander/).
+  As an example look at https://pypi.org/project/matrix-commander/#matrix_commander-8.0.3.tar.gz .
+  You will find `Verified details` in the left column and
+  `Uploaded using Trusted Publishing? Yes` as well as
+  `The following attestation bundles were made for matrix_commander`
+  in the right column. In short, you can trust that the PyPi release
+  actually matches the Github source code.
 - `matrix-commander` now available on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
   and hence easy to install as docker image (:clap: to @pataquets for his PR).
@@ -56,17 +66,7 @@ alt="get it on Docker Hub" height="100"></a>
   Please :star: it if you like the idea. Please contribute if you can,
   please :pray: Thank you!
   :heart:
-- announcing `nostr-commander-rs`, similar idea as `matrix-commander` but
-  for the [nostr protocol](https://github.com/nostr-protocol/nostr).
-  See [nostr-commander-rs](https://github.com/8go/nostr-commander-rs).
-  Please :star: it if you like the idea. Please contribute if you can,
-  please :pray: Thank you!
-  :heart:
-- announcing a new tool! `matrix-commander-tui`. Since `matrix-commander` now
-  has more than 90 options this textual UI tool for the terminal
-  helps you build your command. Run `matrix-commander-tui`,
-  select the desired options in the desired order via fzf, then adjust your
-  selection, and then run your interactively built command.
+  
 
 # Summary, TLDR
 
