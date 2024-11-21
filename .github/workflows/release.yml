@@ -2,7 +2,11 @@
 # https://github.com/pypa/gh-action-pypi-publish
 # https://github.com/pypa/sampleproject/blob/main/.github/workflows/release.yml
 
-name: Release
+# this action requires exactly one version to be found in .dist directory
+# it will take this version and publish it to PyPi.org webpage
+# this published version will be digitally attested.
+
+name: Release - publish attested version to PyPi
 
 on:
   push:
