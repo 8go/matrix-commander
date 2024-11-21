@@ -101,7 +101,7 @@ except ImportError:
 
 # version number
 VERSION = "2024-11-21"
-VERSIONNR = "8.0.2"
+VERSIONNR = "8.0.3"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
