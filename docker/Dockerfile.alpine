@@ -1,0 +1,20 @@
+FROM python:3.12-alpine3.20
+ARG NEEDED_PACKAGES_FOR_BUILD="olm-dev jpeg-dev cmake make gcc g++"
+
+RUN mkdir -p /app/matrix_commander/
+
+WORKDIR /app/
+COPY requirements.txt .
+RUN apk add --no-cache ${NEEDED_PACKAGES_FOR_BUILD} && \
+    pip3 install --no-cache -r requirements.txt && \
+    apk del --purge ${NEEDED_PACKAGES_FOR_BUILD}
+RUN apk add --no-cache libjpeg olm libmagic
+
+WORKDIR /app/matrix_commander/
+COPY matrix_commander/matrix_commander.py .
+COPY matrix_commander/matrix-commander .
+COPY matrix_commander/__init__.py .
+
+VOLUME /data
+
+ENTRYPOINT ["python3", "/app/matrix_commander/matrix-commander" ,"-s", "/data/store", "-c", "/data/credentials.json"]
