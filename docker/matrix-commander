@@ -1,0 +1,20 @@
+#!/bin/sh
+DATA_DIR="$HOME/.cache/matrix-commander"    # Directory on the host to store credentials and other data
+IMAGE="matrixcommander/matrix-commander"    # Docker image to use
+INTERACTIVE="false" # Default setting when --interactive or --pipes is not specified
+
+if [ ! -d "$DATA_DIR" ]; then
+    echo "Creating data directory at $DATA_DIR"
+    mkdir -p "$DATA_DIR"
+fi
+echo "Matrix is running in a container. Data is stored in $DATA_DIR"
+
+if [ "$1" = "--interactive" ]; then #With this setting keyboard input and screen output will be fine but piping to/from the container will not work.
+    INTERACTIVE="true"
+    shift
+elif [ "$1" = "--pipes" ]; then #With this setting keyboard input and screen output will not work but piping to/from the container will.
+    INTERACTIVE="false"
+    shift
+fi
+
+docker run -i --tty=${INTERACTIVE} --rm -v "$DATA_DIR":/data:z ${IMAGE} "$@"
