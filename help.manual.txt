@@ -208,7 +208,7 @@ options:
                         matrix-commander without ever logging out. --logout is
                         a cleanup if you have decided not to use this (or all)
                         device(s) ever again.
-  -c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
+  -c, --credentials CREDENTIALS_FILE
                         Specify location of credentials file. Details:: On
                         first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -218,7 +218,7 @@ options:
                         to the preconfigured room. If this option is provided,
                         the provided file name will be used as credentials
                         file instead of the default one.
-  -s STORE_DIRECTORY, --store STORE_DIRECTORY
+  -s, --store STORE_DIRECTORY
                         Specify location of store directory. Details:: Path to
                         directory to be used as "store" for encrypted
                         messaging. By default, this directory is "./store/".
@@ -229,7 +229,7 @@ options:
                         program use the same store for the same device. The
                         store directory can be shared between multiple
                         different devices and users.
-  -r ROOM [ROOM ...], --room ROOM [ROOM ...]
+  -r, --room ROOM [ROOM ...]
                         Specify one or multiple rooms. Details:: Optionally
                         specify one or multiple rooms via room ids or room
                         aliases. --room is used by various send actions and
@@ -355,7 +355,7 @@ options:
                         Specify the rooms as arguments to this option, i.e. as
                         arguments to --room-kick. The user must have
                         permissions to kick users.
-  -u USER [USER ...], --user USER [USER ...]
+  -u, --user USER [USER ...]
                         Specify one or multiple users. Details:: This option
                         is meaningful in combination with a) room actions like
                         --room-invite, --room-ban, --room-unban, etc. and b)
@@ -420,7 +420,7 @@ options:
                         option is only meaningful in combination with option
                         --room-dm-create. This option --alias specifies the
                         aliases to be used with the command --room-dm-create.
-  -m TEXT [TEXT ...], --message TEXT [TEXT ...]
+  -m, --message TEXT [TEXT ...]
                         Send one or multiple text messages. Details:: Message
                         data must not be binary data, it must be text. If no
                         '-m' is used and no other conflicting arguments are
@@ -458,7 +458,7 @@ options:
                         all input instantly. If you want to send the literal
                         letter '_' then escape it and send '\_'. '_' can be
                         used only once. And either '-' or '_' can be used.
-  -i IMAGE_FILE [IMAGE_FILE ...], --image IMAGE_FILE [IMAGE_FILE ...]
+  -i, --image IMAGE_FILE [IMAGE_FILE ...]
                         Send one or multiple image files. Details:: This
                         option can be used multiple times to send multiple
                         images. First images are sent, then text messages are
@@ -474,7 +474,7 @@ options:
                         overall in all arguments. If the file exists already,
                         it is more efficient to specify the file name than to
                         pipe the file through stdin.
-  -a AUDIO_FILE [AUDIO_FILE ...], --audio AUDIO_FILE [AUDIO_FILE ...]
+  -a, --audio AUDIO_FILE [AUDIO_FILE ...]
                         Send one or multiple audio files. Details:: This
                         option can be used multiple times to send multiple
                         audio files. First audios are sent, then text messages
@@ -482,7 +482,7 @@ options:
                         commander via a pipe, via stdin, then specify the
                         special character '-'. See description of '-i' to see
                         how '-' is handled.
-  -f FILE [FILE ...], --file FILE [FILE ...]
+  -f, --file FILE [FILE ...]
                         Send one or multiple files (e.g. PDF, DOC, MP4).
                         Details:: This option can be used multiple times to
                         send multiple files. First files are sent, then text
@@ -490,7 +490,7 @@ options:
                         matrix-commander via a pipe, via stdin, then specify
                         the special character '-'. See description of '-i' to
                         see how '-' is handled.
-  -e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
+  -e, --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
                         Send a Matrix JSON event. Details:: Send an event that
                         is formatted as a JSON object as specified by the
                         Matrix protocol. This allows the advanced user to send
@@ -524,7 +524,7 @@ options:
                         both --code and --emojize are specified then --code
                         takes priority. This is useful for sending emojis in
                         shortcode form :collision:.
-  -p SEPARATOR, --split SEPARATOR
+  -p, --split SEPARATOR
                         Split message text into multiple Matrix messages.
                         Details:: If set, split the message(s) into multiple
                         messages wherever the string specified with --split
@@ -556,7 +556,7 @@ options:
                         without this argument. This flag exists only for
                         historic reasons. In some specific case encryption can
                         be disabled, please see --plain.
-  -l [NEVER|ONCE|FOREVER|TAIL|ALL], --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
+  -l, --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
                         Print received messages and listen to messages.
                         Details:: The --listen option takes one argument.
                         There are several choices: "never", "once", "forever",
@@ -586,8 +586,7 @@ options:
                         rooms, "tail" and "all" listen only to the room
                         specified in the credentials file or the --room
                         options.
-  -t [NUMBER], --tail [NUMBER]
-                        Print last messages. Details:: The --tail option reads
+  -t, --tail [NUMBER]   Print last messages. Details:: The --tail option reads
                         and prints up to the last N messages from the
                         specified rooms, then quits. It takes one argument, an
                         integer, which we call N here. If there are fewer than
@@ -898,7 +897,7 @@ options:
                         with which the file will be encrypted with. Note that
                         this does not save other information such as the
                         private identity keys of the device.
-  --room-set-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], --room-put-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+  --room-set-alias, --room-put-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
                         Add aliases to rooms. Details:: Add an alias to a
                         room, or aliases to multiple rooms. Provide pairs of
                         arguments. In each pair, the first argument must be
@@ -996,7 +995,7 @@ options:
                         HTTPS), then the password can be visible to attackers.
                         Hence, if the server does not support HTTPS this
                         operation is discouraged.
-  --room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+  --room-redact, --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
                         Strip information out of one or several events.
                         Details:: Strip information from events, e.g.
                         messages. Redact is used in the meaning of 'strip,
@@ -1115,7 +1114,7 @@ options:
                         and the server before a 'send'. If you have chosen
                         'off', synchronization will be skipped entirely before
                         the 'send' which will improve performance.
-  -o TEXT|JSON|JSON-MAX|JSON-SPEC, --output TEXT|JSON|JSON-MAX|JSON-SPEC
+  -o, --output TEXT|JSON|JSON-MAX|JSON-SPEC
                         Select an output format. Details:: This option decides
                         on how the output is presented. Currently offered
                         choices are: 'text', 'json', 'json-max', and 'json-
@@ -1170,7 +1169,7 @@ options:
                         might want to store the output (room id) so that you
                         can join the room later with '--room-join' for
                         example. Don't confuse this option with --room-invite.
-  -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
+  -v, -V, --version [PRINT|CHECK]
                         Print version information or check for updates.
                         Details:: This option takes zero or one argument. If
                         no argument is given, 'print' is assumed which will
@@ -1185,5 +1184,5 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 8.0.4 2024-11-21. Enjoy, star on Github and contribute
+You are running version 8.0.5 2025-06-17. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

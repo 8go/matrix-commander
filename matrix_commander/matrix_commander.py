@@ -100,8 +100,8 @@ except ImportError:
     HAVE_OPENID = False
 
 # version number
-VERSION = "2024-11-21"
-VERSIONNR = "8.0.4"
+VERSION = "2025-06-17"
+VERSIONNR = "8.0.5"
 # matrix-commander; for backwards compitability replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
@@ -864,6 +864,10 @@ class Callbacks(object):
                 msg = event.body  # Extract the message text
             elif isinstance(event, RoomMessageUnknown):
                 msg = "Received room message of unknown type: " + event.msgtype
+                try:
+                    msg += " with content body " + str(event.content['body'])
+                except Exception:
+                    msg += " with content " + str(event.content)
             elif isinstance(event, RoomMessageVideo):
                 msg = "Received video: " + event.body + msg_url
             elif isinstance(event, RoomEncryptedAudio):
@@ -1237,14 +1241,20 @@ class Callbacks(object):
                 # verification successfully, send a 'done' to-device event
                 # to the other device to assert that the verification was
                 # successful.
-                sas = client.key_verifications[event.transaction_id]
+                try:
+                    txid = event.source["content"]["transaction_id"]
+                except Exception as e:
+                    gs.log.warning(f"Got exception {e}. Trying something different.")
+                    txid = event.transaction_id
+
+                sas = client.key_verifications[txid]
 
                 done_message = ToDeviceMessage(
                     type="m.key.verification.done",
                     recipient=event.sender,
                     recipient_device=sas.other_olm_device.device_id,
                     content={
-                        "transaction_id": event.transaction_id,
+                        "transaction_id": txid,
                     },
                 )
                 resp = await client.to_device(done_message, sas.transaction_id)
@@ -9818,11 +9828,11 @@ Login to and authenticate with the Matrix homeserver.
 Perform verification.
 <--logout> ME|ALL
 Logout.
-<-c> CREDENTIALS_FILE, <--credentials> CREDENTIALS_FILE
+<-c>, <--credentials> CREDENTIALS_FILE
 Specify location of credentials file.
-<-s> STORE_DIRECTORY, <--store> STORE_DIRECTORY
+<-s>, <--store> STORE_DIRECTORY
 Specify location of store directory.
-<-r> ROOM [ROOM ...], <--room> ROOM [ROOM ...]
+<-r>, <--room> ROOM [ROOM ...]
 Specify one or multiple rooms.
 <--room-default> DEFAULT_ROOM
 Specify the default room at --login.
@@ -9846,7 +9856,7 @@ Ban one ore more users from one or more rooms.
 Unban one ore more users from one or more rooms.
 <--room-kick> ROOM [ROOM ...]
 Kick one ore more users from one or more rooms.
-<-u> USER [USER ...], <--user> USER [USER ...]
+<-u>, <--user> USER [USER ...]
 Specify one or multiple users.
 <--user-login> USER
 Specify user for --login.
@@ -9856,15 +9866,15 @@ Specify one or multiple room names.
 Specify one or multiple room topics.
 <--alias> ROOM_ALIAS [ROOM_ALIAS ...]
 Specify one or multiple room aliases.
-<-m> TEXT [TEXT ...], <--message> TEXT [TEXT ...]
+<-m>, <--message> TEXT [TEXT ...]
 Send one or multiple text messages.
-<-i> IMAGE_FILE [IMAGE_FILE ...], <--image> IMAGE_FILE [IMAGE_FILE ...]
+<-i>, <--image> IMAGE_FILE [IMAGE_FILE ...]
 Send one or multiple image files.
-<-a> AUDIO_FILE [AUDIO_FILE ...], <--audio> AUDIO_FILE [AUDIO_FILE ...]
+<-a>, <--audio> AUDIO_FILE [AUDIO_FILE ...]
 Send one or multiple audio files.
-<-f> FILE [FILE ...], <--file> FILE [FILE ...]
+<-f>, <--file> FILE [FILE ...]
 Send one or multiple files (e.g. PDF, DOC, MP4).
-<-e> MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], <--event> MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
+<-e>, <--event> MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
 Send a Matrix JSON event.
 <-w>, <--html>
 Send message as format "HTML".
@@ -9874,7 +9884,7 @@ Send message as format "MARKDOWN".
 Send message as format "CODE".
 <-j>, <--emojize>
 Send message after emojizing.
-<-p> SEPARATOR, <--split> SEPARATOR
+<-p>, <--split> SEPARATOR
 Split message text into multiple Matrix messages.
 <--config> CONFIG_FILE
 Specify the location of a config file.
@@ -9884,9 +9894,9 @@ Specify a proxy for connectivity.
 Send message as notice.
 <--encrypted>
 Send message end-to-end encrypted.
-<-l> [NEVER|ONCE|FOREVER|TAIL|ALL], <--listen> [NEVER|ONCE|FOREVER|TAIL|ALL]
+<-l>, <--listen> [NEVER|ONCE|FOREVER|TAIL|ALL]
 Print received messages and listen to messages.
-<-t> [NUMBER], <--tail> [NUMBER]
+<-t>, <--tail> [NUMBER]
 Print last messages.
 <-y>, <--listen-self>
 Print your own messages as well.
@@ -9950,7 +9960,7 @@ Inquire about permissions.
 Import Megolm decryption keys from a file.
 <--export-keys> FILE PASSPHRASE FILE PASSPHRASE
 Export all the Megolm decryption keys of this device.
-<--room-set-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], <--room-put-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+<--room-set-alias,> <--room-put-alias> ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
 Add aliases to rooms.
 <--room-resolve-alias> ROOM_ALIAS [ROOM_ALIAS ...]
 Show room ids corresponding to room aliases.
@@ -9964,7 +9974,7 @@ Get the visibility of one or more rooms.
 Get the state of one or more rooms.
 <--delete-device> DEVICE [DEVICE ...]
 Delete one or multiple devices.
-<--room-redact> ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], <--room-delete-content> ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+<--room-redact,> <--room-delete-content> ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
 Strip information out of one or several events.
 <--whoami>
 Print your user id.
@@ -9990,11 +10000,11 @@ Specify a homeserver for use by certain actions.
 Specify a device name, for use by certain actions.
 <--sync> FULL|OFF
 Choose synchronization options.
-<-o> TEXT|JSON|JSON-MAX|JSON-SPEC, <--output> TEXT|JSON|JSON-MAX|JSON-SPEC
+<-o>, <--output> TEXT|JSON|JSON-MAX|JSON-SPEC
 Select an output format.
 <--room-invites> [LIST|JOIN|LIST+JOIN]
 List room invitations and/or join invited rooms.
-<-v> [PRINT|CHECK], -V [PRINT|CHECK], <--version> [PRINT|CHECK]
+<-v>, -V, <--version> [PRINT|CHECK]
 Print version information or check for updates.
 """.replace(
             "<", eon

@@ -23,11 +23,11 @@ matrix-commander supports these arguments:
   Perform verification.
 --logout ME|ALL
   Logout.
--c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
+-c, --credentials CREDENTIALS_FILE
   Specify location of credentials file.
--s STORE_DIRECTORY, --store STORE_DIRECTORY
+-s, --store STORE_DIRECTORY
   Specify location of store directory.
--r ROOM [ROOM ...], --room ROOM [ROOM ...]
+-r, --room ROOM [ROOM ...]
   Specify one or multiple rooms.
 --room-default DEFAULT_ROOM
   Specify the default room at --login.
@@ -51,7 +51,7 @@ matrix-commander supports these arguments:
   Unban one ore more users from one or more rooms.
 --room-kick ROOM [ROOM ...]
   Kick one ore more users from one or more rooms.
--u USER [USER ...], --user USER [USER ...]
+-u, --user USER [USER ...]
   Specify one or multiple users.
 --user-login USER
   Specify user for --login.
@@ -61,16 +61,15 @@ matrix-commander supports these arguments:
   Specify one or multiple room topics.
 --alias ROOM_ALIAS [ROOM_ALIAS ...]
   Specify one or multiple room aliases.
--m TEXT [TEXT ...], --message TEXT [TEXT ...]
+-m, --message TEXT [TEXT ...]
   Send one or multiple text messages.
--i IMAGE_FILE [IMAGE_FILE ...], --image IMAGE_FILE [IMAGE_FILE ...]
+-i, --image IMAGE_FILE [IMAGE_FILE ...]
   Send one or multiple image files.
--a AUDIO_FILE [AUDIO_FILE ...], --audio AUDIO_FILE [AUDIO_FILE ...]
+-a, --audio AUDIO_FILE [AUDIO_FILE ...]
   Send one or multiple audio files.
--f FILE [FILE ...], --file FILE [FILE ...]
+-f, --file FILE [FILE ...]
   Send one or multiple files (e.g. PDF, DOC, MP4).
--e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], --event MATRIX_JSON_OBJECT
-[MATRIX_JSON_OBJECT ...]
+-e, --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
   Send a Matrix JSON event.
 -w, --html
   Send message as format "HTML".
@@ -80,7 +79,7 @@ matrix-commander supports these arguments:
   Send message as format "CODE".
 -j, --emojize
   Send message after emojizing.
--p SEPARATOR, --split SEPARATOR
+-p, --split SEPARATOR
   Split message text into multiple Matrix messages.
 --config CONFIG_FILE
   Specify the location of a config file.
@@ -90,9 +89,9 @@ matrix-commander supports these arguments:
   Send message as notice.
 --encrypted
   Send message end-to-end encrypted.
--l [NEVER|ONCE|FOREVER|TAIL|ALL], --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
+-l, --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
   Print received messages and listen to messages.
--t [NUMBER], --tail [NUMBER]
+-t, --tail [NUMBER]
   Print last messages.
 -y, --listen-self
   Print your own messages as well.
@@ -157,8 +156,7 @@ BAN|INVITE|KICK|NOTIFICATIONS|REDACT|etc ...]
   Import Megolm decryption keys from a file.
 --export-keys FILE PASSPHRASE FILE PASSPHRASE
   Export all the Megolm decryption keys of this device.
---room-set-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], --room-put-alias
-ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+--room-set-alias, --room-put-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
   Add aliases to rooms.
 --room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
   Show room ids corresponding to room aliases.
@@ -172,8 +170,8 @@ ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
   Get the state of one or more rooms.
 --delete-device DEVICE [DEVICE ...]
   Delete one or multiple devices.
---room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], --room-
-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+--room-redact, --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID
+REASON ...]
   Strip information out of one or several events.
 --whoami
   Print your user id.
@@ -199,12 +197,12 @@ delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
   Specify a device name, for use by certain actions.
 --sync FULL|OFF
   Choose synchronization options.
--o TEXT|JSON|JSON-MAX|JSON-SPEC, --output TEXT|JSON|JSON-MAX|JSON-SPEC
+-o, --output TEXT|JSON|JSON-MAX|JSON-SPEC
   Select an output format.
 --room-invites [LIST|JOIN|LIST+JOIN]
   List room invitations and/or join invited rooms.
--v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
+-v, -V, --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 8.0.4 2024-11-21. Enjoy, star on Github and contribute
+You are running version 8.0.5 2025-06-17. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
