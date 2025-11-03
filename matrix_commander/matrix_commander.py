@@ -6603,7 +6603,7 @@ async def action_verify_emoji() -> None:
     #     Start a new key verification process with the given device.
     #     Parameters:   device (OlmDevice) – The device which we would like to verify
     #     Return type:  ToDeviceMessage
-    #     Returns a ToDeviceMessage that should be sent to to the homeserver.
+    #     Returns a ToDeviceMessage that should be sent to the homeserver.
     #
     # async to_device(message, tx_id=None)[source]
     #     Send a to-device message.
