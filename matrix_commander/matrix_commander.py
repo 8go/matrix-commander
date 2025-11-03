@@ -6653,7 +6653,7 @@ async def action_verify_emoji() -> None:
             )
         else:
             gs.log.debug(
-                f"A verification reqest was sent to user {recipient} "
+                f"A verification request was sent to user {recipient} "
                 f"on device {recipient_device} with transaction_id {txid}."
             )
 
