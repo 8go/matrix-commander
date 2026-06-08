@@ -1,6 +1,5 @@
 aiohttp
 aiofiles>=0.6.0
-argparse
 asyncio
 async-timeout # see Issue 161
 datetime
