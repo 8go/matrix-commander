@@ -1,3 +1,6 @@
+> [!WARNING]
+> Due to cryptographic [olm dependency deprecation](https://github.com/8go/matrix-commander/issues/204#issuecomment-3523986979), this program is cryptographically unsafe to use until https://github.com/matrix-nio/matrix-nio/pull/555 is merged. Good news: https://github.com/8go/matrix-commander-rs is a Rust alternative not having this issue.
+
 [![PyPI - Python Version](
 https://img.shields.io/pypi/pyversions/matrix-commander?color=red)](
 https://www.python.org/)
