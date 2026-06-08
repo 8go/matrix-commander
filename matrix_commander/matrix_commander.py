@@ -9111,7 +9111,7 @@ def main_inner(
     ap.add_argument(
         # no single char flag
         "--devices",
-        "--get-devices",  # alias, cause --deviced is very similar to --device
+        "--get-devices",  # alias, cause --devices is very similar to --device
         required=False,
         action="store_true",
         help="Print the list of devices. "
