@@ -1,6 +1,3 @@
-> [!WARNING]
-> Due to cryptographic [olm dependency deprecation](https://github.com/8go/matrix-commander/issues/204#issuecomment-3523986979), this program is cryptographically unsafe to use until https://github.com/matrix-nio/matrix-nio/pull/555 is merged. Good news: https://github.com/8go/matrix-commander-rs is a Rust alternative not having this issue.
-
 [![PyPI - Python Version](
 https://img.shields.io/pypi/pyversions/matrix-commander?color=red)](
 https://www.python.org/)
@@ -31,44 +28,27 @@ alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
 <img src="https://pypi.org/static/images/logo-large.516e776d.svg"
-alt="get it on PyPi" height="100"></a>
+alt="get it on PyPi" height="80"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://hub.docker.com/r/matrixcommander/matrix-commander">
 <img src="https://www.unixtutorial.org/images/software/docker-hub.png"
-alt="get it on Docker Hub" height="100"></a>
+alt="get it on Docker Hub" height="80"></a>
 </p>
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
-- announcing *digital attestation of releases on PyPi.org*. Please read:
-  [PyPi blog article on digital attestation](https://blog.pypi.org/posts/2024-11-14-pypi-now-supports-digital-attestations/).
-  `matrix-commander` releases are now digitally attested on
-  [PyPi](https://pypi.org/project/matrix-commander/).
-  As an example look at https://pypi.org/project/matrix-commander/#matrix_commander-8.0.3.tar.gz .
-  You will find `Verified details` in the left column and
-  `Uploaded using Trusted Publishing? Yes` as well as
-  `The following attestation bundles were made for matrix_commander`
-  in the right column. In short, you can trust that the PyPi release
-  actually matches the Github source code.
-- `matrix-commander` now available on
-  [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
-  and hence easy to install as docker image (:clap: to @pataquets for his PR).
-  Install via `docker pull matrixcommander/matrix-commander`.
-- `matrix-commander` now available on
-  [PyPi](https://pypi.org/project/matrix-commander/)
-  and hence easy to install via `pip install matrix-commander`
-- available as reproducible
-  [Nix package](https://search.nixos.org/packages?query=matrix-commander)
-  for NixOS, Debian, Fedora, etc.
-- `matrix-commander` is now callable from a Python program as well.
-  See [tests/test-send.py](
-  https://github.com/8go/matrix-commander/blob/master/tests/test-send.py)
-  for an example on how to do that.
-- announcing `matrix-commander-rs` :crab:, `matrix-commander` but in Rust.
+- ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ **WARNING: 
+  Due to cryptographic [olm dependency deprecation](https://github.com/8go/matrix-commander/issues/204#issuecomment-3523986979),
+  this program is cryptographically unsafe to use until https://github.com/matrix-nio/matrix-nio/pull/555 is merged.
+  See also [security advisory](https://github.com/8go/matrix-commander/security/advisories/GHSA-wchh-9x6h-7f6p).** ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ 
+  Good news: [matrix-commander-rs](https://github.com/8go/matrix-commander-rs) is a Rust alternative not having this issue.
+- For the reason of transparency and the reason of appreciation I would like to
+  announce that as of June 2026 there is a new maintainer on the project: 
+  [@Benjamin-Loison](https://github.com/Benjamin-Loison). He has full permissions including publishing new releases. 
+  Welcome ❤️ and thanks.
+- Check out `matrix-commander-rs` :crab:, An incomplete `matrix-commander` but in Rust.
   See [matrix-commander-rs](https://github.com/8go/matrix-commander-rs).
-  Please :star: it if you like the idea. Please contribute if you can,
-  please :pray: Thank you!
-  :heart:
+  Please :star: it if you like the idea. Please contribute if you can.
   
 
 # Summary, TLDR
