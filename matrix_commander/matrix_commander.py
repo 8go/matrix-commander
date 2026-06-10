@@ -4276,48 +4276,88 @@ async def listen_tail(  # noqa: C901
     # To loop over all rooms, one can loop through the join dictionary. i.e.
     # for room_id, room_info in resp_s.rooms.join.items():  # loop all rooms
     for room_id in rooms:  # loop only over user specified rooms
-        resp = await client.room_messages(
-            room_id, start=resp_s.next_batch, limit=limit
-        )
-        if isinstance(resp, RoomMessagesError):
-            gs.log.warning(
-                "W106: "
-                f"room_messages failed with response "
-                f"{privacy_filter(str(resp))}. "
-                "Processing continues."
+        start_token = resp_s.next_batch
+        messages_received = 0
+        newest_event = None
+        
+        while messages_received < limit:
+            remaining_limit = limit - messages_received
+            gs.log.debug("listen_tail: === looping over chunks ===")
+            gs.log.debug(f"listen_tail: room_id = {room_id}")
+            gs.log.debug(f"listen_tail: remaining_limit = {remaining_limit}, limit = {limit}")
+            gs.log.debug(f"listen_tail: start = (str) {start_token}")
+            resp = await client.room_messages(
+                room_id, start=start_token, limit=remaining_limit
             )
-            gs.warn_count += 1
-            continue  # skip this room
-        gs.log.debug(
-            f"room_messages response = {type(resp)} :: "
-            f"{privacy_filter(str(resp))}."
-        )
-        gs.log.debug(f"room_messages room_id = {resp.room_id}.")
-        gs.log.debug(f"room_messages start = (str) {resp.start}.")
-        gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
-        gs.log.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
-        # chunk is just a list of RoomMessage events like this example:
-        # chunk=[RoomMessageText(...)]
-
-        for event in resp.chunk:
-            gs.log.debug(f"sending event to callback = {event}.")
-            if client.rooms and client.rooms[room_id]:
-                room = client.rooms[room_id]
-            else:
-                room = MatrixRoom(room_id, None, True)  # dummy_room
-            await callbacks.message_callback(room, event)
-        if resp.chunk:  # list not empty
-            # order is reversed, first element is timewise the newest
-            first_event = resp.chunk[0]
-            resp = await client.room_read_markers(
+            if isinstance(resp, RoomMessagesError):
+                gs.log.warning(
+                    "W106: "
+                    f"room_messages failed with response "
+                    f"{privacy_filter(str(resp))}. "
+                    "Processing continues."
+                )
+                gs.warn_count += 1
+                break  # skip to next room
+                
+            gs.log.debug(
+                f"room_messages response = {type(resp)} :: "
+                f"{privacy_filter(str(resp))}."
+            )
+            gs.log.debug(f"room_messages room_id = {resp.room_id}.")
+            gs.log.debug(f"room_messages start = (str) {resp.start}.")
+            gs.log.debug(f"room_messages end = (str) :: {resp.end}.")
+            gs.log.debug(f"room_messages chunk = (list) :: {resp.chunk}.")
+            # chunk is just a list of RoomMessage events like this example:
+            # chunk=[RoomMessageText(...)]
+           
+            if not resp.chunk:
+                gs.log.debug(
+                    "listen_tail: chunk is empty. No more messages returned. Total "
+                    "number of requested messages are not available, all available messages "
+                    f"obtained. {limit-remaining_limit} chunk objects retrieved.")
+                break  # no more messages returned
+                
+            # Capture the newest event from the very first chunk fetched
+            if newest_event is None:
+                newest_event = resp.chunk[0]
+                
+            for event in resp.chunk:
+                gs.log.debug(f"sending event to callback = {event}.")
+                if client.rooms and room_id in client.rooms:
+                    room = client.rooms[room_id]
+                else:
+                    room = MatrixRoom(room_id, None, True)  # dummy_room
+                await callbacks.message_callback(room, event)
+                
+            messages_received += len(resp.chunk)
+            
+            if messages_received >= limit:
+                gs.log.debug(
+                    "listen_tail: limit has been reached, "
+                    "number of requested messages has been returned."
+                )
+                break  # limit has been reached
+              
+            # Set the next start token to resp.end to get the next chunk
+            start_token = resp.end
+            if not start_token:
+                gs.log.debug(
+                    "listen_tail: no more chunks available, stopping, number of "
+                    "requested messages are not available, we got all available messages."
+                )
+                break  # no more pages available
+                
+        # Update read markers once per room, using the newest event fetched
+        if newest_event:
+            resp_markers = await client.room_read_markers(
                 room_id=room_id,
-                fully_read_event=first_event.event_id,
-                read_event=first_event.event_id,
+                fully_read_event=newest_event.event_id,
+                read_event=newest_event.event_id,
             )
-            if isinstance(resp, RoomReadMarkersError):
+            if isinstance(resp_markers, RoomReadMarkersError):
                 gs.log.debug(
                     "room_read_markers failed with response "
-                    f"{privacy_filter(str(resp))}."
+                    f"{privacy_filter(str(resp_markers))}."
                 )
 
 
