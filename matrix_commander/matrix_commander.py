@@ -157,7 +157,7 @@ NEVER = "never"  # listening type
 FOREVER = "forever"  # listening type
 ALL = "all"  # listening type
 TAIL = "tail"  # listening type
-DEFAULT_SEPARATOR = "    "  # used for sperating columns in print outputs
+DEFAULT_SEPARATOR = "    "  # used for separating columns in print outputs
 SEP = DEFAULT_SEPARATOR
 LISTEN_DEFAULT = NEVER
 TAIL_UNUSED_DEFAULT = 0  # get 0 if --tail is not specified
@@ -422,7 +422,7 @@ def obj_to_dict(obj):
             and "session_store" in obj.__dict__
             and "outbound_group_sessions" in obj.__dict__
         ):
-            # "olm" is hige, 1MB+, 20K lines of JSON
+            # "olm" is huge, 1MB+, 20K lines of JSON
             # grab only some items
             # "olm": {
             #   "user_id": "@xxx:xxx.xxx.xxx",
@@ -435,10 +435,10 @@ def obj_to_dict(obj):
             #       ... want
             #   },
             #   "session_store": {
-            #       ... dont want, too long
+            #       ... don't want, too long
             #   },
             #   "inbound_group_store": {
-            #       ... dont want, 20K lines, too long
+            #       ... don't want, 20K lines, too long
             #   },
             #   "outbound_group_sessions": {},
             #   "tracked_users": {
@@ -522,7 +522,7 @@ def derive_media_filename_with_path(event):
 
     Depending on --download-media-name derive the corresponding file
     name under which to store the downloaded media file. Note that
-    the file name giveb be the source, i.e. the sender, cannot be trusted.
+    the file name given be the source, i.e. the sender, cannot be trusted.
     The source can specify and provide any string, even invalid file
     names or names containing backslash or slash and similar.
 
@@ -1606,7 +1606,7 @@ def delete_pid_file() -> None:
 
 
 def cleanup() -> None:
-    """Cleanup before quiting program."""
+    """Cleanup before quitting program."""
     gs.log.debug("Cleanup: cleaning up.")
     delete_pid_file()
 
@@ -1819,7 +1819,7 @@ def determine_store_dir() -> str:
         return None
     if not gs.pa.encrypted:
         return None
-    pargs_store_norm = os.path.normpath(gs.pa.store)  # normailzed for humans
+    pargs_store_norm = os.path.normpath(gs.pa.store)  # normalized for humans
     if os.path.isdir(gs.pa.store):
         gs.log.debug(
             "Found an existing store in directory "
@@ -2263,7 +2263,7 @@ def default_homeserver(credentials: dict):
 
 
 def short_room_alias_to_room_alias(short_room_alias: str, credentials: dict):
-    """Convert 'SomeRoomAlias' to ''#SomeToomAlias:matrix.example.com'.
+    """Convert 'SomeRoomAlias' to ''#SomeRoomAlias:matrix.example.com'.
     Converts short canonical local room alias to full room alias.
     """
     if short_room_alias in (None, ""):
@@ -2277,7 +2277,7 @@ def short_room_alias_to_room_alias(short_room_alias: str, credentials: dict):
 
 
 def room_alias_to_short_room_alias(room_alias: str, credentials: dict):
-    """Convert '#SomeToomAlias:matrix.example.com' to 'SomeRoomAlias'.
+    """Convert '#SomeRoomAlias:matrix.example.com' to 'SomeRoomAlias'.
     Converts full room alias to short canonical local room alias.
     """
     return room_alias.split(":")[0][1:]
@@ -3126,7 +3126,7 @@ async def send_file(client, rooms, file):  # noqa: C901
     #    return
 
     # first do an upload of file, see upload() documentation
-    # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
+    # https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
     # then send URI of upload to room
 
     file_stat = await aiofiles.os.stat(file)
@@ -3291,7 +3291,7 @@ async def send_image(client, rooms, image):  # noqa: C901
     # aiofiles.open(sys.stdin.buffer, "r+b") does not work, wrong type.
     # aiofiles.open('/dev/stdin', mode='rb') fails with error:
     #    io.UnsupportedOperation: File or stream is not seekable
-    # stdin, _ = await aioconsole.get_standard_streams() also failes
+    # stdin, _ = await aioconsole.get_standard_streams() also fails
     # Hence I see no way to directly hand stdin to aiofiles.
     # Problem: I cannot combine the 3 things:
     #    stdin + aiofiles + nio.AsyncClient.upload()
@@ -3373,7 +3373,7 @@ async def send_image(client, rooms, image):  # noqa: C901
         blurhash = None
 
     # first do an upload of image, see upload() documentation
-    # http://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
+    # https://matrix-nio.readthedocs.io/en/latest/nio.html#nio.AsyncClient.upload
     # then send URI of upload to room
     # Note that encrypted upload works even with unencrypted/plain rooms; the
     # decryption keys will not be protected, obviously, but no special
@@ -3534,7 +3534,7 @@ async def send_message(client, rooms, message):  # noqa: C901
         message = "```\n" + message + "\n```"  # to format it as code
     elif gs.pa.markdown:
         gs.log.debug(
-            "Converting message from MarkDown into HTML. "
+            "Converting message from Markdown into HTML. "
             'Sending message in format "markdown".'
         )
         # e.g. converts from "-abc" to "<ul><li>abc</li></ul>"
@@ -3669,7 +3669,7 @@ def get_messages_from_pipe() -> list:
     """Read input from pipe if available.
 
     Return [] if no input available on pipe stdin.
-    Return ["some-msg"] if input is availble.
+    Return ["some-msg"] if input is available.
     Might also return [""] of course if "" was in pipe.
     Currently there is at most 1 msg in the returned list.
     """
@@ -3738,7 +3738,7 @@ def get_messages_from_keyboard() -> list:
     --image, --event, etc. are performed.
 
     Return [] if no input available on keyboard.
-    Return ["some-msg"] if input is availble on keyboard.
+    Return ["some-msg"] if input is available on keyboard.
     Might also return [""] of course if "" keyboard entry was empty.
     Currently there is at most 1 msg in the returned list.
     """
@@ -4202,7 +4202,7 @@ async def listen_once_alternative(client: AsyncClient) -> None:
     gs.log.debug(f"sync rooms = (nio.responses.Rooms) {resp_s.rooms}")
     # Set up event callbacks
     callbacks = Callbacks(client)
-    # Note: we are NOT registering a callback funtion!
+    # Note: we are NOT registering a callback function!
     # Loop through the join dictionary
     for room_id, room_info in resp_s.rooms.join.items():
         event_list = room_info.timeline.events
@@ -4263,7 +4263,7 @@ async def listen_tail(  # noqa: C901
 
     # Set up event callbacks
     callbacks = Callbacks(client)
-    # Note: we are NOT registering a callback funtion!
+    # Note: we are NOT registering a callback function!
 
     # room_id = list(resp_s.rooms.join.keys())[0]  # first room_id from dict
     # alternative way of getting room_id, client.rooms is also a dict
@@ -4481,7 +4481,7 @@ async def listen_all(  # noqa: C901
 
     # Set up event callbacks
     callbacks = Callbacks(client)
-    # Note: we are NOT registering a callback funtion!
+    # Note: we are NOT registering a callback function!
 
     # room_id = list(resp_s.rooms.join.keys())[0]  # first room_id from dict
     # alternative way of getting room_id, client.rooms is also a dict
@@ -7175,7 +7175,7 @@ async def action_login() -> None:
         elif method == "password":
             resp = await client.login(password, device_name=device_name)
 
-        # check that we logged in succesfully
+        # check that we logged in successfully
         if isinstance(resp, LoginResponse):
             # when writing, always write to primary location (e.g. .)
             write_credentials_to_disk(
@@ -7324,7 +7324,7 @@ def check_download_media_dir() -> None:
     """Check if media download directory is correct."""
     if not gs.pa.download_media:
         return  # "": that means no download of media, valid value
-    # normailzed for humans
+    # normalized for humans
     dl = os.path.normpath(gs.pa.download_media)
     gs.pa.download_media = dl
     if os.path.isfile(dl):
@@ -8107,7 +8107,7 @@ def main_inner(
         "specified with --user. It then waits for the peer to accept the "
         "verification request in order to inter into the verification "
         "process. "
-        "Different Matrix clients perfrom verification differently "
+        "Different Matrix clients perform verification differently "
         "and have different GUI elements. "
         "Find the button that says 'Accept', 'Verify with another device', "
         "'Verify', "
@@ -8661,7 +8661,7 @@ def main_inner(
         help='Send message as format "MARKDOWN". '
         "Details:: If not specified, message will be sent "
         'as format "TEXT". E.g. that allows sending of text '
-        "formatted in MarkDown language.",
+        "formatted in Markdown language.",
     )
     #  -c is already used for --credentials, -k as it sounds like c
     ap.add_argument(
@@ -8880,7 +8880,7 @@ def main_inner(
         "to the local directory. foo will become ./foo. "
         "foo/foo will become ./foo/foo and only works if ./foo already "
         "exists. "
-        "Absolute paths will remein unchanged. /tmp will remain /tmp. "
+        "Absolute paths will remain unchanged. /tmp will remain /tmp. "
         "/tmp/foo will be /tmp/foo. "
         "If media is encrypted it will be decrypted and stored decrypted. "
         "By default media files will not be downloaded.",
@@ -9382,7 +9382,7 @@ def main_inner(
         "homeserver will be automatically appended. "
         "Adding the same alias "
         "multiple times to the same room results in an error. "
-        "--room-put-alias is eqivalent to --room-set-alias.",
+        "--room-put-alias is equivalent to --room-set-alias.",
     )
     ap.add_argument(
         "--room-resolve-alias",
@@ -9438,7 +9438,7 @@ def main_inner(
         f"Details:: Get an OpenID token for {PROG_WITHOUT_EXT}, or for "
         "one or multiple other users. It prints an OpenID token object "
         "that the requester may supply to another service to verify their "
-        "identity in Matrix. See http://www.openid.net/. "
+        "identity in Matrix. See https://www.openid.net/. "
         "Specify zero or more user ids. "
         f"If no user id is specified, an OpenID for {PROG_WITHOUT_EXT} will "
         "be fetched. If one or more user ids are given, the OpenID of "

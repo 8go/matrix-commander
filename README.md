@@ -112,7 +112,7 @@ Use cases for this program could be
   `matrix-commander`.
 - `poor-man's Matrix client`: if you love the terminal and are too lazy to
    start up an Element desktop app or an Element webpage,
-   `matrix-commander` is a a trivial way to fire off some instant
+   `matrix-commander` is a trivial way to fire off some instant
    messages to your friends from the terminal.
 - `poor-man's importer or exporter`: you want to get things in and out of
    Matrix?
@@ -151,7 +151,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - Sending messages
 - Sending notices
 - Sending formatted messages
-- Sending MarkDown messages
+- Sending Markdown messages
 - Message splitting before sending
 - Sending Code-formatted messages
 - Sending emojis in messages via shorthand
@@ -291,7 +291,7 @@ Messages to send can be provided
 For sending messages the program supports various text formats:
 1) text: default
 2) html:  HTML formatted text
-3) markdown: MarkDown formatted text
+3) markdown: Markdown formatted text
 4) code: used a block of fixed-sized font, ideal for ASCII art or
    tables, bash outputs, etc.
 5) notification
