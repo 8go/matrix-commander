@@ -1311,7 +1311,7 @@ options:
                         "forever", use Control-C on the keyboard or send a
                         signal to the process or service. The PID for
                         signaling can be found in a PID file in directory
-                        "/home/ubuntu/.run". "--listen once" will get all the
+                        "/home/user/.run". "--listen once" will get all the
                         messages from all rooms that are currently queued up.
                         So, with "once" the program will start, print waiting
                         messages (if any) and then stop. The timeout for
