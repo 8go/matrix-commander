@@ -9,7 +9,7 @@
 #
 # bumps version number of project
 # change 2 lines (VERSION and VERSIONNR) in "matrix_commander/matrix_commander.py"
-# changes 1 line in "setup.cfg", the PyPi set-up file
+# changes 1 line in "setup.cfg", the PyPI set-up file
 # creates 1-line `VERSION` file
 #
 # the script must take 1 argument: either `--mayor`, `--minor` or `--patch`
@@ -117,7 +117,7 @@ else
     exit 1
 fi
 
-# update PyPi setup file
+# update PyPI setup file
 # version = 2.1.0
 FN="setup.cfg"
 if ! [ -f "$FN" ]; then

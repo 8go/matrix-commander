@@ -11,7 +11,7 @@ https://hub.docker.com/r/matrixcommander/matrix-commander/)
 [![PyPI - Version](https://img.shields.io/pypi/v/matrix-commander?color=darkblue)](
 https://pypi.org/project/matrix-commander)
 [![PyPI - Downloads](
-https://img.shields.io/pypi/dm/matrix-commander?color=darkblue&label=PyPi%20Downloads
+https://img.shields.io/pypi/dm/matrix-commander?color=darkblue&label=PyPI%20Downloads
 )](https://pypi.org/project/matrix-commander)
 [![Nix: package](https://img.shields.io/badge/Nix-package-6fa8dc.svg)](
 https://search.nixos.org/packages?query=matrix-commander)
@@ -28,7 +28,7 @@ alt="made for Matrix" height="100"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://pypi.org/project/matrix-commander/">
 <img src="https://pypi.org/static/images/logo-large.516e776d.svg"
-alt="get it on PyPi" height="80"></a>
+alt="get it on PyPI" height="80"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://hub.docker.com/r/matrixcommander/matrix-commander">
 <img src="https://www.unixtutorial.org/images/software/docker-hub.png"
@@ -204,7 +204,7 @@ Please give it a :star: on Github right now so others find it more easily.
 - More than 90 options
 - More than 300 stars :stars: on Github
 - Easy installation, available through `pip`, i.e. available in
-  [PyPi](https://pypi.org/project/matrix-commander/) store
+  [PyPI](https://pypi.org/project/matrix-commander/) store
 - Easy installation, available as docker image on
   [Docker Hub](https://hub.docker.com/r/matrixcommander/matrix-commander)
   (thanks to PR from @pataquets :clap:)
@@ -333,7 +333,7 @@ and automatically decrypted for you.
   - See https://pypi.org/project/matrix-commander
   - Usually `pip install matrix-commander` will do the trick.
   - But, note that even if you install via `pip` you must have a) Python 3.8+
-    and b) `libolm` installed. See `PyPi-Instructions.md`.
+    and b) `libolm` installed. See `PyPI-Instructions.md`.
   - Run `python -V` to get your Python version number and assure that it is
     3.8+.
   - For e2ee support, python-olm is needed which requires the libolm C

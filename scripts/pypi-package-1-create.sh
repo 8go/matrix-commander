@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 #
-# # on PC where PyPi package is to be created
+# # on PC where PyPI package is to be created
 # python3 -m pip install --upgrade build # install necessary build packages
 # python3 -m pip install --upgrade twine # install necessary build packages
 # rm dist/*                              # cleanup
 # nano setup.cfg                         # increment version number
-# python3 -m build                       # build PyPi package
-# python3 -m twine upload dist/*         # upload PyPi package, use __token__ as user
+# python3 -m build                       # build PyPI package
+# python3 -m twine upload dist/*         # upload PyPI package, use __token__ as user
 #
 # # on PC where to install
 # sudo apt install libolm-dev
