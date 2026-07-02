@@ -70,9 +70,9 @@ else
     echo "Error while searching for $REGEX"
     grep -e "$PREFIX" $FN
     if [ "$COUNT" == "1" ]; then
-        echo "ERROR: Version not found, expected 1 occurance."
+        echo "ERROR: Version not found, expected 1 occurrence."
     else
-        echo "ERROR: Version found $COUNT times, expected 1 occurance."
+        echo "ERROR: Version found $COUNT times, expected 1 occurrence."
     fi
     exit 1
 fi
@@ -110,9 +110,9 @@ else
     echo "Error while searching for $REGEX"
     grep -e "$PREFIX" $FN
     if [ "$COUNT" == "1" ]; then
-        echo "ERROR: Version not found in $FN, expected 1 occurance."
+        echo "ERROR: Version not found in $FN, expected 1 occurrence."
     else
-        echo "ERROR: Version found $COUNT times in $FN, expected 1 occurance."
+        echo "ERROR: Version found $COUNT times in $FN, expected 1 occurrence."
     fi
     exit 1
 fi
@@ -141,9 +141,9 @@ else
     echo "Error while searching for $REGEX"
     grep -e "$PREFIX" $FN
     if [ "$COUNT" == "1" ]; then
-        echo "ERROR: Version not found in $FN, expected 1 occurance."
+        echo "ERROR: Version not found in $FN, expected 1 occurrence."
     else
-        echo "ERROR: Version found $COUNT times in $FN, expected 1 occurance."
+        echo "ERROR: Version found $COUNT times in $FN, expected 1 occurrence."
     fi
     exit 1
 fi

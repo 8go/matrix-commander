@@ -70,7 +70,7 @@ OPT1="scripts/update-1-version.sh --mayor # increment MAJOR version number, inco
 OPT2="scripts/update-1-version.sh --minor # increment MINOR version number, new feature"
 OPT3="scripts/update-1-version.sh --patch # increment PATCH version number, bug fix"
 OPT4="scripts/update-2-help-manual.py # update help-manual file, puts it also into README.md"
-OPT5="scripts/update-4-help-help.py # update help-help-pre file, puts it inte matix_commander.py"
+OPT5="scripts/update-4-help-help.py # update help-help-pre file, puts it into matrix_commander.py"
 OPT6="scripts/create-help-help.sh # update help-help file"
 OPT7="scripts/create-help-usage.sh # update help-usage file"
 OPT8="scripts/lintmc.sh # lint and beautify main file"
@@ -188,7 +188,7 @@ done
 
 PS3='Please enter your choice: '
 echo "A tag push of major version kicks off the Docker actions workflow on Github."
-echo "A tag push of major version kicks off the PiPy actions workflow on Github."
+echo "A tag push of major version kicks off the PyPI actions workflow on Github."
 echo "Note: a PR does not trigger Github Actions workflows."
 echo "Only pushing a tag kicks off the workflow and only if not a minor version."
 echo "Instead of 2 separate pushes, one can use *annotated* tags and ----follow-tags."

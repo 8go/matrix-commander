@@ -102,11 +102,11 @@ except ImportError:
 # version number
 VERSION = "2025-06-17"
 VERSIONNR = "8.0.5"
-# matrix-commander; for backwards compitability replace _ with -
+# matrix-commander; for backwards compatibility replace _ with -
 PROG_WITHOUT_EXT = os.path.splitext(os.path.basename(__file__))[0].replace(
     "_", "-"
 )
-# matrix-commander.py; for backwards compitability replace _ with -
+# matrix-commander.py; for backwards compatibility replace _ with -
 PROG_WITH_EXT = os.path.basename(__file__).replace("_", "-")
 # file to store credentials in case you want to run program multiple times
 CREDENTIALS_FILE_DEFAULT = "credentials.json"  # login credentials JSON file
