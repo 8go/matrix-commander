@@ -204,5 +204,5 @@ REASON ...]
 -v, -V, --version [PRINT|CHECK]
   Print version information or check for updates.
 
-You are running version 8.0.5 2025-06-17. Enjoy, star on Github and contribute
+You are running version 8.0.6 2026-07-02. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.

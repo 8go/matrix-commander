@@ -920,7 +920,7 @@ options:
                         --device belonging to a user specified with --user. It
                         then waits for the peer to accept the verification
                         request in order to inter into the verification
-                        process. Different Matrix clients perfrom verification
+                        process. Different Matrix clients perform verification
                         differently and have different GUI elements. Find the
                         button that says 'Accept', 'Verify with another
                         device', 'Verify', 'Interactively verify by Emoji' or
@@ -951,7 +951,7 @@ options:
                         matrix-commander without ever logging out. --logout is
                         a cleanup if you have decided not to use this (or all)
                         device(s) ever again.
-  -c, --credentials CREDENTIALS_FILE
+  -c CREDENTIALS_FILE, --credentials CREDENTIALS_FILE
                         Specify location of credentials file. Details:: On
                         first run, information about homeserver, user, room
                         id, etc. will be written to a credentials file. By
@@ -961,7 +961,7 @@ options:
                         to the preconfigured room. If this option is provided,
                         the provided file name will be used as credentials
                         file instead of the default one.
-  -s, --store STORE_DIRECTORY
+  -s STORE_DIRECTORY, --store STORE_DIRECTORY
                         Specify location of store directory. Details:: Path to
                         directory to be used as "store" for encrypted
                         messaging. By default, this directory is "./store/".
@@ -972,7 +972,7 @@ options:
                         program use the same store for the same device. The
                         store directory can be shared between multiple
                         different devices and users.
-  -r, --room ROOM [ROOM ...]
+  -r ROOM [ROOM ...], --room ROOM [ROOM ...]
                         Specify one or multiple rooms. Details:: Optionally
                         specify one or multiple rooms via room ids or room
                         aliases. --room is used by various send actions and
@@ -1098,7 +1098,7 @@ options:
                         Specify the rooms as arguments to this option, i.e. as
                         arguments to --room-kick. The user must have
                         permissions to kick users.
-  -u, --user USER [USER ...]
+  -u USER [USER ...], --user USER [USER ...]
                         Specify one or multiple users. Details:: This option
                         is meaningful in combination with a) room actions like
                         --room-invite, --room-ban, --room-unban, etc. and b)
@@ -1163,7 +1163,7 @@ options:
                         option is only meaningful in combination with option
                         --room-dm-create. This option --alias specifies the
                         aliases to be used with the command --room-dm-create.
-  -m, --message TEXT [TEXT ...]
+  -m TEXT [TEXT ...], --message TEXT [TEXT ...]
                         Send one or multiple text messages. Details:: Message
                         data must not be binary data, it must be text. If no
                         '-m' is used and no other conflicting arguments are
@@ -1201,7 +1201,7 @@ options:
                         all input instantly. If you want to send the literal
                         letter '_' then escape it and send '\_'. '_' can be
                         used only once. And either '-' or '_' can be used.
-  -i, --image IMAGE_FILE [IMAGE_FILE ...]
+  -i IMAGE_FILE [IMAGE_FILE ...], --image IMAGE_FILE [IMAGE_FILE ...]
                         Send one or multiple image files. Details:: This
                         option can be used multiple times to send multiple
                         images. First images are sent, then text messages are
@@ -1217,7 +1217,7 @@ options:
                         overall in all arguments. If the file exists already,
                         it is more efficient to specify the file name than to
                         pipe the file through stdin.
-  -a, --audio AUDIO_FILE [AUDIO_FILE ...]
+  -a AUDIO_FILE [AUDIO_FILE ...], --audio AUDIO_FILE [AUDIO_FILE ...]
                         Send one or multiple audio files. Details:: This
                         option can be used multiple times to send multiple
                         audio files. First audios are sent, then text messages
@@ -1225,7 +1225,7 @@ options:
                         commander via a pipe, via stdin, then specify the
                         special character '-'. See description of '-i' to see
                         how '-' is handled.
-  -f, --file FILE [FILE ...]
+  -f FILE [FILE ...], --file FILE [FILE ...]
                         Send one or multiple files (e.g. PDF, DOC, MP4).
                         Details:: This option can be used multiple times to
                         send multiple files. First files are sent, then text
@@ -1233,7 +1233,7 @@ options:
                         matrix-commander via a pipe, via stdin, then specify
                         the special character '-'. See description of '-i' to
                         see how '-' is handled.
-  -e, --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
+  -e MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...], --event MATRIX_JSON_OBJECT [MATRIX_JSON_OBJECT ...]
                         Send a Matrix JSON event. Details:: Send an event that
                         is formatted as a JSON object as specified by the
                         Matrix protocol. This allows the advanced user to send
@@ -1254,7 +1254,7 @@ options:
                         of HTML tags are accepted by Matrix.
   -z, --markdown        Send message as format "MARKDOWN". Details:: If not
                         specified, message will be sent as format "TEXT". E.g.
-                        that allows sending of text formatted in MarkDown
+                        that allows sending of text formatted in Markdown
                         language.
   -k, --code            Send message as format "CODE". Details:: If not
                         specified, message will be sent as format "TEXT". If
@@ -1267,7 +1267,7 @@ options:
                         both --code and --emojize are specified then --code
                         takes priority. This is useful for sending emojis in
                         shortcode form :collision:.
-  -p, --split SEPARATOR
+  -p SEPARATOR, --split SEPARATOR
                         Split message text into multiple Matrix messages.
                         Details:: If set, split the message(s) into multiple
                         messages wherever the string specified with --split
@@ -1299,7 +1299,7 @@ options:
                         without this argument. This flag exists only for
                         historic reasons. In some specific case encryption can
                         be disabled, please see --plain.
-  -l, --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
+  -l [NEVER|ONCE|FOREVER|TAIL|ALL], --listen [NEVER|ONCE|FOREVER|TAIL|ALL]
                         Print received messages and listen to messages.
                         Details:: The --listen option takes one argument.
                         There are several choices: "never", "once", "forever",
@@ -1311,7 +1311,7 @@ options:
                         "forever", use Control-C on the keyboard or send a
                         signal to the process or service. The PID for
                         signaling can be found in a PID file in directory
-                        "/home/user/.run". "--listen once" will get all the
+                        "/home/ubuntu/.run". "--listen once" will get all the
                         messages from all rooms that are currently queued up.
                         So, with "once" the program will start, print waiting
                         messages (if any) and then stop. The timeout for
@@ -1329,7 +1329,8 @@ options:
                         rooms, "tail" and "all" listen only to the room
                         specified in the credentials file or the --room
                         options.
-  -t, --tail [NUMBER]   Print last messages. Details:: The --tail option reads
+  -t [NUMBER], --tail [NUMBER]
+                        Print last messages. Details:: The --tail option reads
                         and prints up to the last N messages from the
                         specified rooms, then quits. It takes one argument, an
                         integer, which we call N here. If there are fewer than
@@ -1366,7 +1367,7 @@ options:
                         path, the relative path will be relative to the local
                         directory. foo will become ./foo. foo/foo will become
                         ./foo/foo and only works if ./foo already exists.
-                        Absolute paths will remein unchanged. /tmp will remain
+                        Absolute paths will remain unchanged. /tmp will remain
                         /tmp. /tmp/foo will be /tmp/foo. If media is encrypted
                         it will be decrypted and stored decrypted. By default
                         media files will not be downloaded.
@@ -1640,7 +1641,7 @@ options:
                         with which the file will be encrypted with. Note that
                         this does not save other information such as the
                         private identity keys of the device.
-  --room-set-alias, --room-put-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
+  --room-set-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...], --room-put-alias ROOM_ALIAS ROOM [ROOM_ALIAS ROOM ...]
                         Add aliases to rooms. Details:: Add an alias to a
                         room, or aliases to multiple rooms. Provide pairs of
                         arguments. In each pair, the first argument must be
@@ -1662,7 +1663,7 @@ options:
                         automatically prefixed with '#' and the homeserver
                         will be automatically appended. Adding the same alias
                         multiple times to the same room results in an error.
-                        --room-put-alias is eqivalent to --room-set-alias.
+                        --room-put-alias is equivalent to --room-set-alias.
   --room-resolve-alias ROOM_ALIAS [ROOM_ALIAS ...]
                         Show room ids corresponding to room aliases. Details::
                         Resolves a room alias to the corresponding room id, or
@@ -1696,12 +1697,12 @@ options:
                         matrix-commander, or for one or multiple other users.
                         It prints an OpenID token object that the requester
                         may supply to another service to verify their identity
-                        in Matrix. See http://www.openid.net/. Specify zero or
-                        more user ids. If no user id is specified, an OpenID
-                        for matrix-commander will be fetched. If one or more
-                        user ids are given, the OpenID of these users will be
-                        fetched. As response the user id(s) and OpenID(s) will
-                        be printed.
+                        in Matrix. See https://www.openid.net/. Specify zero
+                        or more user ids. If no user id is specified, an
+                        OpenID for matrix-commander will be fetched. If one or
+                        more user ids are given, the OpenID of these users
+                        will be fetched. As response the user id(s) and
+                        OpenID(s) will be printed.
   --room-get-visibility [ROOM ...]
                         Get the visibility of one or more rooms. Details::
                         Provide zero or more room ids as arguments. If no
@@ -1738,7 +1739,7 @@ options:
                         HTTPS), then the password can be visible to attackers.
                         Hence, if the server does not support HTTPS this
                         operation is discouraged.
-  --room-redact, --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
+  --room-redact ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...], --room-delete-content ROOM_ID EVENT_ID REASON [ROOM_ID EVENT_ID REASON ...]
                         Strip information out of one or several events.
                         Details:: Strip information from events, e.g.
                         messages. Redact is used in the meaning of 'strip,
@@ -1857,7 +1858,7 @@ options:
                         and the server before a 'send'. If you have chosen
                         'off', synchronization will be skipped entirely before
                         the 'send' which will improve performance.
-  -o, --output TEXT|JSON|JSON-MAX|JSON-SPEC
+  -o TEXT|JSON|JSON-MAX|JSON-SPEC, --output TEXT|JSON|JSON-MAX|JSON-SPEC
                         Select an output format. Details:: This option decides
                         on how the output is presented. Currently offered
                         choices are: 'text', 'json', 'json-max', and 'json-
@@ -1912,7 +1913,7 @@ options:
                         might want to store the output (room id) so that you
                         can join the room later with '--room-join' for
                         example. Don't confuse this option with --room-invite.
-  -v, -V, --version [PRINT|CHECK]
+  -v [PRINT|CHECK], -V [PRINT|CHECK], --version [PRINT|CHECK]
                         Print version information or check for updates.
                         Details:: This option takes zero or one argument. If
                         no argument is given, 'print' is assumed which will
@@ -1927,7 +1928,7 @@ options:
                         the program will continue to run. This is useful for
                         having version number in the log files.
 
-You are running version 8.0.5 2025-06-17. Enjoy, star on Github and contribute
+You are running version 8.0.6 2026-07-02. Enjoy, star on Github and contribute
 by submitting a Pull Request. Also have a look at matrix-commander-tui.
 ```
 
