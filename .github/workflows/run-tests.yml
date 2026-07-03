@@ -1,29 +1,28 @@
-# This is a basic workflow to perform automated tests with Actions
-
 name: Run tests from tests directory
 
 on:
-  push:
-    branches: [ "master", "*" ]
+  # push:
+  #   branches: [ "master", "*" ]
   pull_request:
     branches: [ "master" ]
-
   workflow_dispatch:
 
 env:
-  python-version: ""
+  python-version: "3.*" 
 
 jobs:
   tests:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.python-version }}
+          cache: "pip"
 
       - name: Install system dependencies
         run:  sudo apt install libdbus-1-dev libolm-dev
