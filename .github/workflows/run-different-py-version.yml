@@ -1,12 +1,10 @@
-# This is a basic workflow to perform automated tests with Actions
-
 name: Run different Py version manually
 
 on:
   workflow_dispatch:
 
 env:
-  python-version: "3.10"
+  python-version: "3.11"
   test-case: "test-version.sh"
   MC_OPTIONS: " --verbose "
 
@@ -15,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.python-version }}
+          cache: "pip"
 
       - name: Install system dependencies
         run:  sudo apt install libdbus-1-dev libolm-dev
