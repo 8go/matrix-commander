@@ -1,12 +1,14 @@
-# This is a basic workflow to perform automated tests with Actions
-
 name: Run version test from tests directory manually
 
 on:
+  # push:
+  #   branches: [ "master", "*" ]
+  pull_request:
+    branches: [ "master" ]
   workflow_dispatch:
 
 env:
-  python-version: ""
+  python-version: "3.*" 
   test-case: "test-version.sh"
   MC_OPTIONS: " --verbose "
 
@@ -21,6 +23,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.python-version }}
+          cache: "pip"
 
       - name: Install system dependencies
         run:  sudo apt install libdbus-1-dev libolm-dev
