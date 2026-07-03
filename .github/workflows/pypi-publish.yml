@@ -1,16 +1,7 @@
 name: PyPI Publish
 
-# on: push
-# on: pull_request
-# on:
-#   push:
-#     branches:
-#       - master
-
 # Adding "git push origin <tag>" made it trigger the workflow twice.
 # Hence made it so that only pushing tags triggers the workflow.
-# And only if the tag is a version ending in ".0". 
-# Minor versions like "v2.40.1" will be skipped.
 on:
   push:
     tags:
@@ -28,7 +19,7 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: pypi-publish
         uses: pypa/gh-action-pypi-publish@v1.14.0
