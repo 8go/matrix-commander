@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v7
+        uses: actions/checkout@release/v7
 
       - name: pypi-publish
-        uses: pypa/gh-action-pypi-publish@v1.14.0
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
