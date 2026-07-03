@@ -2,7 +2,7 @@
 # https://github.com/pypa/gh-action-pypi-publish
 # https://github.com/pypa/sampleproject/blob/main/.github/workflows/release.yml
 
-name: New form of Publish Python Package to PyPI
+name: New form of PyPI Publish (build+pub)
 
 on:
   push:
