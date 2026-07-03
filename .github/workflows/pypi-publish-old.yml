@@ -1,4 +1,4 @@
-name: PyPI Publish
+name: Old form of PyPI Publish
 
 # Adding "git push origin <tag>" made it trigger the workflow twice.
 # Hence made it so that only pushing tags triggers the workflow.
