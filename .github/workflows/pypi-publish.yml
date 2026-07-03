@@ -2,6 +2,10 @@
 # https://github.com/pypa/gh-action-pypi-publish
 # https://github.com/pypa/sampleproject/blob/main/.github/workflows/release.yml
 
+# The pypi-publish.yml file name is HARD-CODED by PyPI.org.
+# If you change the file name you will break the autentication. It will fail.
+# Do NOT change the file name. 
+
 name: New form of PyPI Publish (build+pub)
 
 on:
