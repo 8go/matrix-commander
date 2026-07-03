@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@release/v7
+        uses: actions/checkout@v7
 
       - name: pypi-publish
         uses: pypa/gh-action-pypi-publish@release/v1
