@@ -1,0 +1,58 @@
+# See https://blog.pypi.org/posts/2024-11-14-pypi-now-supports-digital-attestations/
+# https://github.com/pypa/gh-action-pypi-publish
+# https://github.com/pypa/sampleproject/blob/main/.github/workflows/release.yml
+
+name: Build distribution and Publish Python Package to PyPI
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    name: Build and Publish to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    
+    steps:
+      # 1. Get the code from the repository
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # 2. Set up the Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      # 3. Install the official Python 'build' tool
+      - name: Install build dependencies
+        run: python -m pip install -U setuptools wheel build
+        # run: python -m pip install build --user
+
+      - name: Clean dist directory, it should not exist, but just in case
+        run: rm -rf dist/
+
+      # 4. Build the package (creates .tar.gz and .whl files in a 'dist/' folder)
+      - name: Build package
+        run: python -m build --outdir dist/
+        # run: python -m build .
+
+      # 5.a. Publish the contents of the 'dist/' folder to PyPI, NEW version
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+          verbose: true
+
+#     # 5.b. Publish the contents of the 'dist/' folder to PyPI, OLD version
+#     - name: Publish to PyPI
+#       uses: pypa/gh-action-pypi-publish@release/v1
+#       with:
+#         password: ${{ secrets.PYPI_API_TOKEN }}
+#
