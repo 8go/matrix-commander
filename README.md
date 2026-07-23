@@ -37,11 +37,6 @@ alt="get it on Docker Hub" height="80"></a>
 
 # :loudspeaker: :new: :boom: Latest News! :fire: :mega: :tada:
 
-- ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ **WARNING: 
-  Due to cryptographic [olm dependency deprecation](https://github.com/8go/matrix-commander/issues/204#issuecomment-3523986979),
-  this program is cryptographically unsafe to use until https://github.com/matrix-nio/matrix-nio/pull/555 is merged.
-  See also [security advisory](https://github.com/8go/matrix-commander/security/advisories/GHSA-wchh-9x6h-7f6p).** ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ 
-  Good news: [matrix-commander-rs](https://github.com/8go/matrix-commander-rs) is a Rust alternative not having this issue.
 - For the reason of transparency and the reason of appreciation I would like to
   announce that as of June 2026 there is a new maintainer on the project: 
   [@Benjamin-Loison](https://github.com/Benjamin-Loison). He has full permissions including publishing new releases. 
