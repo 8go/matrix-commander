@@ -2209,9 +2209,10 @@ async def map_roominfo_to_roomid(client: AsyncClient, info: str) -> str:
             ri = short_room_alias_to_room_alias(ri, gs.credentials)
         ri = await map_roomalias_to_roomid(client, ri)
         return ri
-    if ":" not in ri:
-        # '!someRoomId'
-        ri = ri + ":" + default_homeserver(gs.credentials)
+    # Room ids are opaque values (spec, MSC4291): room version 12 ids have
+    # no ':domain' suffix, and appending one breaks send and join for them.
+    # An incomplete legacy id cannot be told apart from a complete v12 id,
+    # so never append a domain suffix and use the id exactly as provided.
     return ri
 
 
