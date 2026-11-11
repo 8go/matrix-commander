@@ -2945,7 +2945,17 @@ async def send_event(client, rooms, event):  # noqa: C901
         return
 
     if event == "-":  # - means read as pipe from stdin
-        jsondata = sys.stdin.buffer.read().decode()  # binary read
+        try:
+            jsondata = sys.stdin.buffer.read().decode()  # binary read
+        except UnicodeDecodeError:
+            gs.log.error(
+                "E152: "
+                "Event piped via stdin is not valid UTF-8. "
+                "This event is being dropped and NOT sent."
+            )
+            gs.err_count += 1
+            gs.log.debug("Here is the traceback.\n" + traceback.format_exc())
+            return
     else:
         with open(event, "r") as file:
             jsondata = file.read()
